@@ -21,24 +21,48 @@ export async function scan(source: Source): Promise<ScanResult> {
   // The files are read at the same time: on GitHub, each one is a request.
   const read = await Promise.all(files.map(async (file) => ({ file, bytes: await source.read(file.path) })));
   const warnings = [...source.warnings];
-  // Identical text is one skill, whichever agent's folder it is in.
-  const copies = new Map<string, SkillFile[]>();
+  const texts = new Map<SkillFile, string>();
   for (const { file, bytes } of read) {
-    if (!bytes) {
-      warnings.push(`${file.path}: listed, but not found at the scanned commit; skipped`);
-      continue;
-    }
-    const text = new TextDecoder().decode(bytes);
-    copies.set(text, [...(copies.get(text) ?? []), file]);
+    if (bytes) texts.set(file, new TextDecoder().decode(bytes));
+    else warnings.push(`${file.path}: listed, but not found at the scanned commit; skipped`);
   }
   const skills: Skill[] = [];
-  for (const [text, same] of copies) {
+  for (const same of copies([...texts.keys()], texts)) {
     const [kept, ...others] = same.sort(byGenerality);
-    const { skill, warning } = readSkill(source, { ...kept, copies: others.map((file) => file.path) }, text);
+    const { skill, warning } = readSkill(source, { ...kept, copies: others.map((file) => file.path) }, texts.get(kept)!);
     skills.push(skill);
     if (warning) warnings.push(warning);
   }
   return { repository: source.repository, skills: sortSkills(skills), warnings };
+}
+
+/**
+ * The files that are one skill: identical text, wherever it is; or the same name in the skills
+ * folder of an agent's folder at the top of the repository, whatever the text.
+ */
+function copies(files: SkillFile[], texts: Map<SkillFile, string>): SkillFile[][] {
+  // Union-find: each file starts alone, and each shared key joins two groups.
+  const parent = files.map((_, index) => index);
+  const root = (index: number): number => (parent[index] === index ? index : (parent[index] = root(parent[index])));
+  const owners = new Map<string, number>();
+  files.forEach((file, index) => {
+    const name = agentSkillName(file.path);
+    for (const key of [`text:${texts.get(file)}`, ...(name ? [`name:${name}`] : [])]) {
+      const owner = owners.get(key);
+      if (owner === undefined) owners.set(key, index);
+      else parent[root(index)] = root(owner);
+    }
+  });
+  const groups = new Map<number, SkillFile[]>();
+  files.forEach((file, index) => groups.set(root(index), [...(groups.get(root(index)) ?? []), file]));
+  return [...groups.values()];
+}
+
+/** `<agent folder>/skills/<name>/SKILL.md` at the top of the repository: the name; an agent folder is `agent` or starts with a dot. */
+function agentSkillName(path: string): string | undefined {
+  const [folder, skills, name, file, ...rest] = path.split('/');
+  const agent = folder === 'agent' || folder.startsWith('.');
+  return agent && skills === 'skills' && file === 'SKILL.md' && rest.length === 0 ? name : undefined;
 }
 
 /** The general copy first, the one in `.agents/skills`; then by path. */
