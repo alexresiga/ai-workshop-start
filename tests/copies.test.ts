@@ -1,4 +1,5 @@
-// "What is a project skill" in spec/analysis.md: SKILL.md files with identical text are one skill.
+// "What is a project skill" in spec/analysis.md: SKILL.md files with identical text, or of the same
+// name in agents' folders, are one skill.
 // Each case is a small repository, scanned as a local directory and through GitHub; both must agree.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -40,22 +41,41 @@ const CASES: Case[] = [
     skills: [['.agents/skills/mps-tests/SKILL.md', 'mps-tests', ['.claude/skills/mps-tests/SKILL.md', '.github/skills/mps-tests/SKILL.md']]],
   },
   {
-    name: 'a generated copy differs by a line → skills of their own (JetBrains/intellij-community)',
+    name: 'the same name in agents’ folders, the text differing → one skill (JetBrains/intellij-community generates its .claude copy)',
     files: {
       '.agents/skills/commits/SKILL.md': skill('commits'),
       '.claude/skills/commits/SKILL.md': skill('commits').replace('---\n#', '---\n<!-- Generated; edit .agents/skills/commits/SKILL.md -->\n#'),
     },
+    skills: [['.agents/skills/commits/SKILL.md', 'commits', ['.claude/skills/commits/SKILL.md']]],
+  },
+  {
+    name: 'the same name in agent/skills, outside .agents and .claude → counted with them (JetBrains/android)',
+    files: {
+      '.agents/skills/writing-lint-checks/SKILL.md': skill('writing-lint-checks'),
+      '.claude/skills/writing-lint-checks/SKILL.md': skill('writing-lint-checks'),
+      'agent/skills/writing-lint-checks/SKILL.md': `${skill('writing-lint-checks')}More.\n`,
+    },
+    skills: [['.agents/skills/writing-lint-checks/SKILL.md', 'writing-lint-checks', ['.claude/skills/writing-lint-checks/SKILL.md', 'agent/skills/writing-lint-checks/SKILL.md']]],
+  },
+  {
+    name: 'the same name outside agents’ folders, the text differing → skills of their own',
+    files: {
+      '.agents/skills/a/SKILL.md': skill('a'),
+      'community/.agents/skills/a/SKILL.md': `${skill('a')}Community.\n`,
+      'tools/a/SKILL.md': `${skill('a')}Tools.\n`,
+    },
     skills: [
-      ['.agents/skills/commits/SKILL.md', 'commits', []],
-      ['.claude/skills/commits/SKILL.md', 'commits', []],
+      ['.agents/skills/a/SKILL.md', 'a', []],
+      ['community/.agents/skills/a/SKILL.md', 'a', []],
+      ['tools/a/SKILL.md', 'a', []],
     ],
   },
   {
-    name: 'line endings differ → skills of their own',
-    files: { '.agents/skills/mps-tests/SKILL.md': MPS, '.claude/skills/mps-tests/SKILL.md': MPS.replaceAll('\n', '\r\n') },
+    name: 'outside agents’ folders, line endings differ → skills of their own',
+    files: { 'docs/mps-tests/SKILL.md': MPS, 'tools/mps-tests/SKILL.md': MPS.replaceAll('\n', '\r\n') },
     skills: [
-      ['.agents/skills/mps-tests/SKILL.md', 'mps-tests', []],
-      ['.claude/skills/mps-tests/SKILL.md', 'mps-tests', []],
+      ['docs/mps-tests/SKILL.md', 'mps-tests', []],
+      ['tools/mps-tests/SKILL.md', 'mps-tests', []],
     ],
   },
   {

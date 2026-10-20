@@ -13,10 +13,10 @@ Skill: id = `repo:path`, name, description, commit
 - Malformed front matter → a *warning*, the scan goes on
 - Unreachable repository → a clear message, exit code 1
 ## What is a project skill
-- SKILL.md files with **identical text** → one skill; the others are its *copies* (`also in`)
+- SKILL.md files with **identical text**, or of the **same name** in an agent's folder (`<.agents, .claude, … or agent>/skills/<name>`) → one skill; the others are its *copies* (`also in`)
 - The one kept: the general one, in `.agents/skills`; else the first by path
-- Any difference, a byte or a line ending → skills of their own
+- Elsewhere, any difference, a byte or a line ending → skills of their own
 - A warning once, for the one kept
-- the repository’s own workflow, outside .agents and .claude, example JetBrains/android: agent/skills/writing-lint-checks/SKILL.md
+- the repository’s own workflow, outside .agents and .claude, example JetBrains/android: agent/skills/writing-lint-checks/SKILL.md; counted together with the ones of the same name
 - skip A fixture for the project’s own tests, not a skill: a SKILL.md under `fixture`, `fixtures`, `__fixtures__`, `testData`, `testdata` or `test-data`; a skill in a `skills` folder may still be named so
 - skip skills which are shipped as part of the product: a SKILL.md under `resources`; a skill in a `skills` folder may still be named so
