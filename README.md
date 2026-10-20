@@ -13,6 +13,8 @@ build-tools-bump-gradle-api — Bumps the Gradle API version that Kotlin Gradle 
 …
 ```
 
+`./skill-atlas scan https://github.com/<org>` counts the skills of every repository of an organization.
+
 `./skill-atlas serve` opens the web view on http://127.0.0.1:3000: enter `owner/repo` or a GitHub link, press
 **Scan**, and read each skill with its `SKILL.md`.
 

@@ -7,23 +7,27 @@ import { test } from 'node:test';
 import { openGitHub } from '../src/core/github.ts';
 import { replay } from '../src/core/replay.ts';
 import { AtlasError } from '../src/core/errors.ts';
-import { createWebServer, listen, type ScanAnswer } from '../src/web.ts';
-import { atlas, CLI, EXAMPLE_COMMIT, github, searchAnswers } from './helpers.ts';
+import { createWebServer, listen, type OrganizationAnswer, type ScanAnswer } from '../src/web.ts';
+import { scanOrganization } from '../src/core/organization.ts';
+import { atlas, CLI, EXAMPLE_COMMIT, github, noWait, organizationAnswers, ORGANIZATION, searchAnswers } from './helpers.ts';
 
 const missing = replay({ 'https://api.github.com/repos/JetBrains/missing': { status: 404, body: { message: 'Not Found' } } }, github);
-const server = createWebServer({ open: (url) => openGitHub(url, { fetch: missing, token: 'test' }) });
+const server = createWebServer({
+  open: (url) => openGitHub(url, { fetch: missing, token: 'test', wait: noWait }),
+  organization: (url) => scanOrganization(url, { fetch: replay(organizationAnswers('JetBrains', 'Organization', ORGANIZATION), missing), token: 'test' }),
+});
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 test.after(() => server.close());
 
 const scanFor = (url: string) => fetch(`${base}/api/scan?url=${encodeURIComponent(url)}`);
 
-test('the page: an owner/repo or GitHub link input, a Scan button, the list and the SKILL.md', async () => {
+test('the page: an owner/repo, organization or GitHub link input, a Scan button, the list and the SKILL.md', async () => {
   const response = await fetch(`${base}/`);
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type') ?? '', /text\/html/);
   const page = await response.text();
-  assert.match(page, /<input id="url"[^>]*placeholder="owner\/repo or a GitHub link"[^>]*aria-label="Repository link"/);
+  assert.match(page, /<input id="url"[^>]*placeholder="owner\/repo, an organization or a GitHub link"[^>]*aria-label="Repository or organization link"/);
   assert.match(page, /<button id="button" class="scan" type="submit">Scan<\/button>/);
   assert.match(page, /<nav id="skills"/);
   assert.match(page, /<section id="detail"/);
@@ -66,6 +70,7 @@ test('scan: the other front matter keys and the body, apart', async (t) => {
   const text = '---\nname: pick\ndescription: Pick a fix.\ndisable-model-invocation: true\nallowed-tools: [Bash]\n---\n\n# Pick\n\nRun it.\n';
   const server = createWebServer({
     open: (url) => openGitHub(url, { fetch: replay(searchAnswers('example/repo', { '.claude/skills/pick/SKILL.md': text })), token: 't' }),
+    organization: () => Promise.reject(new Error('not scanned')),
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => server.close());
@@ -107,6 +112,56 @@ test('the page: after a scan, a filter above the skills, with the filter module'
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type') ?? '', /text\/javascript/);
   assert.match(await response.text(), /export function matches\(skill, text\)/);
+});
+
+const organizationFor = (name: string) => fetch(`${base}/api/organization?name=${encodeURIComponent(name)}`);
+
+test('organization: each repository with skills and its count, most first; how many were scanned; the warnings', async () => {
+  const response = await organizationFor('JetBrains');
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    organization: { id: 'JetBrains', url: 'https://github.com/JetBrains' },
+    repositories: [
+      { id: 'JetBrains/idea', url: 'https://github.com/JetBrains/idea', skills: 3 },
+      { id: 'JetBrains/android', url: 'https://github.com/JetBrains/android', skills: 2 },
+      { id: 'JetBrains/kotlin', url: 'https://github.com/JetBrains/kotlin', skills: 2 },
+    ],
+    scanned: 5,
+    warnings: [],
+  });
+});
+
+test('organization: org, org/ and the GitHub link are the same', async () => {
+  for (const name of ['JetBrains/', 'github.com/JetBrains', 'https://github.com/JetBrains']) {
+    const answer = (await (await organizationFor(name)).json()) as OrganizationAnswer;
+    assert.equal(answer.organization.id, 'JetBrains', name);
+    assert.equal(answer.repositories.length, 3, name);
+  }
+});
+
+test('organization: not an organization → status 400 and the clear message', async () => {
+  for (const name of ['JetBrains/kotlin', './fixture', '-x', '']) {
+    const response = await organizationFor(name);
+    assert.equal(response.status, 400, name);
+    assert.deepEqual(await response.json(), { error: `Not a GitHub organization: ${name}` });
+  }
+  const missing = await organizationFor('nobody');
+  assert.equal(missing.status, 400);
+  assert.match(((await missing.json()) as { error: string }).error, /^Cannot reach GitHub: /);
+});
+
+test('the page: an organization lists its repositories with their counts; a repository scans it, Back returns', async () => {
+  const page = await (await fetch(`${base}/`)).text();
+  assert.match(page, /'\/api\/organization\?name=' \+ encodeURIComponent\(name\)/);
+  assert.match(page, /'\?org=' : '\?repo='/);
+  assert.match(page, /setAttribute\('aria-label', 'Repositories'\)/);
+  assert.match(page, /' of ' \+ plural\(answer.scanned, 'repository'\)/);
+  assert.match(page, /Pick a repository to see its skills\./);
+  assert.match(page, /No SKILL.md in any of /);
+  assert.match(page, /scan\(repository.id, 'push', false\)/);
+  assert.match(page, /addEventListener\('popstate', scanAddress\)/);
+  // Only the latest scan's answer is shown, whichever comes back last.
+  assert.match(page, /if \(mine !== latest\) return;/);
 });
 
 test('anything else → 404', async () => {
@@ -152,7 +207,7 @@ test('serve: a port already in use → a clear message, not a stack trace', asyn
   t.after(() => taken.close());
   const port = (taken.address() as AddressInfo).port;
   await assert.rejects(
-    listen(createWebServer({ open: () => Promise.reject(new Error('not scanned')) }), port, () => {}),
+    listen(createWebServer({ open: () => Promise.reject(new Error('not scanned')), organization: () => Promise.reject(new Error('not scanned')) }), port, () => {}),
     new AtlasError(`Port ${port} is already in use; try skill-atlas serve <another port>`),
   );
   // The real command, as a user runs it.
