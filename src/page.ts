@@ -1,5 +1,8 @@
 // The web view's page: one file, no build. Every text from a repository goes in as textContent,
 // never as HTML: the Markdown, too, comes from markdown.js as a tree and is built element by element.
+/** What the list says before a scan. */
+const START = 'Paste a repository or an organization and press Scan.';
+
 export const PAGE = `<!doctype html>
 <html lang="en">
 <head>
@@ -28,6 +31,7 @@ export const PAGE = `<!doctype html>
 
   header { display: flex; align-items: center; gap: 1.5rem; padding: .85rem 2rem; background: var(--panel); border-bottom: 1px solid var(--line); }
   header h1 { margin: 0; font-size: 1.45rem; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
+  header h1 a { color: inherit; text-decoration: none; }
   form { display: flex; gap: .5rem; flex: 1; max-width: 42rem; }
   input { flex: 1; min-width: 0; padding: .55rem .9rem; font: 1rem var(--mono); color: var(--text); background: var(--panel);
     border: 1px solid var(--line); border-radius: .5rem; }
@@ -113,7 +117,7 @@ export const PAGE = `<!doctype html>
 </head>
 <body>
 <header>
-  <h1>Skill Atlas</h1>
+  <h1><a id="home" href="/" title="Back to the start">Skill Atlas</a></h1>
   <form id="scan">
     <input id="url" name="url" type="text" placeholder="owner/repo, an organization or a GitHub link" aria-label="Repository or organization link"
       autocomplete="off" spellcheck="false" required>
@@ -128,7 +132,7 @@ export const PAGE = `<!doctype html>
   <aside>
     <input id="filter" type="search" placeholder="Filter by name or description" aria-label="Filter skills"
       autocomplete="off" spellcheck="false" hidden>
-    <nav id="skills" aria-label="Skills"><p class="message">Paste a repository or an organization and press Scan.</p></nav>
+    <nav id="skills" aria-label="Skills"><p class="message">${START}</p></nav>
   </aside>
   <section id="detail" aria-live="polite"></section>
 </main>
@@ -153,6 +157,31 @@ export const PAGE = `<!doctype html>
   const ORGANIZATION = /^(?:(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/)?([a-z\\d][a-z\\d-]*)\\/?$/i;
   /** The repository on the page, as \`owner/repo\`, after a scan. */
   let onPage = '';
+
+  /** Home: the page as it first opens, with no scan; one still running is dropped. */
+  function home() {
+    latest++;
+    onPage = '';
+    skills = [];
+    $('url').value = '';
+    $('button').disabled = false;
+    $('dice').disabled = false;
+    $('button').textContent = 'Scan';
+    $('repository').replaceChildren();
+    $('warnings').replaceChildren();
+    $('detail').replaceChildren();
+    $('filter').value = '';
+    $('filter').hidden = true;
+    $('skills').classList.remove('repositories');
+    $('skills').setAttribute('aria-label', 'Skills');
+    $('skills').replaceChildren(element('p.message', '${START}'));
+  }
+
+  $('home').addEventListener('click', (event) => {
+    event.preventDefault();
+    if (location.search) history.pushState(null, '', '/');
+    home();
+  });
 
   $('scan').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -402,7 +431,7 @@ export const PAGE = `<!doctype html>
   function scanAddress() {
     const address = new URLSearchParams(location.search);
     const text = address.get('org') ?? address.get('repo');
-    if (!text) return;
+    if (!text) return home();
     $('url').value = text;
     scan(text, 'none', address.has('org'));
   }
