@@ -15,11 +15,17 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The recording tests diff past commits of spec/.
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
+      # For the recording tests: ffmpeg, and Chromium with Playwright's ffmpeg.
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npx playwright install --with-deps chromium ffmpeg
       - run: npm run typecheck
       - run: npm test
       # The real CLI on the fixture repository, as a user would run it: it must exit 0.
