@@ -1,15 +1,8 @@
 // "What is a project skill" in spec/analysis.md: SKILL.md files with identical text are one skill.
 // Each case is a small repository, scanned as a local directory and through GitHub; both must agree.
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
 import { test } from 'node:test';
-import { openGitHub } from '../src/core/github.ts';
-import { replay, type Recording } from '../src/core/replay.ts';
-import { scan, type ScanResult } from '../src/core/scan.ts';
-import { openDirectory } from '../src/local.ts';
-import { atlas } from './helpers.ts';
+import { atlas, directory, scanBothWays, skill } from './helpers.ts';
 
 type Case = {
   name: string;
@@ -19,7 +12,6 @@ type Case = {
   warnings?: string[];
 };
 
-const skill = (name: string) => `---\nname: ${name}\ndescription: Run the ${name}.\n---\n# ${name}\n`;
 const MPS = skill('mps-tests');
 
 const CASES: Case[] = [
@@ -79,48 +71,17 @@ const CASES: Case[] = [
   },
 ];
 
-const COMMIT = '0123456789abcdef0123456789abcdef01234567';
-
-/** What GitHub answers for the case, through code search. */
-function github(id: string, files: Record<string, string>): Recording {
-  const recording: Recording = {
-    [`https://api.github.com/repos/${id}`]: { status: 200, body: { full_name: id, default_branch: 'main' } },
-    [`https://api.github.com/repos/${id}/commits/main`]: { status: 200, body: { sha: COMMIT } },
-    [`https://api.github.com/search/code?q=filename:SKILL.md+repo:${id}&per_page=100&page=1`]: {
-      status: 200,
-      body: { total_count: Object.keys(files).length, items: Object.keys(files).map((path) => ({ path })) },
-    },
-  };
-  for (const [path, text] of Object.entries(files)) {
-    recording[`https://raw.githubusercontent.com/${id}/${COMMIT}/${path}`] = { status: 200, body: text };
-  }
-  return recording;
-}
-
-function local(t: { after(fn: () => void): void }, files: Record<string, string>): string {
-  const root = join(mkdtempSync(join(tmpdir(), 'skill-atlas-')), 'repo');
-  t.after(() => rmSync(dirname(root), { recursive: true, force: true }));
-  for (const [path, text] of Object.entries(files)) {
-    mkdirSync(dirname(join(root, path)), { recursive: true });
-    writeFileSync(join(root, path), text);
-  }
-  return root;
-}
-
-const summary = ({ skills, warnings }: ScanResult) => ({ skills: skills.map((skill) => [skill.path, skill.name, skill.copies]), warnings });
-
 for (const c of CASES) {
   test(c.name, async (t) => {
     const expected = { skills: c.skills, warnings: c.warnings ?? [] };
-    assert.deepEqual(summary(await scan(await openDirectory(local(t, c.files)))), expected, 'local');
-    const id = 'example/copies';
-    const remote = await scan(await openGitHub(`https://github.com/${id}`, { fetch: replay(github(id, c.files)), token: 't' }));
-    assert.deepEqual(summary(remote), expected, 'GitHub');
+    const scanned = await scanBothWays(t, c.files);
+    assert.deepEqual(scanned.local, expected, 'local');
+    assert.deepEqual(scanned.github, expected, 'GitHub');
   });
 }
 
 test('scan prints the copies: also in <paths>', async (t) => {
-  const root = local(t, CASES[3].files);
+  const root = directory(t, CASES[3].files);
   const scanned = await atlas(['scan', root]);
   assert.equal(scanned.code, 0, scanned.stderr);
   assert.equal(
