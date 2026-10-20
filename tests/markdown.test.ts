@@ -49,6 +49,24 @@ test('fenced code as it is, a quote, a table', () => {
   ]);
 });
 
+test('indented code as it is, line by line; an indented line inside a paragraph is still the paragraph', () => {
+  assert.deepEqual(markdown('Run this:\n\n    git checkout -b fix\n    git commit -m "x"\n\n    git push\n\nAfter.\n'), [
+    ['p', {}, 'Run this:'],
+    ['pre', {}, ['code', {}, 'git checkout -b fix\ngit commit -m "x"\n\ngit push']],
+    ['p', {}, 'After.'],
+  ]);
+  assert.deepEqual(markdown('text\n    more text\n'), [['p', {}, 'text more text']]);
+  assert.deepEqual(markdown('- item\n\n      code in the item\n'), [['ul', {}, ['li', {}, ['p', {}, 'item'], ['pre', {}, ['code', {}, 'code in the item']]]]]);
+});
+
+test('a table right after a line of text, as on GitHub; only with as many columns as the delimiter row', () => {
+  assert.deepEqual(markdown('Severity levels:\n| Level | Meaning |\n|---|---|\n| 1 | low |\n'), [
+    ['p', {}, 'Severity levels:'],
+    ['table', {}, ['thead', {}, ['tr', {}, ['th', {}, 'Level'], ['th', {}, 'Meaning']]], ['tbody', {}, ['tr', {}, ['td', {}, '1'], ['td', {}, 'low']]]],
+  ]);
+  assert.deepEqual(markdown('a | b\n|---|\n'), [['p', {}, 'a | b |---|']]);
+});
+
 test('HTML in a SKILL.md is text, never an element', () => {
   assert.deepEqual(markdown('<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>'), [
     ['p', {}, '<script>alert(1)</script>'],

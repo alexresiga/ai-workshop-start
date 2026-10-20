@@ -11,6 +11,7 @@ const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
 const RULE = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const QUOTE = /^ {0,3}> ?/;
 const ITEM = /^( {0,3})([-*+]|\d{1,9}[.)])(?:[ \t]+|$)/;
+const INDENTED = /^(?: {4}|\t)/;
 const DELIMITER = /^ {0,3}\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
 
 /** The blocks of a Markdown text. */
@@ -26,6 +27,12 @@ function blocks(lines) {
     let match;
     if (!line.trim()) {
       i++;
+    } else if (INDENTED.test(line)) {
+      // Indented code, as it is: its blank lines too, but not the ones after it.
+      const code = [];
+      for (; i < lines.length && (INDENTED.test(lines[i]) || !lines[i].trim()); i++) code.push(lines[i].replace(INDENTED, ''));
+      while (!code.at(-1)?.trim()) code.pop();
+      out.push(['pre', {}, ['code', {}, code.join('\n')]]);
     } else if ((match = FENCE.exec(line))) {
       const fence = match[1];
       const code = [];
@@ -44,11 +51,12 @@ function blocks(lines) {
       out.push(['blockquote', {}, ...blocks(quoted)]);
     } else if (ITEM.test(line)) {
       i = list(lines, i, out);
-    } else if (line.includes('|') && DELIMITER.test(lines[i + 1] ?? '') && lines[i + 1].includes('-')) {
+    } else if (isTable(lines, i)) {
       i = table(lines, i, out);
     } else {
-      const paragraph = [];
-      for (; i < lines.length && lines[i].trim() && !startsBlock(lines[i]); i++) paragraph.push(lines[i].trim());
+      // A paragraph, up to a blank line or a block that interrupts it; a table does, as on GitHub.
+      const paragraph = [lines[i++].trim()];
+      for (; i < lines.length && lines[i].trim() && !startsBlock(lines[i]) && !isTable(lines, i); i++) paragraph.push(lines[i].trim());
       out.push(['p', {}, ...inline(paragraph.join(' '))]);
     }
   }
@@ -58,6 +66,22 @@ function blocks(lines) {
 function isClosingFence(line, fence) {
   const trimmed = line.trim();
   return trimmed.startsWith(fence) && new RegExp(`^\\${fence[0]}+$`).test(trimmed);
+}
+
+/** A header row at `i`, then a delimiter row with as many columns. */
+function isTable(lines, i) {
+  const [head, delimiter] = [lines[i], lines[i + 1] ?? ''];
+  return head.includes('|') && delimiter.includes('-') && DELIMITER.test(delimiter) && cells(head).length === cells(delimiter).length;
+}
+
+/** A table row's cells; an escaped \| stays in its cell. */
+function cells(line) {
+  return line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.trim().replace(/\\\|/g, '|'));
 }
 
 function startsBlock(line) {
@@ -114,13 +138,6 @@ function leading(line) {
 }
 
 function table(lines, start, out) {
-  const cells = (line) =>
-    line
-      .trim()
-      .replace(/^\|/, '')
-      .replace(/(?<!\\)\|$/, '')
-      .split(/(?<!\\)\|/)
-      .map((cell) => cell.trim().replace(/\\\|/g, '|'));
   const head = cells(lines[start]);
   const rows = [];
   let i = start + 2;
