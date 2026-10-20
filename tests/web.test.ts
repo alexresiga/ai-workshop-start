@@ -1,0 +1,82 @@
+// spec/web.md: the web view, served on a free port, with GitHub answering from tests/helpers.ts.
+import assert from 'node:assert/strict';
+import type { AddressInfo } from 'node:net';
+import { test } from 'node:test';
+import { openGitHub } from '../src/core/github.ts';
+import { replay } from '../src/core/replay.ts';
+import { createWebServer, type ScanAnswer } from '../src/web.ts';
+import { atlas, EXAMPLE_COMMIT, github, searchAnswers } from './helpers.ts';
+
+const missing = replay({ 'https://api.github.com/repos/JetBrains/missing': { status: 404, body: { message: 'Not Found' } } }, github);
+const server = createWebServer({ open: (url) => openGitHub(url, { fetch: missing, token: 'test' }) });
+await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+test.after(() => server.close());
+
+const scanFor = (url: string) => fetch(`${base}/api/scan?url=${encodeURIComponent(url)}`);
+
+test('scan: the repository, each skill with its link and its SKILL.md text', async () => {
+  const response = await scanFor('https://github.com/JetBrains/example');
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    repository: { id: 'JetBrains/example', url: 'https://github.com/JetBrains/example', commit: EXAMPLE_COMMIT },
+    skills: [
+      {
+        name: 'commits',
+        description: 'Write commit messages the way this repository does. Use for every commit.',
+        path: '.claude/skills/commits/SKILL.md',
+        link: `https://github.com/JetBrains/example/blob/${EXAMPLE_COMMIT}/.claude/skills/commits/SKILL.md`,
+        copies: [],
+        text: '---\nname: commits\ndescription: Write commit messages the way this repository does. Use for every commit.\n---\n# Commits\n',
+        properties: {},
+        body: '# Commits',
+      },
+    ],
+    warnings: [],
+  });
+});
+
+test('scan: owner/repo is short for the GitHub link', async () => {
+  const response = await scanFor('JetBrains/example');
+  assert.equal(response.status, 200);
+  const answer = (await response.json()) as ScanAnswer;
+  assert.equal(answer.repository.id, 'JetBrains/example');
+  assert.deepEqual(answer.skills.map((skill) => skill.name), ['commits']);
+});
+
+test('scan: the other front matter keys and the body, apart', async (t) => {
+  const text = '---\nname: pick\ndescription: Pick a fix.\ndisable-model-invocation: true\nallowed-tools: [Bash]\n---\n\n# Pick\n\nRun it.\n';
+  const server = createWebServer({
+    open: (url) => openGitHub(url, { fetch: replay(searchAnswers('example/repo', { '.claude/skills/pick/SKILL.md': text })), token: 't' }),
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => server.close());
+  const response = await fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}/api/scan?url=example/repo`);
+  const [skill] = ((await response.json()) as ScanAnswer).skills;
+  assert.deepEqual(skill.properties, { 'disable-model-invocation': true, 'allowed-tools': ['Bash'] });
+  assert.equal(skill.body, '# Pick\n\nRun it.');
+  assert.equal(skill.text, text);
+});
+
+test('scan: an unreachable repository → status 400 and the clear message', async () => {
+  const response = await scanFor('https://github.com/JetBrains/missing');
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'Repository not found: https://github.com/JetBrains/missing' });
+});
+
+test('scan: GitHub repositories only, never the server’s own directories', async () => {
+  for (const url of ['./fixture', '../repo', '/etc', '']) {
+    const response = await scanFor(url);
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: `Not a GitHub repository URL: ${url}` });
+  }
+});
+
+test('anything else → 404', async () => {
+  assert.equal((await fetch(`${base}/nothing`)).status, 404);
+});
+
+test('serve: a port or nothing; not available without a server', async () => {
+  assert.deepEqual(await atlas(['serve', 'abc']), { code: 1, stdout: '', stderr: 'Usage: skill-atlas serve [port]' });
+  assert.deepEqual(await atlas(['serve']), { code: 1, stdout: '', stderr: 'serve: not available here' });
+});

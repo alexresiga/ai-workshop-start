@@ -1,0 +1,79 @@
+// The web view's server: the scan as JSON. The same core as the CLI; nothing is stored. Only GitHub repositories: a page must not read the
+// server's own directories.
+import { createServer, type Server } from 'node:http';
+import { AtlasError } from './core/errors.ts';
+import { parseGitHubUrl } from './core/github.ts';
+import { skillLink } from './core/model.ts';
+import { parseSkill } from './core/parse.ts';
+import { scan, type Source } from './core/scan.ts';
+
+export type WebOptions = {
+  /** Opens a GitHub repository URL. */
+  open(url: string): Promise<Source>;
+};
+
+/** What `GET /api/scan?url=<GitHub URL>` answers: the result, or `{ error }` with status 400. */
+export type ScanAnswer = {
+  repository: { id: string; url: string; commit: string };
+  skills: {
+    name: string;
+    description: string;
+    path: string;
+    link: string;
+    copies: string[];
+    text: string;
+    /** The other front matter keys. */
+    properties: Record<string, unknown>;
+    /** The Markdown after the front matter. */
+    body: string;
+  }[];
+  warnings: string[];
+};
+
+export function createWebServer(options: WebOptions): Server {
+  return createServer(async (request, response) => {
+    const url = new URL(request.url ?? '/', 'http://localhost');
+    const send = (status: number, type: string, body: string) => {
+      response.writeHead(status, { 'Content-Type': `${type}; charset=utf-8` });
+      response.end(body);
+    };
+    const json = (status: number, body: unknown) => send(status, 'application/json', JSON.stringify(body));
+    if (request.method !== 'GET') return json(405, { error: 'Only GET' });
+    if (url.pathname !== '/api/scan') return json(404, { error: `Not found: ${url.pathname}` });
+    const input = repositoryUrl(url.searchParams.get('url') ?? '');
+    try {
+      if (!parseGitHubUrl(input)) throw new AtlasError(`Not a GitHub repository URL: ${input}`);
+      json(200, await scanAnswer(await options.open(input)));
+    } catch (error) {
+      if (error instanceof AtlasError) json(400, { error: error.message });
+      else json(500, { error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}` });
+    }
+  });
+}
+
+/** `owner/repo` is short for `https://github.com/owner/repo`; `./dir` is not: an owner starts with a letter or a digit. */
+function repositoryUrl(input: string): string {
+  const text = input.trim();
+  return /^[a-z\d][a-z\d-]*\/[\w.-]+$/i.test(text) ? `https://github.com/${text}` : text;
+}
+
+async function scanAnswer(source: Source): Promise<ScanAnswer> {
+  const { repository, skills, warnings } = await scan(source);
+  return {
+    repository: { id: repository.id, url: repository.url, commit: repository.commit },
+    skills: skills.map((skill) => {
+      const { properties, body } = parseSkill(skill.text);
+      return {
+        name: skill.name,
+        description: skill.description,
+        path: skill.path,
+        link: skillLink(repository, skill),
+        copies: skill.copies,
+        text: skill.text,
+        properties,
+        body,
+      };
+    }),
+    warnings,
+  };
+}
