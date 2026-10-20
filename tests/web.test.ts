@@ -164,6 +164,20 @@ test('the page: an organization lists its repositories with their counts; a repo
   assert.match(page, /if \(mine !== latest\) return;/);
 });
 
+test('the page: a dice in the header, for a random skill from JetBrains/kotlin, with the random module', async () => {
+  const page = await (await fetch(`${base}/`)).text();
+  const header = page.slice(page.indexOf('<header>'), page.indexOf('</header>'));
+  assert.match(header, /<button id="dice" class="dice" type="button"[^>]*aria-label="A random skill from JetBrains\/kotlin">🎲<\/button>/);
+  assert.match(page, /import \{ DICE_REPOSITORY, pick \} from '\/random.js'/);
+  // Scans JetBrains/kotlin unless it is on the page, empties the filter, and is disabled while a scan runs.
+  assert.match(page, /await scan\(DICE_REPOSITORY, 'replace', false\)/);
+  assert.match(page, /\$\('dice'\).disabled = true/);
+  const response = await fetch(`${base}/random.js`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /text\/javascript/);
+  assert.match(await response.text(), /export function pick\(count, current = -1, random = Math.random\)/);
+});
+
 test('anything else → 404', async () => {
   assert.equal((await fetch(`${base}/nothing`)).status, 404);
 });
