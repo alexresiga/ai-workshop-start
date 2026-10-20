@@ -21,7 +21,8 @@ Skill: id = `repo:path`, name, description, commit
 - skip A fixture for the project’s own tests, not a skill: a SKILL.md under `fixture`, `fixtures`, `__fixtures__`, `testData`, `testdata` or `test-data`; a skill in a `skills` folder may still be named so
 - skip skills which are shipped as part of the product: a SKILL.md under `resources`; a skill in a `skills` folder may still be named so
 ## An organization
-- Every repository of the account, *forks left out*: a fork's skills are its upstream's; with a token, private ones it can see
+- Every repository of the account, *forks left out*: a fork's skills are its upstream's; for an organization, with a token,
+  the private ones it can see; for a user, the public ones: GitHub lists no other
 - Each repository goes through the **same scan**: the same skills, copies counted once, fixtures and `resources` skipped
 - The repositories with skills, *most first*, then by name; and how many were scanned
 - Each repository is read at its **default branch**, from the listing: no request of its own
@@ -36,4 +37,5 @@ Skill: id = `repo:path`, name, description, commit
 - Without: each repository's tree. **Before**, what is left of the limit (`/rate_limit`, free) is checked: not enough →
   `Scanning <org> needs N GitHub requests, and M are left until HH:MM UTC`, exit code 1, rather than half an answer
 - At most **16 requests** to GitHub at a time
-- GitHub asks to wait a minute or less (`retry-after`, or a reset that close) → waits, *once*; a request with no answer → sent again, once
+- GitHub asks to wait a minute or less (`retry-after`, or a reset that close) → waits, *once*; a request with no answer → sent
+  again a second later, once; still none → GitHub out of reach

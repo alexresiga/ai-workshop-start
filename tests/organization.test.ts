@@ -150,6 +150,14 @@ test('an organization: what every repository would hit stops the scan, exit code
   }
   const offline = await atlas(['scan', 'https://github.com/JetBrains'], replay({}));
   assert.deepEqual(offline, { code: 1, stdout: '', stderr: `Cannot reach GitHub: not recorded: ${API}/users/JetBrains` });
+  // Out of reach after the listing: not a warning for each repository, and no count of nothing.
+  const listed = replay(jetbrains());
+  const gone: Fetch = (url, init) =>
+    url.includes('/git/trees/') || url.startsWith('https://raw.githubusercontent.com/') ? Promise.reject(new TypeError('fetch failed')) : listed(url, init);
+  const cut = await atlas(['scan', 'https://github.com/JetBrains'], gone, false);
+  assert.equal(cut.code, 1);
+  assert.equal(cut.stdout, '');
+  assert.match(cut.stderr, /^Cannot reach GitHub: fetch failed$/);
 });
 
 test('the rate limit for a moment: waits as long as GitHub asks, once, then goes on', async () => {
@@ -160,6 +168,13 @@ test('the rate limit for a moment: waits as long as GitHub asks, once, then goes
   const scanned = await scanOrganization('https://github.com/JetBrains', { fetch: replay(recording), token: 't', wait: async (ms) => void waits.push(ms) });
   assert.equal(scanned.repositories.length, 3);
   assert.deepEqual(waits, [3000]);
+  // A primary limit that resets within a minute: waits until then.
+  const reset = Math.floor(Date.now() / 1000) + 20;
+  recording[SEARCH] = [{ status: 403, body: { message: 'API rate limit exceeded' }, headers: { 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': String(reset) } }, answer].flat();
+  waits.length = 0;
+  await scanOrganization('https://github.com/JetBrains', { fetch: replay(recording), token: 't', wait: async (ms) => void waits.push(ms) });
+  assert.equal(waits.length, 1);
+  assert.ok(waits[0] > 15_000 && waits[0] <= 21_000, String(waits[0]));
   // Limited again after the wait: the message.
   recording[SEARCH] = { status: 429, body: '', headers: { 'retry-after': '3' } };
   await assert.rejects(scanOrganization('https://github.com/JetBrains', { fetch: replay(recording), token: 't', wait: noWait }), {
