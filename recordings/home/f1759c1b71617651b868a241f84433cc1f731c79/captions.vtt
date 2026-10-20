@@ -1,0 +1,21 @@
+WEBVTT
+
+1
+00:00:00.925 --> 00:00:03.330
+Ctrl+click Skill Atlas: home opens in a new tab, and this one keeps its scan, 3 skills
+
+2
+00:00:03.330 --> 00:00:05.601
+Click Skill Atlas: the page as it first opens, the input empty, no scan
+
+3
+00:00:05.601 --> 00:00:07.495
+Back: the address has ?repo= again, and example/fixture is scanned, 3 skills
+
+4
+00:00:07.495 --> 00:00:09.373
+Forward: home again
+
+5
+00:00:09.373 --> 00:00:16.080
+Scan, and click Skill Atlas while it runs: the answer comes, and the page stays home

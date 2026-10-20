@@ -1,0 +1,127 @@
+{
+  "title": "Skill Atlas returns home",
+  "head": "f1759c1b71617651b868a241f84433cc1f731c79",
+  "base": "64805b608bc1337d925d2e589102cf5ea68b6ca9",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 10,
+        "text": "**Skill Atlas** in the header returns home: the page as it first opens, the input empty, no scan"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Click Skill Atlas: the page as it first opens, the input empty, no scan",
+          "start": 3.33
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 10,
+        "text": "the address with no `?repo=` or `?org=`, so Back returns to the scan"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Back: the address has ?repo= again, and example/fixture is scanned, 3 skills",
+          "start": 5.601
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 11,
+        "text": "a scan still running is dropped"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Scan, and click Skill Atlas while it runs: the answer comes, and the page stays home",
+          "start": 9.373
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 11,
+        "text": "Back or Forward to that address returns home too"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Forward: home again",
+          "start": 7.495
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 12,
+        "text": "a click with Ctrl, ⌘, Shift or Alt is the browser's, as on any link: home in a new tab or window, and this one keeps its scan"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Ctrl+click Skill Atlas: home opens in a new tab, and this one keeps its scan, 3 skills",
+          "start": 0.925
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"Ctrl+click Skill Atlas: home opens in a new tab, and this one keeps its scan, 3 skills\": locator.scrollIntoViewIfNeeded: Timeout 5000ms exceeded.\nCall log:\n  - waiting for getByRole('link', { name: 'Skill Atlas' })\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "5 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 16.4 s, 409 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 16.3 s, 407 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.3 s, 207 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.987"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.985"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.02 s, SSIM ≥ 0.994"
+    }
+  ]
+}
