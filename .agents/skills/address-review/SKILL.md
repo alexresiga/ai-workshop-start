@@ -20,7 +20,7 @@ Claim before you start work on an item, and post on the PR only through this scr
 
 ## Steps
 
-For each PR given, or else each open PR (`gh pr list --state open`):
+For each PR given, or else each open PR (`gh pr list --repo alexresiga/ai-workshop-start --state open`):
 
 1. `git switch` to its branch and `git pull --rebase`. Read `spec/` and the code it touches.
 2. For each item from `feedback.sh pending PR`, oldest first:
