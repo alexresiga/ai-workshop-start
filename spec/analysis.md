@@ -35,7 +35,8 @@ Skill: id = `repo:path`, name, description, commit
   the other; only the repositories it found are read, no tree. Above GitHub's 1000 results, or a search it could not finish:
   after its first page, each repository's tree, never a search each (code search allows 30 a minute)
 - Without: each repository's tree. **Before**, what is left of the limit (`/rate_limit`, free) is checked: not enough →
-  `Scanning <org> needs N GitHub requests, and M are left until HH:MM UTC`, exit code 1, rather than half an answer
+  `Scanning <org> needs N GitHub requests, and M are left until HH:MM UTC`, exit code 1, rather than half an answer;
+  checked again when a tree is too large for one answer, before the skill roots' requests
 - At most **16 requests** to GitHub at a time
 - GitHub asks to wait a minute or less (`retry-after`, or a reset that close) → waits, *once*; a request with no answer → sent
   again a second later, once; still none → GitHub out of reach

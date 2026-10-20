@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { openGitHub, type Fetch } from '../src/core/github.ts';
 import { AT_ONCE, scanOrganization } from '../src/core/organization.ts';
 import { replay, type Recording } from '../src/core/replay.ts';
-import { atlas, noWait, ORGANIZATION, ORGANIZATION_OUTPUT, organizationAnswers, skill, type Listed } from './helpers.ts';
+import { atlas, noWait, ORGANIZATION, ORGANIZATION_OUTPUT, organizationAnswers, RESET, skill, type Listed } from './helpers.ts';
 
 const API = 'https://api.github.com';
 const SEARCH = `${API}/search/code?q=filename:SKILL.md+org:JetBrains&per_page=100&page=1`;
@@ -75,6 +75,31 @@ test('an organization: not enough rate limit left for a tree per repository → 
     stderr: 'Scanning JetBrains needs 5 GitHub requests, and 2 are left until 14:05 UTC; set GITHUB_TOKEN',
   });
   assert.ok(!asked.some((url) => url.includes('/git/trees/')));
+});
+
+test('an organization: a tree too large for one answer → the limit checked again before its skill roots', async () => {
+  const recording = jetbrains({ monorepo: {}, website: { 'README.md': '' } });
+  const tree = (entries: [string, string, string][], truncated = false) => ({
+    status: 200,
+    body: { truncated, tree: entries.map(([path, type, sha]) => ({ path, mode: type === 'tree' ? '040000' : '100644', type, sha })) },
+  });
+  recording[`${API}/repos/JetBrains/monorepo/git/trees/main?recursive=1`] = tree([], true);
+  recording[`${API}/repos/JetBrains/monorepo/git/trees/main`] = tree([['.claude', 'tree', 'claude']]);
+  recording[`${API}/repos/JetBrains/monorepo/git/trees/claude`] = tree([['skills', 'tree', 'skills']]);
+  recording[`${API}/repos/JetBrains/monorepo/git/trees/skills?recursive=1`] = tree([['big/SKILL.md', 'blob', '0']]);
+  recording['https://raw.githubusercontent.com/JetBrains/monorepo/main/.claude/skills/big/SKILL.md'] = { status: 200, body: skill('big') };
+  const enough = recording[`${API}/rate_limit`];
+  const scanned = await atlas(['scan', 'https://github.com/JetBrains'], replay(recording), false);
+  assert.equal(scanned.code, 0, scanned.stderr);
+  assert.equal(scanned.stdout, 'JetBrains · 1 skill in 1 of 2 repositories\nJetBrains/monorepo · 1 skill\n  https://github.com/JetBrains/monorepo');
+  // Enough for a tree each, not for the truncated tree's skill roots.
+  const low = { status: 200, body: { resources: { core: { remaining: 3, reset: RESET } } } };
+  recording[`${API}/rate_limit`] = [enough, low].flat();
+  const { fetch, asked } = recorded(recording);
+  const stopped = await atlas(['scan', 'https://github.com/JetBrains'], fetch, false);
+  assert.equal(stopped.code, 1);
+  assert.match(stopped.stderr, /^Scanning JetBrains needs 9 GitHub requests, and 3 are left until 14:05 UTC; set GITHUB_TOKEN$/);
+  assert.ok(!asked.includes(`${API}/repos/JetBrains/monorepo/git/trees/main`));
 });
 
 test('an organization: more SKILL.md files than one search returns → its first page only, then each tree, not a search each', async () => {
