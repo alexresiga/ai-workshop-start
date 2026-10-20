@@ -114,10 +114,10 @@ function repositoryUrl(input: string): string {
   return /^[a-z\d][a-z\d-]*\/[\w.-]+$/i.test(text) ? `https://github.com/${text}` : text;
 }
 
-/** `org` is short for `https://github.com/org`. */
+/** `org`, or `org/`, is short for `https://github.com/org`. */
 function organizationUrl(input: string): string {
   const text = input.trim();
-  return /^[a-z\d][a-z\d-]*$/i.test(text) ? `https://github.com/${text}` : text;
+  return /^[a-z\d][a-z\d-]*\/?$/i.test(text) ? `https://github.com/${text}` : text;
 }
 
 async function organizationAnswer(source: OrganizationSource): Promise<OrganizationAnswer> {

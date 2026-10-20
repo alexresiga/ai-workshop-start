@@ -19,7 +19,8 @@ Skill: id = `repo:path`, name, description, commit
 - With `GITHUB_TOKEN`: one code search over the account (`org:` or `user:`) finds the repositories with a `SKILL.md`; only those, and the forks, are scanned.
   More than the 1000 results a search returns → each repository searched on its own. Without a token, each repository's tree
 - Every page of repositories, 100 at a time; a few repositories scanned at a time
-- A repository that cannot be scanned, an empty one → a warning, `<owner/repo>: … ; skipped`, the scan goes on
+- A repository that cannot be scanned, an empty one → a warning, `<owner/repo>: … ; skipped`, the scan goes on; with
+  `GITHUB_TOKEN`, one the search finds no `SKILL.md` in is not opened, so there is nothing to warn about
 - What stops every repository, GitHub out of reach, the rate limit, a rejected token → the clear message, exit code 1
 - Unknown organization → `Organization not found: https://github.com/<org>`, exit code 1
 - Each warning led by its repository

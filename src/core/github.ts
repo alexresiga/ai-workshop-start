@@ -87,7 +87,8 @@ export async function openOrganization(input: string, options: GitHubOptions): P
       const paths = found?.get(info.full_name.toLowerCase());
       return {
         id: info.full_name,
-        open: async () => (found && !paths && !info.fork ? undefined : openRepository(github, info, options, paths)),
+        // A client of its own: its answers, the tree above all, go when the repository is scanned.
+        open: async () => (found && !paths && !info.fork ? undefined : openRepository(client(options), info, options, paths)),
       };
     }),
   };
@@ -95,15 +96,18 @@ export async function openOrganization(input: string, options: GitHubOptions): P
 
 type SearchResult = { total_count: number; items: { path: string; repository?: { full_name: string } }[] };
 
-/** Code search, 100 results a page; GitHub returns at most 1000 results: ten pages. */
-async function search(github: Client, qualifier: string): Promise<SearchResult> {
+/**
+ * Code search, 100 results a page; GitHub returns at most 1000 results: ten pages. Above `wanted`
+ * results, the first page is all: the rest would be thrown away, and searches are few a minute.
+ */
+async function search(github: Client, qualifier: string, wanted = Infinity): Promise<SearchResult> {
   const items: SearchResult['items'] = [];
   let total = 0;
   for (let page = 1; page <= 10; page++) {
     const result = await github.json<SearchResult>(`${API}/search/code?q=filename:SKILL.md+${qualifier}&per_page=100&page=${page}`);
     items.push(...result.items);
     total = result.total_count;
-    if (result.items.length < 100 || page * 100 >= result.total_count) break;
+    if (result.items.length < 100 || page * 100 >= result.total_count || total > wanted) break;
   }
   return { total_count: total, items };
 }
@@ -116,7 +120,7 @@ async function searchPaths(github: Client, id: string): Promise<string[]> {
 
 /** The SKILL.md paths by repository, lower case `owner/name`; undefined when there are more than the search returns. */
 async function searchAccount(github: Client, qualifier: string): Promise<Map<string, string[]> | undefined> {
-  const { total_count, items } = await search(github, qualifier);
+  const { total_count, items } = await search(github, qualifier, 1000);
   if (total_count > 1000) return undefined;
   const paths = new Map<string, Set<string>>();
   for (const item of items) {

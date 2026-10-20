@@ -84,11 +84,13 @@ test('more SKILL.md files than one search returns: each repository searched on i
   const recording = accountAnswers('JetBrains', 'Organization', JETBRAINS);
   recording['https://api.github.com/search/code?q=filename:SKILL.md+org:JetBrains&per_page=100&page=1'] = {
     status: 200,
-    body: { total_count: 1500, items: [] },
+    body: { total_count: 1500, items: Array.from({ length: 100 }, (_, i) => ({ path: `${i}/SKILL.md`, repository: { full_name: 'JetBrains/kotlin' } })) },
   };
   const { fetch, asked } = recorded(recording);
   const result = await atlas(['scan', 'https://github.com/JetBrains'], { fetch });
   assert.deepEqual(result, { code: 0, stdout: JETBRAINS_OUTPUT, stderr: '' });
+  // The first page tells: the other nine are not asked for, searches are few a minute.
+  assert.equal(asked.filter((url) => url.includes('+org:JetBrains')).length, 1);
   assert.ok(asked.includes('https://api.github.com/search/code?q=filename:SKILL.md+repo:JetBrains/MPS&per_page=100&page=1'));
 });
 
@@ -99,6 +101,29 @@ test('a repository that cannot be scanned, an empty one: a warning, and the scan
   assert.equal(result.code, 0);
   assert.equal(result.stdout, JETBRAINS_OUTPUT.replace('of 4 repositories', 'of 5 repositories'));
   assert.equal(result.stderr, 'warning: JetBrains/empty: the repository is empty; skipped');
+});
+
+test('with a token, a repository the search finds no SKILL.md in is not opened: an empty one, no warning', async () => {
+  const recording = accountAnswers('JetBrains', 'Organization', { ...JETBRAINS, 'JetBrains/empty': {} });
+  recording['https://api.github.com/repos/JetBrains/empty/commits/main'] = { status: 409, body: { message: 'Git Repository is empty.' } };
+  const result = await atlas(['scan', 'https://github.com/JetBrains'], { fetch: recorded(recording).fetch });
+  assert.deepEqual(result, { code: 0, stdout: JETBRAINS_OUTPUT.replace('of 4 repositories', 'of 5 repositories'), stderr: '' });
+});
+
+test('a few repositories at a time, not all at once', async () => {
+  const many = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`JetBrains/repo-${i}`, { [`.claude/skills/s${i}/SKILL.md`]: skill(`s${i}`) }]));
+  const answer = recorded(accountAnswers('JetBrains', 'Organization', many)).fetch;
+  let open = 0;
+  let most = 0;
+  const fetch: typeof answer = async (url, init) => {
+    most = Math.max(most, ++open);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    open--;
+    return answer(url, init);
+  };
+  const result = await atlas(['scan', 'https://github.com/JetBrains'], { fetch, token: '' });
+  assert.match(result.stdout, /^JetBrains · 20 skills in 20 of 20 repositories\n/);
+  assert.ok(most > 1 && most <= 4, `at most ${most} requests at once`);
 });
 
 test('warnings: each one led by its repository', async () => {
@@ -124,6 +149,23 @@ test('the rate limit, in any repository → the scan stops with the message, exi
     code: 1,
     stdout: '',
     stderr: 'GitHub rate limit reached; set GITHUB_TOKEN',
+  });
+});
+
+test('a rejected token, or GitHub out of reach, in any repository → the scan stops with the message, exit code 1', async () => {
+  const rejected = accountAnswers('JetBrains', 'Organization', JETBRAINS);
+  rejected['https://api.github.com/repos/JetBrains/android/commits/main'] = { status: 401, body: { message: 'Bad credentials' } };
+  assert.deepEqual(await atlas(['scan', 'https://github.com/JetBrains'], { fetch: recorded(rejected).fetch }), {
+    code: 1,
+    stdout: '',
+    stderr: 'GitHub rejected the token in GITHUB_TOKEN',
+  });
+  const unreachable = accountAnswers('JetBrains', 'Organization', JETBRAINS);
+  delete unreachable['https://api.github.com/repos/JetBrains/android/commits/main'];
+  assert.deepEqual(await atlas(['scan', 'https://github.com/JetBrains'], { fetch: recorded(unreachable).fetch }), {
+    code: 1,
+    stdout: '',
+    stderr: 'Cannot reach GitHub: not recorded: https://api.github.com/repos/JetBrains/android/commits/main',
   });
 });
 
@@ -155,7 +197,7 @@ test('web: GET /api/organization → each repository with skills and its count',
     scanned: 4,
     warnings: [],
   };
-  for (const name of ['JetBrains', 'https://github.com/JetBrains', ' github.com/JetBrains/ ']) {
+  for (const name of ['JetBrains', 'JetBrains/', 'https://github.com/JetBrains', ' github.com/JetBrains/ ']) {
     const response = await fetch(`${base}/api/organization?name=${encodeURIComponent(name)}`);
     assert.equal(response.status, 200, name);
     assert.deepEqual(await response.json(), expected, name);
@@ -179,6 +221,9 @@ test('web: the page scans an organization, shows each repository and its count, 
   assert.match(page, /'\/api\/organization\?name='/);
   assert.match(page, /'\?org='/);
   assert.match(page, /function showOrganization\(answer\)/);
+  assert.match(page, /'No SKILL\.md in any of its ' \+ count\(answer\.scanned, 'repository', 'repositories'\)/);
+  assert.match(page, /count\(answer\.repositories\.length, 'repository', 'repositories'\) \+ ' of ' \+ answer\.scanned/);
+  assert.match(page, /query\.get\('repo'\) \?\? query\.get\('org'\)/);
   assert.match(page, /history\.pushState\(null, '', '\?repo='/);
   assert.match(page, /addEventListener\('popstate'/);
   // Which input is an organization, as the page, a template literal, sends it to the browser.
