@@ -32,7 +32,8 @@ const EXAMPLE: Recording = {
   },
 };
 
-const github = replay(EXAMPLE);
+/** GitHub, answering from EXAMPLE. */
+export const github = replay(EXAMPLE);
 
 /** `skill-atlas <args>`, as the CLI runs it, with GitHub answering from EXAMPLE. */
 export async function atlas(args: string[]) {
@@ -67,7 +68,7 @@ export function directory(t: { after(fn: () => void): void }, files: Files): str
 const COMMIT = '0123456789abcdef0123456789abcdef01234567';
 
 /** What GitHub answers for the files, through code search. */
-function searchAnswers(id: string, files: Files): Recording {
+export function searchAnswers(id: string, files: Files): Recording {
   const skills = Object.keys(files).filter((path) => path.split('/').at(-1) === 'SKILL.md');
   const recording: Recording = {
     [`https://api.github.com/repos/${id}`]: { status: 200, body: { full_name: id, default_branch: 'main' } },
