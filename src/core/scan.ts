@@ -81,6 +81,7 @@ function readSkill(source: Source, file: SkillFile, text: string): { skill: Skil
     description: parsed.description,
     commit: source.repository.commit,
     copies: file.copies,
+    text,
   };
   return { skill, warning: parsed.warning && `${file.path}: ${parsed.warning}` };
 }
