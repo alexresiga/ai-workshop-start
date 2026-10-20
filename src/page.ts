@@ -58,6 +58,11 @@ export const PAGE = `<!doctype html>
   nav .name, nav .description { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   nav .name { font: 1.05rem var(--mono); }
   nav .description { color: var(--muted); }
+  nav.repositories button { display: flex; align-items: center; gap: 1rem; }
+  nav.repositories .name { flex: 1; min-width: 0; }
+  nav.repositories .pill { flex: none; }
+  .summary h2 { margin: 0 0 .5rem; font: 1.45rem var(--mono); }
+  .summary p { margin: 0 0 .5rem; color: var(--muted); }
   .message { padding: 1rem; color: var(--muted); }
   .message.error { color: var(--error); }
 
@@ -106,7 +111,7 @@ export const PAGE = `<!doctype html>
 <header>
   <h1>Skill Atlas</h1>
   <form id="scan">
-    <input id="url" name="url" type="text" placeholder="owner/repo or a GitHub link" aria-label="Repository link"
+    <input id="url" name="url" type="text" placeholder="owner/repo, an organization or a GitHub link" aria-label="Repository or organization link"
       autocomplete="off" spellcheck="false" required>
     <button id="button" class="scan" type="submit">Scan</button>
   </form>
@@ -117,7 +122,7 @@ export const PAGE = `<!doctype html>
   <aside>
     <input id="filter" type="search" placeholder="Filter by name or description" aria-label="Filter skills"
       autocomplete="off" spellcheck="false" hidden>
-    <nav id="skills" aria-label="Skills"><p class="message">Paste a repository and press Scan.</p></nav>
+    <nav id="skills" aria-label="Skills"><p class="message">Paste a repository or an organization and press Scan.</p></nav>
   </aside>
   <section id="detail" aria-live="polite"></section>
 </main>
@@ -135,13 +140,29 @@ export const PAGE = `<!doctype html>
     return node;
   };
   let skills = [];
+  /** The latest scan: only its answer is shown, whichever comes back last. */
+  let latest = 0;
+  /** An organization or a user, alone or as a GitHub link; \`owner/repo\` is a repository. */
+  const ORGANIZATION = /^(?:(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/)?([a-z\\d][a-z\\d-]*)\\/?$/i;
 
   $('scan').addEventListener('submit', (event) => {
     event.preventDefault();
-    scan($('url').value.trim());
+    scan($('url').value.trim(), 'replace');
   });
 
-  async function scan(url) {
+  /** Scans an organization or a repository; \`how\` says what becomes of the address: push, replace, or none. */
+  function scan(text, how, organization = ORGANIZATION.test(text)) {
+    const name = organization ? ORGANIZATION.exec(text)[1] : text;
+    const address = (organization ? '?org=' : '?repo=') + encodeURIComponent(name);
+    if (how === 'push') history.pushState(null, '', address);
+    else if (how === 'replace') history.replaceState(null, '', address);
+    return organization
+      ? load('/api/organization?name=' + encodeURIComponent(name), name, showOrganization)
+      : load('/api/scan?url=' + encodeURIComponent(text), text, show);
+  }
+
+  async function load(api, url, render) {
+    const mine = ++latest;
     $('button').disabled = true;
     $('button').textContent = 'Scanning…';
     $('repository').replaceChildren();
@@ -149,19 +170,65 @@ export const PAGE = `<!doctype html>
     $('detail').replaceChildren();
     $('filter').value = '';
     $('filter').hidden = true;
+    $('skills').classList.remove('repositories');
+    $('skills').setAttribute('aria-label', 'Skills');
     $('skills').replaceChildren(element('p.message', 'Scanning ' + url + '…'));
-    history.replaceState(null, '', '?repo=' + encodeURIComponent(url));
     try {
-      const response = await fetch('/api/scan?url=' + encodeURIComponent(url));
+      const response = await fetch(api);
       const answer = await response.json();
+      if (mine !== latest) return; // a later scan replaced this one
       if (!response.ok) throw new Error(answer.error);
-      show(answer);
+      render(answer);
     } catch (error) {
-      $('skills').replaceChildren(element('p.message.error', error.message));
+      if (mine === latest) $('skills').replaceChildren(element('p.message.error', error.message));
     } finally {
-      $('button').disabled = false;
-      $('button').textContent = 'Scan';
+      if (mine === latest) {
+        $('button').disabled = false;
+        $('button').textContent = 'Scan';
+      }
     }
+  }
+
+  const plural = (n, noun) => n + ' ' + (n === 1 ? noun : noun === 'repository' ? 'repositories' : noun + 's');
+
+  /** The organization's repositories with skills, most first; picking one scans it, and Back returns here. */
+  function showOrganization(answer) {
+    skills = [];
+    const total = answer.repositories.reduce((sum, repository) => sum + repository.skills, 0);
+    const link = element('a', answer.organization.id);
+    link.href = answer.organization.url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    const count = element('span.pill', plural(total, 'skill'));
+    count.id = 'count';
+    const repositories = element('span.pill', answer.repositories.length + ' of ' + plural(answer.scanned, 'repository'));
+    repositories.id = 'repositories';
+    $('repository').replaceChildren(link, count, repositories);
+    $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    $('skills').classList.add('repositories');
+    $('skills').setAttribute('aria-label', 'Repositories');
+    $('skills').replaceChildren(
+      ...(answer.repositories.length
+        ? []
+        : [element('p.message', 'No SKILL.md in any of ' + answer.organization.id + '’s ' + plural(answer.scanned, 'repository') + '.')]),
+      ...answer.repositories.map((repository) => {
+        const item = element('button', element('span.name', repository.id), element('span.pill', plural(repository.skills, 'skill')));
+        item.type = 'button';
+        item.title = repository.id;
+        item.addEventListener('click', () => {
+          $('url').value = repository.id;
+          scan(repository.id, 'push', false);
+        });
+        return item;
+      }),
+    );
+    $('detail').replaceChildren(
+      element('div.summary',
+        element('h2', answer.organization.id),
+        element('p', plural(total, 'skill') + ' in ' + answer.repositories.length + ' of ' + plural(answer.scanned, 'repository') + '.'),
+        ...(answer.repositories.length ? [element('p', 'Pick a repository to see its skills.')] : []),
+      ),
+    );
   }
 
   function show(answer) {
@@ -283,10 +350,18 @@ export const PAGE = `<!doctype html>
     return result;
   }
 
-  // Up and down move through the skills the filter shows.
+  // Up and down move through the skills the filter shows, or through an organization's repositories.
   $('skills').addEventListener('keydown', (event) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     const items = [...$('skills').querySelectorAll('button')];
+    if ($('skills').classList.contains('repositories')) {
+      const current = items.indexOf(document.activeElement);
+      const next = items[Math.max(0, Math.min(items.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)))];
+      if (!next) return;
+      event.preventDefault();
+      next.focus();
+      return;
+    }
     const shown = items.filter((item) => !item.hidden);
     const current = shown.findIndex((item) => item.getAttribute('aria-current') === 'true');
     const next = Math.max(0, Math.min(shown.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
@@ -296,12 +371,16 @@ export const PAGE = `<!doctype html>
     shown[next].focus();
   });
 
-  // ?repo=owner/repo scans at once, so a scan can be reloaded and shared.
-  const repo = new URLSearchParams(location.search).get('repo');
-  if (repo) {
-    $('url').value = repo;
-    scan(repo);
+  // ?repo=owner/repo, or ?org=organization, scans at once, so a scan can be reloaded and shared; Back and Forward too.
+  function scanAddress() {
+    const address = new URLSearchParams(location.search);
+    const text = address.get('org') ?? address.get('repo');
+    if (!text) return;
+    $('url').value = text;
+    scan(text, 'none', address.has('org'));
   }
+  addEventListener('popstate', scanAddress);
+  scanAddress();
 </script>
 </body>
 </html>

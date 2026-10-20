@@ -7,6 +7,7 @@ import type { AddressInfo } from 'node:net';
 import { AtlasError } from './core/errors.ts';
 import { parseGitHubUrl } from './core/github.ts';
 import { skillLink } from './core/model.ts';
+import { parseOrganizationUrl, type OrganizationResult } from './core/organization.ts';
 import { parseSkill } from './core/parse.ts';
 import { scan, type Source } from './core/scan.ts';
 import { PAGE } from './page.ts';
@@ -25,7 +26,12 @@ const FILTER = readFileSync(new URL('./filter.js', import.meta.url), 'utf8');
 export type WebOptions = {
   /** Opens a GitHub repository URL. */
   open(url: string): Promise<Source>;
+  /** Scans a GitHub organization URL. */
+  organization(url: string): Promise<OrganizationResult>;
 };
+
+/** What `GET /api/organization?name=<organization | GitHub URL>` answers: the result, or `{ error }` with status 400. */
+export type OrganizationAnswer = OrganizationResult;
 
 /** What `GET /api/scan?url=<GitHub URL>` answers: the result, or `{ error }` with status 400. */
 export type ScanAnswer = {
@@ -58,11 +64,16 @@ export function createWebServer(options: WebOptions): Server {
     if (url.pathname === '/') return send(200, 'text/html', PAGE);
     if (url.pathname === '/markdown.js') return send(200, 'text/javascript', MARKDOWN);
     if (url.pathname === '/filter.js') return send(200, 'text/javascript', FILTER);
-    if (url.pathname !== '/api/scan') return json(404, { error: `Not found: ${url.pathname}` });
-    const input = repositoryUrl(url.searchParams.get('url') ?? '');
     try {
-      if (!parseGitHubUrl(input)) throw new AtlasError(`Not a GitHub repository URL: ${input}`);
-      json(200, await scanAnswer(await options.open(input)));
+      if (url.pathname === '/api/scan') {
+        const input = repositoryUrl(url.searchParams.get('url') ?? '');
+        if (!parseGitHubUrl(input)) throw new AtlasError(`Not a GitHub repository URL: ${input}`);
+        json(200, await scanAnswer(await options.open(input)));
+      } else if (url.pathname === '/api/organization') {
+        const input = organizationUrl(url.searchParams.get('name') ?? '');
+        if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
+        json(200, (await options.organization(input)) satisfies OrganizationAnswer);
+      } else json(404, { error: `Not found: ${url.pathname}` });
     } catch (error) {
       if (error instanceof AtlasError) json(400, { error: error.message });
       else json(500, { error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}` });
@@ -94,6 +105,12 @@ export function listen(server: Server, port: number, listening: (url: string) =>
 function repositoryUrl(input: string): string {
   const text = input.trim();
   return /^[a-z\d][a-z\d-]*\/[\w.-]+$/i.test(text) ? `https://github.com/${text}` : text;
+}
+
+/** `org`, or `org/`, is short for `https://github.com/org`. */
+function organizationUrl(input: string): string {
+  const text = input.trim();
+  return /^[a-z\d][a-z\d-]*\/?$/i.test(text) ? `https://github.com/${text}` : text;
 }
 
 async function scanAnswer(source: Source): Promise<ScanAnswer> {
