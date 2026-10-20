@@ -17,3 +17,4 @@ Skill: id = `repo:path`, name, description, commit
 - The one kept: the general one, in `.agents/skills`; else the first by path
 - Any difference, a byte or a line ending → skills of their own
 - A warning once, for the one kept
+- the repository’s own workflow, outside .agents and .claude
