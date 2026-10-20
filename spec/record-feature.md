@@ -2,6 +2,7 @@
 `node .agents/skills/record-feature/record.ts <scenes.ts> [--base <ref>] [--head <ref>] [--update]`: a video that shows a change
 does what `spec/` says, for the PR reviewer. The skill: [record-feature](../.agents/skills/record-feature/SKILL.md).
 `--base`: `origin/main` by default; `--head`: the working tree by default, else that commit.
+A commit that is not there, as in a shallow clone → a clear message, exit 1.
 ## The clauses
 - The change: `git diff <base> <head> -- spec/`; each changed bullet, its continuation lines joined, split at `;` outside `code`:
   the parts with a changed line are its **clauses**; a changed line outside a bullet too; not headings, not blank lines

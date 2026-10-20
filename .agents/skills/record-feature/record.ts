@@ -237,8 +237,14 @@ export async function main(argv: string[]): Promise<number> {
     return 2;
   }
   const repository = git(process.cwd(), 'rev-parse', '--show-toplevel').trim();
-  const base = git(repository, 'rev-parse', options.base).trim();
-  const head = options.head ? git(repository, 'rev-parse', options.head).trim() : git(repository, 'rev-parse', 'HEAD').trim();
+  const commit = (ref: string) => {
+    const found = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], { cwd: repository, encoding: 'utf8' });
+    if (found.status === 0) return found.stdout.trim();
+    console.error(`unknown commit: ${ref}; in a shallow clone, git fetch --unshallow`);
+  };
+  const base = commit(options.base);
+  const head = commit(options.head ?? 'HEAD');
+  if (!base || !head) return 1;
   const diff = git(repository, 'diff', '-U0', base, ...(options.head ? [head] : []), '--', 'spec/');
   const changed: Clause[] = [];
   for (const [file, lines] of changedLines(diff)) {

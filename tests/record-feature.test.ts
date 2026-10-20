@@ -197,6 +197,12 @@ test('--clauses: each changed clause of the spec, with its file and line', () =>
   assert.equal(lines[6], 'spec/web.md:11 a new scan empties it');
 });
 
+test('an unknown commit → a clear message, exit 1', () => {
+  const run = spawnSync('node', [RECORD, '--clauses', '--base', 'no-such-commit'], { cwd: REPOSITORY, encoding: 'utf8' });
+  assert.equal(run.status, 1);
+  assert.equal(run.stderr, 'unknown commit: no-such-commit; in a shallow clone, git fetch --unshallow\n');
+});
+
 recordTest('recording: a clause not covered → listed, exit 1, before anything is recorded', (t) => {
   const run = recordScenes(t, PILL.replace("covers: ['the pill shows']", "covers: ['Skill Atlas']"));
   assert.equal(run.status, 1);
