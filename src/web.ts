@@ -1,11 +1,17 @@
-// The web view's server: the scan as JSON. The same core as the CLI; nothing is stored. Only GitHub repositories: a page must not read the
+// The web view: a page with a repository link and a Scan button, and the scan behind it as JSON.
+// The same core as the CLI; nothing is stored. Only GitHub repositories: a page must not read the
 // server's own directories.
+import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { AtlasError } from './core/errors.ts';
 import { parseGitHubUrl } from './core/github.ts';
 import { skillLink } from './core/model.ts';
 import { parseSkill } from './core/parse.ts';
 import { scan, type Source } from './core/scan.ts';
+import { PAGE } from './page.ts';
+
+/** The Markdown parser, sent to the browser as it is. */
+const MARKDOWN = readFileSync(new URL('./markdown.js', import.meta.url), 'utf8');
 
 export type WebOptions = {
   /** Opens a GitHub repository URL. */
@@ -39,6 +45,8 @@ export function createWebServer(options: WebOptions): Server {
     };
     const json = (status: number, body: unknown) => send(status, 'application/json', JSON.stringify(body));
     if (request.method !== 'GET') return json(405, { error: 'Only GET' });
+    if (url.pathname === '/') return send(200, 'text/html', PAGE);
+    if (url.pathname === '/markdown.js') return send(200, 'text/javascript', MARKDOWN);
     if (url.pathname !== '/api/scan') return json(404, { error: `Not found: ${url.pathname}` });
     const input = repositoryUrl(url.searchParams.get('url') ?? '');
     try {

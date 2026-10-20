@@ -15,6 +15,21 @@ test.after(() => server.close());
 
 const scanFor = (url: string) => fetch(`${base}/api/scan?url=${encodeURIComponent(url)}`);
 
+test('the page: an owner/repo or GitHub link input, a Scan button, the list and the SKILL.md', async () => {
+  const response = await fetch(`${base}/`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /text\/html/);
+  const page = await response.text();
+  assert.match(page, /<input id="url"[^>]*placeholder="owner\/repo or a GitHub link"[^>]*aria-label="Repository link"/);
+  assert.match(page, /<button id="button" class="scan" type="submit">Scan<\/button>/);
+  assert.match(page, /<nav id="skills"/);
+  assert.match(page, /<section id="detail"/);
+  assert.match(page, /Open on GitHub ↗/);
+  assert.match(page, /import \{ markdown \} from '\/markdown.js'/);
+  // A SKILL.md is text: the page never puts repository content in as HTML.
+  assert.doesNotMatch(page, /innerHTML/);
+});
+
 test('scan: the repository, each skill with its link and its SKILL.md text', async () => {
   const response = await scanFor('https://github.com/JetBrains/example');
   assert.equal(response.status, 200);
@@ -56,6 +71,13 @@ test('scan: the other front matter keys and the body, apart', async (t) => {
   assert.deepEqual(skill.properties, { 'disable-model-invocation': true, 'allowed-tools': ['Bash'] });
   assert.equal(skill.body, '# Pick\n\nRun it.');
   assert.equal(skill.text, text);
+});
+
+test('the page gets the Markdown parser, as JavaScript', async () => {
+  const response = await fetch(`${base}/markdown.js`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /text\/javascript/);
+  assert.match(await response.text(), /export function markdown\(text\)/);
 });
 
 test('scan: an unreachable repository → status 400 and the clear message', async () => {
