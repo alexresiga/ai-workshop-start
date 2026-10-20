@@ -46,9 +46,13 @@ export const PAGE = `<!doctype html>
   #warnings:empty { display: none; }
 
   main { display: grid; grid-template-columns: minmax(16rem, 36%) 1fr; flex: 1; min-height: 0; }
-  nav { overflow-y: auto; padding: .9rem; border-right: 1px solid var(--line); }
+  aside { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
+  #filter { flex: none; margin: .9rem .9rem 0; font-family: var(--sans); }
+  #filter[hidden] { display: none; }
+  nav { flex: 1; overflow-y: auto; padding: .9rem; }
   nav button { display: block; width: 100%; margin-bottom: .2rem; padding: .55rem 1rem; text-align: left; font: inherit; color: inherit;
     background: none; border: 0; border-left: 3px solid transparent; border-radius: .5rem; cursor: pointer; }
+  nav button[hidden] { display: none; }
   nav button:hover { background: var(--pill); }
   nav button[aria-current="true"] { background: var(--selected); border-left-color: var(--accent); border-radius: .25rem .5rem .5rem .25rem; }
   nav .name, nav .description { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -93,7 +97,7 @@ export const PAGE = `<!doctype html>
     header { flex-wrap: wrap; padding: .75rem 1rem; }
     form { order: 3; flex-basis: 100%; max-width: none; }
     main { grid-template-columns: 1fr; grid-template-rows: minmax(8rem, 35%) 1fr; }
-    nav { border-right: 0; border-bottom: 1px solid var(--line); }
+    aside { border-right: 0; border-bottom: 1px solid var(--line); }
     #detail { padding: 1.2rem 1rem 2rem; }
   }
 </style>
@@ -110,11 +114,16 @@ export const PAGE = `<!doctype html>
 </header>
 <ul id="warnings"></ul>
 <main>
-  <nav id="skills" aria-label="Skills"><p class="message">Paste a repository and press Scan.</p></nav>
+  <aside>
+    <input id="filter" type="search" placeholder="Filter by name or description" aria-label="Filter skills"
+      autocomplete="off" spellcheck="false" hidden>
+    <nav id="skills" aria-label="Skills"><p class="message">Paste a repository and press Scan.</p></nav>
+  </aside>
   <section id="detail" aria-live="polite"></section>
 </main>
 <script type="module">
   import { markdown } from '/markdown.js';
+  import { matches } from '/filter.js';
 
   const $ = (id) => document.getElementById(id);
   /** An element with text, children and, for classes, \`.name\` in the tag: \`element('p.message.error', 'text')\`. */
@@ -138,6 +147,8 @@ export const PAGE = `<!doctype html>
     $('repository').replaceChildren();
     $('warnings').replaceChildren();
     $('detail').replaceChildren();
+    $('filter').value = '';
+    $('filter').hidden = true;
     $('skills').replaceChildren(element('p.message', 'Scanning ' + url + '…'));
     history.replaceState(null, '', '?repo=' + encodeURIComponent(url));
     try {
@@ -159,10 +170,16 @@ export const PAGE = `<!doctype html>
     repository.href = answer.repository.url;
     repository.target = '_blank';
     repository.rel = 'noopener';
-    $('repository').replaceChildren(repository, element('span.pill', skills.length + (skills.length === 1 ? ' skill' : ' skills')));
+    const count = element('span.pill', skills.length + (skills.length === 1 ? ' skill' : ' skills'));
+    count.id = 'count';
+    $('repository').replaceChildren(repository, count);
+    const unmatched = element('p.message');
+    unmatched.id = 'unmatched';
+    unmatched.hidden = true;
     $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
     $('skills').replaceChildren(
       ...(skills.length ? [] : [element('p.message', 'No SKILL.md in this repository.')]),
+      unmatched,
       ...skills.map((skill, index) => {
         const item = element('button', element('span.name', skill.name), element('span.description', skill.description));
         item.type = 'button';
@@ -171,8 +188,38 @@ export const PAGE = `<!doctype html>
         return item;
       }),
     );
-    if (skills.length) select(0);
+    $('filter').hidden = !skills.length;
+    if (skills.length) filter();
   }
+
+  /** Only the skills whose name or description has every word of the filter; the selection stays if it can. */
+  function filter() {
+    if ($('filter').hidden) return; // before a scan, or while one runs
+    const text = $('filter').value;
+    const items = [...$('skills').querySelectorAll('button')];
+    items.forEach((item, i) => (item.hidden = !matches(skills[i], text)));
+    const shown = items.filter((item) => !item.hidden).length;
+    const count = shown === skills.length ? String(skills.length) : shown + ' of ' + skills.length;
+    $('count').textContent = count + (skills.length === 1 ? ' skill' : ' skills');
+    $('unmatched').hidden = shown > 0 || !skills.length;
+    $('unmatched').textContent = 'No skill matches ' + text.trim() + '.';
+    const current = items.findIndex((item) => item.getAttribute('aria-current') === 'true');
+    if (current >= 0 && !items[current].hidden) return;
+    const first = items.findIndex((item) => !item.hidden);
+    if (first >= 0) select(first);
+    else {
+      items.forEach((item) => item.setAttribute('aria-current', 'false'));
+      $('detail').replaceChildren();
+    }
+  }
+
+  $('filter').addEventListener('input', filter);
+  $('filter').addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && $('filter').value) {
+      $('filter').value = '';
+      filter();
+    }
+  });
 
   function select(index) {
     const items = [...$('skills').querySelectorAll('button')];
@@ -236,16 +283,17 @@ export const PAGE = `<!doctype html>
     return result;
   }
 
-  // Up and down move through the skills.
+  // Up and down move through the skills the filter shows.
   $('skills').addEventListener('keydown', (event) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     const items = [...$('skills').querySelectorAll('button')];
-    const current = items.findIndex((item) => item.getAttribute('aria-current') === 'true');
-    const next = Math.max(0, Math.min(items.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
-    if (next === current || !items[next]) return;
+    const shown = items.filter((item) => !item.hidden);
+    const current = shown.findIndex((item) => item.getAttribute('aria-current') === 'true');
+    const next = Math.max(0, Math.min(shown.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
+    if (next === current || !shown[next]) return;
     event.preventDefault();
-    select(next);
-    items[next].focus();
+    select(items.indexOf(shown[next]));
+    shown[next].focus();
   });
 
   // ?repo=owner/repo scans at once, so a scan can be reloaded and shared.

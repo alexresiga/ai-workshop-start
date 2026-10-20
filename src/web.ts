@@ -19,6 +19,8 @@ const LOOPBACK = /^(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/i;
 
 /** The Markdown parser, sent to the browser as it is. */
 const MARKDOWN = readFileSync(new URL('./markdown.js', import.meta.url), 'utf8');
+/** The skill filter, sent to the browser as it is. */
+const FILTER = readFileSync(new URL('./filter.js', import.meta.url), 'utf8');
 
 export type WebOptions = {
   /** Opens a GitHub repository URL. */
@@ -55,6 +57,7 @@ export function createWebServer(options: WebOptions): Server {
     if (request.method !== 'GET') return json(405, { error: 'Only GET' });
     if (url.pathname === '/') return send(200, 'text/html', PAGE);
     if (url.pathname === '/markdown.js') return send(200, 'text/javascript', MARKDOWN);
+    if (url.pathname === '/filter.js') return send(200, 'text/javascript', FILTER);
     if (url.pathname !== '/api/scan') return json(404, { error: `Not found: ${url.pathname}` });
     const input = repositoryUrl(url.searchParams.get('url') ?? '');
     try {
