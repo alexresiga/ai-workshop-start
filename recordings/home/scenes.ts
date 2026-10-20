@@ -23,6 +23,20 @@ export const title = 'Skill Atlas returns home';
 export const notShown = {};
 export const scenes: Scene[] = [
   {
+    caption: 'Ctrl+click Skill Atlas: home opens in a new tab, and this one keeps its scan, 3 skills',
+    covers: ['a click with Ctrl, ⌘, Shift or Alt is the browser'],
+    async run(page, act) {
+      await page.keyboard.down('Control');
+      const [other] = await Promise.all([page.context().waitForEvent('page'), act.click(home(page))]);
+      await page.keyboard.up('Control');
+      await other.waitForLoadState();
+      await expectHome(other);
+      await other.close();
+      await expect.poll(() => address(page)).toBe('?repo=example/fixture');
+      await expect(page.locator('#count')).toHaveText('3 skills');
+    },
+  },
+  {
     caption: 'Click Skill Atlas: the page as it first opens, the input empty, no scan',
     covers: ['**Skill Atlas** in the header returns home'],
     async run(page, act) {

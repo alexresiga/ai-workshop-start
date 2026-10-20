@@ -1,9 +1,8 @@
 // spec/web.md: **Skill Atlas** in the header returns home, in a real browser, with GitHub answering from tests/helpers.ts.
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import { test } from 'node:test';
-import { chromium, expect, type Browser, type Page } from '@playwright/test';
+import { chromium, expect, type Page } from '@playwright/test';
 import { openGitHub } from '../src/core/github.ts';
 import { scanOrganization } from '../src/core/organization.ts';
 import { replay } from '../src/core/replay.ts';
@@ -30,14 +29,13 @@ await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 test.after(() => server.close());
 
-// Chromium, as CI installs it: `npx playwright install chromium`.
-const browserTest = existsSync(chromium.executablePath()) ? test : test.skip;
-let browser: Browser | undefined;
+// Chromium, as CI installs it: `npx playwright install --with-deps chromium`; one that cannot start skips the browser tests.
+const browser = await chromium.launch().catch(() => undefined);
+const browserTest = browser ? test : test.skip;
 test.after(() => browser?.close());
 
 async function open(t: { after(fn: () => Promise<void>): void }, address = '/'): Promise<Page> {
-  browser ??= await chromium.launch();
-  const page = await browser.newPage();
+  const page = await browser!.newPage();
   t.after(() => page.close());
   await page.goto(base + address);
   return page;
@@ -112,4 +110,24 @@ browserTest('home: on the home page already, it stays home and adds nothing to t
   await page.getByRole('link', { name: 'Skill Atlas' }).click();
   await expectHome(page);
   assert.equal(await page.evaluate<number>('history.length'), length);
+});
+
+browserTest('home: with Ctrl, ⌘, Shift or Alt, the click is the browser’s: home in a new tab or window, this one keeps its scan', async (t) => {
+  for (const modifier of ['ControlOrMeta', 'Shift'] as const) {
+    const page = await open(t, '/?repo=JetBrains/example');
+    await expect(page.locator('#count')).toHaveText('1 skill');
+    const opened = page.context().waitForEvent('page');
+    await page.getByRole('link', { name: 'Skill Atlas' }).click({ modifiers: [modifier] });
+    const other = await opened;
+    t.after(() => other.close());
+    await other.waitForLoadState();
+    await expectHome(other);
+    assert.equal(new URL(page.url()).searchParams.get('repo'), 'JetBrains/example', modifier);
+    await expect(page.locator('#count')).toHaveText('1 skill');
+  }
+});
+
+test('the page: the start message goes into the script as a JavaScript string', async () => {
+  const page = await (await fetch(`${base}/`)).text();
+  assert.match(page, /element\('p\.message', "Paste a repository or an organization and press Scan\."\)\);/);
 });
