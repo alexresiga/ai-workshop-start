@@ -9,3 +9,6 @@ Integration tests for every case in the spec.
 ## Commands
 - `npm ci`: first, in a fresh checkout
 - `npm test`: the tests
+
+## VCS
+- always prefer rebasing over merge commits when merging PRs
