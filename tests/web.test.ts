@@ -97,6 +97,18 @@ test('scan: GitHub repositories only, never the server’s own directories', asy
   }
 });
 
+test('the page: after a scan, a filter above the skills, with the filter module', async () => {
+  const page = await (await fetch(`${base}/`)).text();
+  assert.match(page, /<input id="filter" type="search"[^>]*aria-label="Filter skills"[^>]*hidden>/);
+  assert.match(page, /import \{ matches \} from '\/filter.js'/);
+  assert.match(page, /No skill matches /);
+  assert.match(page, /' of ' \+ skills.length/);
+  const response = await fetch(`${base}/filter.js`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /text\/javascript/);
+  assert.match(await response.text(), /export function matches\(skill, text\)/);
+});
+
 test('anything else → 404', async () => {
   assert.equal((await fetch(`${base}/nothing`)).status, 404);
 });

@@ -6,6 +6,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - A header: **Skill Atlas**, an input for `owner/repo` or a **GitHub link**, a **Scan** button; then `<owner>/<repo>` and an `N skills` pill
 - The warnings, under the header
 - On the left, the skills sorted by **name**: the name, and the description on one line; the first is selected; ↑ and ↓ move
+- After a scan, above the skills, a **filter**: it keeps the skills whose name or description has *every word* typed, in any case,
+  anywhere in a word; the pill shows `N of M skills` while it hides some; none left → `No skill matches <text>.`, and nothing on the right;
+  the selected skill stays if it is shown, else the first shown is selected; ↑ and ↓ move through the shown ones; Esc clears it; a new scan empties it
 - On the right, the selected skill's **SKILL.md**: its path, *Open on GitHub* at the scanned commit, `also in <paths>` for copies;
   a card with the front matter, **name** and **description**, every other key as a tag (`key`, for a flag that is true; else `key: value`);
   then the body, **rendered Markdown**: headings, paragraphs, lists, code, fenced or indented, as it is, quotes, tables, links, emphasis;
