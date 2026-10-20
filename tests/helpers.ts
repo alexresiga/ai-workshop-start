@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { run } from '../src/commands.ts';
-import { openGitHub, parseGitHubUrl } from '../src/core/github.ts';
+import { openGitHub, openOrganization, parseGitHubUrl, type Fetch } from '../src/core/github.ts';
 import { replay, type Recording } from '../src/core/replay.ts';
 import { scan, type ScanResult } from '../src/core/scan.ts';
 import { openDirectory } from '../src/local.ts';
@@ -36,12 +36,14 @@ const EXAMPLE: Recording = {
 export const github = replay(EXAMPLE);
 
 /** `skill-atlas <args>`, as the CLI runs it, with GitHub answering from EXAMPLE. */
-export async function atlas(args: string[]) {
+export async function atlas(args: string[], options: { fetch?: Fetch; token?: string } = {}) {
   const stdout: string[] = [];
   const stderr: string[] = [];
+  // With a token, through code search, as EXAMPLE answers it.
+  const { fetch = github, token = 'test' } = options;
   const code = await run(args, {
-    // With a token, through code search, as EXAMPLE answers it.
-    open: (input) => (parseGitHubUrl(input) ? openGitHub(input, { fetch: github, token: 'test' }) : openDirectory(input)),
+    open: (input) => (parseGitHubUrl(input) ? openGitHub(input, { fetch, token: token || undefined }) : openDirectory(input)),
+    openOrganization: (input) => openOrganization(input, { fetch, token: token || undefined }),
     print: (text) => stdout.push(text),
     error: (text) => stderr.push(text),
   });
@@ -82,6 +84,48 @@ export function searchAnswers(id: string, files: Files): Recording {
     recording[`https://raw.githubusercontent.com/${id}/${COMMIT}/${path}`] = { status: 200, body: text };
   }
   return recording;
+}
+
+/**
+ * What GitHub answers for an account and its repositories, each with its files: the account, its
+ * repositories, one code search over the account; and for each repository what `searchAnswers`
+ * answers, and its tree. Code search leaves the forks out, as GitHub does.
+ */
+export function accountAnswers(login: string, type: 'Organization' | 'User', repositories: Record<string, Files>, forks: string[] = []): Recording {
+  const ids = Object.keys(repositories);
+  const recording: Recording = {
+    [`https://api.github.com/users/${login}`]: { status: 200, body: { login, type } },
+    [`https://api.github.com/${type === 'Organization' ? 'orgs' : 'users'}/${login}/repos?per_page=100&page=1`]: {
+      status: 200,
+      body: ids.map((id) => ({ full_name: id, default_branch: 'main', fork: forks.includes(id) })),
+    },
+  };
+  const items = ids.filter((id) => !forks.includes(id)).flatMap((id) =>
+    Object.keys(repositories[id])
+      .filter((path) => path.split('/').at(-1) === 'SKILL.md')
+      .map((path) => ({ path, repository: { full_name: id } })),
+  );
+  recording[`https://api.github.com/search/code?q=filename:SKILL.md+${type === 'Organization' ? 'org' : 'user'}:${login}&per_page=100&page=1`] = {
+    status: 200,
+    body: { total_count: items.length, items },
+  };
+  for (const [id, files] of Object.entries(repositories)) {
+    Object.assign(recording, searchAnswers(id, forks.includes(id) ? {} : files));
+    recording[`https://api.github.com/repos/${id}`] = { status: 200, body: { full_name: id, default_branch: 'main', fork: forks.includes(id) } };
+    for (const [path, text] of Object.entries(files)) recording[`https://raw.githubusercontent.com/${id}/${COMMIT}/${path}`] = { status: 200, body: text };
+    recording[`https://api.github.com/repos/${id}/git/trees/${COMMIT}?recursive=1`] = {
+      status: 200,
+      body: { truncated: false, tree: Object.keys(files).map((path) => ({ path, mode: '100644', type: 'blob', sha: '0' })) },
+    };
+  }
+  return recording;
+}
+
+/** A fetch that answers from the recording, and the URLs asked for. */
+export function recorded(recording: Recording): { fetch: Fetch; asked: string[] } {
+  const asked: string[] = [];
+  const answer = replay(recording);
+  return { fetch: (url, init) => (asked.push(url), answer(url, init)), asked };
 }
 
 /** Each skill as its path, name and copies; and the warnings. */

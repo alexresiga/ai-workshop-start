@@ -1,5 +1,6 @@
-import { AtlasError } from './errors.ts';
+import { AtlasError, GitHubError } from './errors.ts';
 import { SKILL_ROOTS } from './find.ts';
+import type { OrganizationSource } from './organization.ts';
 import type { Source } from './scan.ts';
 
 /** The part of `fetch` the core uses, so tests and the browser can pass their own. */
@@ -7,7 +8,7 @@ export type Fetch = (url: string, init?: { headers?: Record<string, string> }) =
 
 export type GitHubOptions = {
   fetch: Fetch;
-  /** With a token, skills are found through code search; without it, through the tree. */
+  /** With a token, skills are found through code search, a fork's through its tree; without a token, through the tree. */
   token?: string;
 };
 
@@ -20,19 +21,33 @@ export function parseGitHubUrl(input: string): { owner: string; repo: string } |
   return match ? { owner: match[1], repo: match[2] } : undefined;
 }
 
+/** `https://github.com/owner`, with or without the scheme or a trailing slash: an organization's or a user's account. */
+export function parseGitHubOrganization(input: string): string | undefined {
+  return /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-z\d][a-z\d-]*)\/?$/i.exec(input.trim())?.[1];
+}
+
+type RepositoryInfo = { full_name: string; default_branch: string; fork?: boolean };
+
 /** Resolves the default branch to a commit and lists the files that may be skills. */
 export async function openGitHub(input: string, options: GitHubOptions): Promise<Source> {
   const name = parseGitHubUrl(input);
   if (!name) throw new AtlasError(`Not a GitHub repository URL: ${input}`);
   const github = client(options);
-  const info = await github.json<{ full_name: string; default_branch: string }>(
+  const info = await github.json<RepositoryInfo>(
     `${API}/repos/${name.owner}/${name.repo}`,
     `Repository not found: https://github.com/${name.owner}/${name.repo}`,
   );
+  return openRepository(github, info, options);
+}
+
+/** The repository at its default branch's commit; `found`, the SKILL.md paths a search has already found in it. */
+async function openRepository(github: Client, info: RepositoryInfo, options: GitHubOptions, found?: string[]): Promise<Source> {
   const id = info.full_name;
   const { sha } = await github.json<{ sha: string }>(`${API}/repos/${id}/commits/${encodePath(info.default_branch)}`);
   const warnings: string[] = [];
-  const paths = options.token ? await searchPaths(github, id) : await treePaths(github, id, sha, warnings);
+  // Code search leaves forks out: a fork's skills are in its tree.
+  const searched = options.token && !info.fork;
+  const paths = found ?? (searched ? await searchPaths(github, id) : await treePaths(github, id, sha, warnings, options.token));
   const [organization, repo] = id.split('/');
   return {
     repository: { id, organization, name: repo, url: `https://github.com/${id}`, commit: sha },
@@ -42,27 +57,83 @@ export async function openGitHub(input: string, options: GitHubOptions): Promise
   };
 }
 
-/** Code search looks at the whole default branch, 100 results a page. */
-async function searchPaths(github: Client, id: string): Promise<string[]> {
-  const paths = new Set<string>(); // pages can repeat a result
-  // GitHub returns at most 1000 results: ten pages.
-  for (let page = 1; page <= 10; page++) {
-    const result = await github.json<{ total_count: number; items: { path: string }[] }>(
-      `${API}/search/code?q=filename:SKILL.md+repo:${id}&per_page=100&page=${page}`,
+/**
+ * An organization's, or a user's, repositories. With a token, one code search over the whole
+ * account finds the ones with a SKILL.md, and only those, and the forks it leaves out, are opened;
+ * past the 1000 results GitHub returns, each repository is searched on its own. Without a token,
+ * each repository's tree.
+ */
+export async function openOrganization(input: string, options: GitHubOptions): Promise<OrganizationSource> {
+  const name = parseGitHubOrganization(input);
+  if (!name) throw new AtlasError(`Not a GitHub organization URL: ${input}`);
+  const github = client(options);
+  const account = await github.json<{ login: string; type: string }>(
+    `${API}/users/${name}`,
+    `Organization not found: https://github.com/${name}`,
+  );
+  const organization = account.type === 'Organization';
+  const listed: RepositoryInfo[] = [];
+  for (let page = 1; ; page++) {
+    const repositories = await github.json<RepositoryInfo[]>(
+      `${API}/${organization ? 'orgs' : 'users'}/${account.login}/repos?per_page=100&page=${page}`,
     );
-    for (const item of result.items) paths.add(item.path);
+    listed.push(...repositories);
+    if (repositories.length < 100) break;
+  }
+  const found = options.token ? await searchAccount(github, `${organization ? 'org' : 'user'}:${account.login}`) : undefined;
+  return {
+    organization: { id: account.login, url: `https://github.com/${account.login}` },
+    repositories: listed.map((info) => {
+      const paths = found?.get(info.full_name.toLowerCase());
+      return {
+        id: info.full_name,
+        open: async () => (found && !paths && !info.fork ? undefined : openRepository(github, info, options, paths)),
+      };
+    }),
+  };
+}
+
+type SearchResult = { total_count: number; items: { path: string; repository?: { full_name: string } }[] };
+
+/** Code search, 100 results a page; GitHub returns at most 1000 results: ten pages. */
+async function search(github: Client, qualifier: string): Promise<SearchResult> {
+  const items: SearchResult['items'] = [];
+  let total = 0;
+  for (let page = 1; page <= 10; page++) {
+    const result = await github.json<SearchResult>(`${API}/search/code?q=filename:SKILL.md+${qualifier}&per_page=100&page=${page}`);
+    items.push(...result.items);
+    total = result.total_count;
     if (result.items.length < 100 || page * 100 >= result.total_count) break;
   }
-  return [...paths];
+  return { total_count: total, items };
+}
+
+/** Code search looks at the whole default branch. */
+async function searchPaths(github: Client, id: string): Promise<string[]> {
+  const { items } = await search(github, `repo:${id}`);
+  return [...new Set(items.map((item) => item.path))]; // pages can repeat a result
+}
+
+/** The SKILL.md paths by repository, lower case `owner/name`; undefined when there are more than the search returns. */
+async function searchAccount(github: Client, qualifier: string): Promise<Map<string, string[]> | undefined> {
+  const { total_count, items } = await search(github, qualifier);
+  if (total_count > 1000) return undefined;
+  const paths = new Map<string, Set<string>>();
+  for (const item of items) {
+    const id = item.repository?.full_name.toLowerCase();
+    if (id) paths.set(id, (paths.get(id) ?? new Set()).add(item.path));
+  }
+  return new Map([...paths].map(([id, found]) => [id, [...found]]));
 }
 
 type Tree = { truncated: boolean; tree: { path: string; mode: string; type: string; sha: string }[] };
 
 /** The whole tree at once, or only the skill roots when it is too large for one answer. */
-async function treePaths(github: Client, id: string, sha: string, warnings: string[]): Promise<string[]> {
+async function treePaths(github: Client, id: string, sha: string, warnings: string[], token?: string): Promise<string[]> {
   const tree = await github.json<Tree>(`${API}/repos/${id}/git/trees/${sha}?recursive=1`);
   if (!tree.truncated) return files(tree);
-  warnings.push(`the tree is too large to list at once; looked only in ${SKILL_ROOTS.join(', ')} (GITHUB_TOKEN searches everywhere)`);
+  const why = token ? 'code search leaves forks out' : 'GITHUB_TOKEN searches everywhere';
+  warnings.push(`the tree is too large to list at once; looked only in ${SKILL_ROOTS.join(', ')} (${why})`);
   const paths: string[] = [];
   for (const root of SKILL_ROOTS) {
     const rootSha = await directory(github, id, sha, root);
@@ -101,7 +172,7 @@ function client({ fetch, token }: GitHubOptions) {
     try {
       return await fetch(url, init);
     } catch (error) {
-      throw new AtlasError(`Cannot reach GitHub: ${describe(error)}`);
+      throw new GitHubError(`Cannot reach GitHub: ${describe(error)}`);
     }
   }
 
@@ -113,9 +184,10 @@ function client({ fetch, token }: GitHubOptions) {
     const text = typeof message === 'string' ? message : '';
     if (response.status === 404) throw new AtlasError(notFound);
     if ((response.status === 403 || response.status === 429) && /rate limit/i.test(text)) {
-      throw new AtlasError(`GitHub rate limit reached; ${token ? 'try again in a minute' : 'set GITHUB_TOKEN'}`);
+      throw new GitHubError(`GitHub rate limit reached; ${token ? 'try again in a minute' : 'set GITHUB_TOKEN'}`);
     }
-    if (response.status === 401) throw new AtlasError('GitHub rejected the token in GITHUB_TOKEN');
+    if (response.status === 409 && /empty/i.test(text)) throw new AtlasError('the repository is empty');
+    if (response.status === 401) throw new GitHubError('GitHub rejected the token in GITHUB_TOKEN');
     throw new AtlasError(`GitHub answered ${response.status} for ${url}${text && `: ${text}`}`);
   }
 

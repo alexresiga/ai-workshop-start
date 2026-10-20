@@ -4,26 +4,29 @@ import { spawnSync } from 'node:child_process';
 import { request } from 'node:http';
 import { createServer, type AddressInfo } from 'node:net';
 import { test } from 'node:test';
-import { openGitHub } from '../src/core/github.ts';
+import { openGitHub, openOrganization } from '../src/core/github.ts';
 import { replay } from '../src/core/replay.ts';
 import { AtlasError } from '../src/core/errors.ts';
 import { createWebServer, listen, type ScanAnswer } from '../src/web.ts';
 import { atlas, CLI, EXAMPLE_COMMIT, github, searchAnswers } from './helpers.ts';
 
 const missing = replay({ 'https://api.github.com/repos/JetBrains/missing': { status: 404, body: { message: 'Not Found' } } }, github);
-const server = createWebServer({ open: (url) => openGitHub(url, { fetch: missing, token: 'test' }) });
+const server = createWebServer({
+  open: (url) => openGitHub(url, { fetch: missing, token: 'test' }),
+  openOrganization: (url) => openOrganization(url, { fetch: missing, token: 'test' }),
+});
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 test.after(() => server.close());
 
 const scanFor = (url: string) => fetch(`${base}/api/scan?url=${encodeURIComponent(url)}`);
 
-test('the page: an owner/repo or GitHub link input, a Scan button, the list and the SKILL.md', async () => {
+test('the page: an owner/repo, organization or GitHub link input, a Scan button, the list and the SKILL.md', async () => {
   const response = await fetch(`${base}/`);
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type') ?? '', /text\/html/);
   const page = await response.text();
-  assert.match(page, /<input id="url"[^>]*placeholder="owner\/repo or a GitHub link"[^>]*aria-label="Repository link"/);
+  assert.match(page, /<input id="url"[^>]*placeholder="owner\/repo, an organization or a GitHub link"[^>]*aria-label="Repository or organization"/);
   assert.match(page, /<button id="button" class="scan" type="submit">Scan<\/button>/);
   assert.match(page, /<nav id="skills"/);
   assert.match(page, /<section id="detail"/);
@@ -66,6 +69,7 @@ test('scan: the other front matter keys and the body, apart', async (t) => {
   const text = '---\nname: pick\ndescription: Pick a fix.\ndisable-model-invocation: true\nallowed-tools: [Bash]\n---\n\n# Pick\n\nRun it.\n';
   const server = createWebServer({
     open: (url) => openGitHub(url, { fetch: replay(searchAnswers('example/repo', { '.claude/skills/pick/SKILL.md': text })), token: 't' }),
+    openOrganization: () => Promise.reject(new Error('not scanned')),
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => server.close());
@@ -152,7 +156,7 @@ test('serve: a port already in use → a clear message, not a stack trace', asyn
   t.after(() => taken.close());
   const port = (taken.address() as AddressInfo).port;
   await assert.rejects(
-    listen(createWebServer({ open: () => Promise.reject(new Error('not scanned')) }), port, () => {}),
+    listen(createWebServer({ open: () => Promise.reject(new Error('not scanned')), openOrganization: () => Promise.reject(new Error('not scanned')) }), port, () => {}),
     new AtlasError(`Port ${port} is already in use; try skill-atlas serve <another port>`),
   );
   // The real command, as a user runs it.

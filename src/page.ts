@@ -60,6 +60,7 @@ export const PAGE = `<!doctype html>
   nav .description { color: var(--muted); }
   .message { padding: 1rem; color: var(--muted); }
   .message.error { color: var(--error); }
+  nav.repositories .description { font-size: .9rem; }
 
   #detail { overflow-y: auto; padding: 1.6rem 2.2rem 3rem; }
   #detail:empty { display: none; }
@@ -106,7 +107,7 @@ export const PAGE = `<!doctype html>
 <header>
   <h1>Skill Atlas</h1>
   <form id="scan">
-    <input id="url" name="url" type="text" placeholder="owner/repo or a GitHub link" aria-label="Repository link"
+    <input id="url" name="url" type="text" placeholder="owner/repo, an organization or a GitHub link" aria-label="Repository or organization"
       autocomplete="off" spellcheck="false" required>
     <button id="button" class="scan" type="submit">Scan</button>
   </form>
@@ -117,7 +118,7 @@ export const PAGE = `<!doctype html>
   <aside>
     <input id="filter" type="search" placeholder="Filter by name or description" aria-label="Filter skills"
       autocomplete="off" spellcheck="false" hidden>
-    <nav id="skills" aria-label="Skills"><p class="message">Paste a repository and press Scan.</p></nav>
+    <nav id="skills" aria-label="Skills"><p class="message">Paste a repository or an organization and press Scan.</p></nav>
   </aside>
   <section id="detail" aria-live="polite"></section>
 </main>
@@ -135,13 +136,17 @@ export const PAGE = `<!doctype html>
     return node;
   };
   let skills = [];
+  /** An organization's name, or a GitHub link to one: a single name, no repository. */
+  const ORGANIZATION = /^(?:(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/)?[a-z\\d][a-z\\d-]*\\/?$/i;
 
   $('scan').addEventListener('submit', (event) => {
     event.preventDefault();
     scan($('url').value.trim());
   });
 
+  /** A repository, or each repository of an organization. */
   async function scan(url) {
+    const organization = ORGANIZATION.test(url);
     $('button').disabled = true;
     $('button').textContent = 'Scanning…';
     $('repository').replaceChildren();
@@ -149,13 +154,16 @@ export const PAGE = `<!doctype html>
     $('detail').replaceChildren();
     $('filter').value = '';
     $('filter').hidden = true;
+    $('skills').classList.toggle('repositories', organization);
+    $('skills').setAttribute('aria-label', organization ? 'Repositories' : 'Skills');
     $('skills').replaceChildren(element('p.message', 'Scanning ' + url + '…'));
-    history.replaceState(null, '', '?repo=' + encodeURIComponent(url));
+    history.replaceState(null, '', (organization ? '?org=' : '?repo=') + encodeURIComponent(url));
     try {
-      const response = await fetch('/api/scan?url=' + encodeURIComponent(url));
+      const response = await fetch(organization ? '/api/organization?name=' + encodeURIComponent(url) : '/api/scan?url=' + encodeURIComponent(url));
       const answer = await response.json();
       if (!response.ok) throw new Error(answer.error);
-      show(answer);
+      if (organization) showOrganization(answer);
+      else show(answer);
     } catch (error) {
       $('skills').replaceChildren(element('p.message.error', error.message));
     } finally {
@@ -164,15 +172,49 @@ export const PAGE = `<!doctype html>
     }
   }
 
+  const count = (n, one, many = one + 's') => n + ' ' + (n === 1 ? one : many);
+
+  /** A link to GitHub, in a new tab. */
+  function external(text, href) {
+    const link = element('a', text);
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    return link;
+  }
+
+  /** The organization and its counts; on the left, each repository with skills; a click scans it. */
+  function showOrganization(answer) {
+    skills = [];
+    const total = answer.repositories.reduce((sum, repository) => sum + repository.skills, 0);
+    $('repository').replaceChildren(
+      external(answer.organization.id, answer.organization.url),
+      element('span.pill', count(total, 'skill')),
+      element('span.pill', count(answer.repositories.length, 'repository', 'repositories') + ' of ' + answer.scanned),
+    );
+    $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    $('skills').replaceChildren(
+      ...(answer.repositories.length ? [] : [element('p.message', 'No SKILL.md in any of its ' + count(answer.scanned, 'repository', 'repositories') + '.')]),
+      ...answer.repositories.map((repository) => {
+        const item = element('button', element('span.name', repository.id), element('span.description', count(repository.skills, 'skill')));
+        item.type = 'button';
+        item.title = repository.id;
+        item.addEventListener('click', () => {
+          history.pushState(null, '', '?repo=' + encodeURIComponent(repository.id)); // Back returns to the organization
+          $('url').value = repository.id;
+          scan(repository.id);
+        });
+        return item;
+      }),
+    );
+    if (answer.repositories.length) $('detail').replaceChildren(element('p.message', 'Pick a repository to see its skills.'));
+  }
+
   function show(answer) {
     skills = answer.skills;
-    const repository = element('a', answer.repository.id);
-    repository.href = answer.repository.url;
-    repository.target = '_blank';
-    repository.rel = 'noopener';
-    const count = element('span.pill', skills.length + (skills.length === 1 ? ' skill' : ' skills'));
-    count.id = 'count';
-    $('repository').replaceChildren(repository, count);
+    const pill = element('span.pill', count(skills.length, 'skill'));
+    pill.id = 'count';
+    $('repository').replaceChildren(external(answer.repository.id, answer.repository.url), pill);
     const unmatched = element('p.message');
     unmatched.id = 'unmatched';
     unmatched.hidden = true;
@@ -227,10 +269,7 @@ export const PAGE = `<!doctype html>
     items[index].scrollIntoView({ block: 'nearest' });
     const skill = skills[index];
 
-    const github = element('a', 'Open on GitHub ↗');
-    github.href = skill.link;
-    github.target = '_blank';
-    github.rel = 'noopener';
+    const github = external('Open on GitHub ↗', skill.link);
     const path = element('span.path', skill.path);
     path.title = skill.path;
     const parts = [element('div.file', element('span', 'SKILL.md'), path, github)];
@@ -283,25 +322,30 @@ export const PAGE = `<!doctype html>
     return result;
   }
 
-  // Up and down move through the skills the filter shows.
+  // Up and down move through the skills the filter shows, or the repositories.
   $('skills').addEventListener('keydown', (event) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     const items = [...$('skills').querySelectorAll('button')];
     const shown = items.filter((item) => !item.hidden);
-    const current = shown.findIndex((item) => item.getAttribute('aria-current') === 'true');
+    const repositories = $('skills').classList.contains('repositories');
+    const current = repositories ? shown.indexOf(document.activeElement) : shown.findIndex((item) => item.getAttribute('aria-current') === 'true');
     const next = Math.max(0, Math.min(shown.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
     if (next === current || !shown[next]) return;
     event.preventDefault();
-    select(items.indexOf(shown[next]));
+    if (!repositories) select(items.indexOf(shown[next]));
     shown[next].focus();
   });
 
-  // ?repo=owner/repo scans at once, so a scan can be reloaded and shared.
-  const repo = new URLSearchParams(location.search).get('repo');
-  if (repo) {
-    $('url').value = repo;
-    scan(repo);
+  // ?repo=owner/repo or ?org=org scans at once, so a scan can be reloaded and shared; Back scans again.
+  function scanAddress() {
+    const query = new URLSearchParams(location.search);
+    const input = query.get('repo') ?? query.get('org');
+    if (!input) return;
+    $('url').value = input;
+    scan(input);
   }
+  window.addEventListener('popstate', scanAddress);
+  scanAddress();
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 `GITHUB_TOKEN`, optional, as for the CLI. The look: [mockups/list-web-view.png](../mockups/list-web-view.png).
 A port already in use, or not a port (above 65535) → a clear message, exit code 1.
 ## The page
-- A header: **Skill Atlas**, an input for `owner/repo` or a **GitHub link**, a **Scan** button; then `<owner>/<repo>` and an `N skills` pill
+- A header: **Skill Atlas**, an input for `owner/repo`, an **organization** or a **GitHub link**, a **Scan** button; then `<owner>/<repo>` and an `N skills` pill
 - The warnings, under the header
 - On the left, the skills sorted by **name**: the name, and the description on one line; the first is selected; ↑ and ↓ move
 - After a scan, above the skills, a **filter**: it keeps the skills whose name or description has *every word* typed, in any case,
@@ -16,6 +16,13 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once
+## An organization
+- `<org>` or `github.com/<org>`, a single name, scans each of its repositories, as the CLI does
+- The header: `<org>`, an `N skills` pill and an `M repositories of K` pill; the warnings under it
+- On the left, the repositories with skills, the **most skills** first: `owner/repo`, and `N skills`; ↑ and ↓ move;
+  a click scans that repository, and *Back* returns to the organization
+- None → `No SKILL.md in any of its K repositories.`
+- `?org=<org>` in the address scans at once
 - Unreachable repository or not a GitHub URL → the clear message, in the list
 - Light and dark, as the system is
 ## Details
@@ -25,4 +32,6 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a page that rebinds its own name to 127.0.0.1 cannot read the scans, nor what `GITHUB_TOKEN` can see
 - `GET /api/scan?url=<owner/repo | GitHub URL>` → JSON `{ repository, skills, warnings }`; a skill also has its `text`, the
   other front matter keys as `properties`, and the `body`; a failure → status 400, `{ error }`
+- `GET /api/organization?name=<org | GitHub URL>` → JSON `{ organization, repositories, scanned, warnings }`; a repository is
+  `{ id, url, skills }`, its count; a failure, or not an organization → status 400, `{ error }`
 - Nothing is stored

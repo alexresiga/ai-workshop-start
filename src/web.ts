@@ -5,8 +5,9 @@ import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { AtlasError } from './core/errors.ts';
-import { parseGitHubUrl } from './core/github.ts';
+import { parseGitHubOrganization, parseGitHubUrl } from './core/github.ts';
 import { skillLink } from './core/model.ts';
+import { scanOrganization, type OrganizationSource } from './core/organization.ts';
 import { parseSkill } from './core/parse.ts';
 import { scan, type Source } from './core/scan.ts';
 import { PAGE } from './page.ts';
@@ -25,6 +26,18 @@ const FILTER = readFileSync(new URL('./filter.js', import.meta.url), 'utf8');
 export type WebOptions = {
   /** Opens a GitHub repository URL. */
   open(url: string): Promise<Source>;
+  /** Opens a GitHub organization URL. */
+  openOrganization(url: string): Promise<OrganizationSource>;
+};
+
+/** What `GET /api/organization?name=<org | GitHub URL>` answers: the result, or `{ error }` with status 400. */
+export type OrganizationAnswer = {
+  organization: { id: string; url: string };
+  /** The repositories with skills, the most first, and how many each has. */
+  repositories: { id: string; url: string; skills: number }[];
+  /** How many repositories the organization has. */
+  scanned: number;
+  warnings: string[];
 };
 
 /** What `GET /api/scan?url=<GitHub URL>` answers: the result, or `{ error }` with status 400. */
@@ -58,9 +71,14 @@ export function createWebServer(options: WebOptions): Server {
     if (url.pathname === '/') return send(200, 'text/html', PAGE);
     if (url.pathname === '/markdown.js') return send(200, 'text/javascript', MARKDOWN);
     if (url.pathname === '/filter.js') return send(200, 'text/javascript', FILTER);
-    if (url.pathname !== '/api/scan') return json(404, { error: `Not found: ${url.pathname}` });
-    const input = repositoryUrl(url.searchParams.get('url') ?? '');
+    if (url.pathname !== '/api/scan' && url.pathname !== '/api/organization') return json(404, { error: `Not found: ${url.pathname}` });
     try {
+      if (url.pathname === '/api/organization') {
+        const input = organizationUrl(url.searchParams.get('name') ?? '');
+        if (!parseGitHubOrganization(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
+        return json(200, await organizationAnswer(await options.openOrganization(input)));
+      }
+      const input = repositoryUrl(url.searchParams.get('url') ?? '');
       if (!parseGitHubUrl(input)) throw new AtlasError(`Not a GitHub repository URL: ${input}`);
       json(200, await scanAnswer(await options.open(input)));
     } catch (error) {
@@ -94,6 +112,22 @@ export function listen(server: Server, port: number, listening: (url: string) =>
 function repositoryUrl(input: string): string {
   const text = input.trim();
   return /^[a-z\d][a-z\d-]*\/[\w.-]+$/i.test(text) ? `https://github.com/${text}` : text;
+}
+
+/** `org` is short for `https://github.com/org`. */
+function organizationUrl(input: string): string {
+  const text = input.trim();
+  return /^[a-z\d][a-z\d-]*$/i.test(text) ? `https://github.com/${text}` : text;
+}
+
+async function organizationAnswer(source: OrganizationSource): Promise<OrganizationAnswer> {
+  const { organization, repositories, scanned, warnings } = await scanOrganization(source);
+  return {
+    organization,
+    repositories: repositories.map(({ repository, skills }) => ({ id: repository.id, url: repository.url, skills: skills.length })),
+    scanned,
+    warnings,
+  };
 }
 
 async function scanAnswer(source: Source): Promise<ScanAnswer> {

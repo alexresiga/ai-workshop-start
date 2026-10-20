@@ -40,3 +40,11 @@ export function sortSkills(skills: Skill[]): Skill[] {
   const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
   return [...skills].sort((a, b) => compare(a.name, b.name) || compare(a.path, b.path));
 }
+
+/** An organization's, or a user's, account on GitHub. */
+export type Organization = {
+  /** The login, for example `JetBrains`. */
+  id: string;
+  /** `https://github.com/<login>`. */
+  url: string;
+};

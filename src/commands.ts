@@ -1,12 +1,16 @@
 // The skill-atlas commands. The same code serves the Node CLI and the browser
 // terminal: everything that differs between them comes in through the context.
 import { AtlasError } from './core/errors.ts';
+import { parseGitHubOrganization } from './core/github.ts';
 import { skillLink, type Repository, type Skill } from './core/model.ts';
+import { scanOrganization, type OrganizationResult, type OrganizationSource } from './core/organization.ts';
 import { scan, type Source } from './core/scan.ts';
 
 export type Context = {
   /** Opens what the user asked to scan. */
   open(input: string): Promise<Source>;
+  /** Opens an organization, `https://github.com/<org>`; only where there is GitHub. */
+  openOrganization?(input: string): Promise<OrganizationSource>;
   print(text: string): void;
   /** Errors and warnings. */
   error(text: string): void;
@@ -17,6 +21,7 @@ export type Context = {
 const usage = `Usage: skill-atlas <command>
 
   scan <GitHub URL | directory>   find every SKILL.md in a repository and print it
+  scan https://github.com/<org>   count the skills in each repository of an organization
   serve [port]                    the web view on http://127.0.0.1:<port>, 3000 by default
   help                            show this help`;
 
@@ -38,6 +43,12 @@ export async function run(args: string[], context: Context): Promise<number> {
 
 async function scanCommand(args: string[], context: Context) {
   if (args.length !== 1) throw new AtlasError('Usage: skill-atlas scan <GitHub URL | directory>');
+  if (context.openOrganization && parseGitHubOrganization(args[0])) {
+    const result = await scanOrganization(await context.openOrganization(args[0]));
+    printOrganization(result, context);
+    for (const warning of result.warnings) context.error(`warning: ${warning}`);
+    return;
+  }
   const result = await scan(await context.open(args[0]));
   printRepository(result.repository, result.skills, context);
   for (const warning of result.warnings) context.error(`warning: ${warning}`);
@@ -53,12 +64,26 @@ async function serveCommand(args: string[], context: Context) {
 
 /** `<owner>/<repo> · N skills`, then each skill's name, first sentence and link. */
 function printRepository(repository: Repository, skills: Skill[], { print }: Context) {
-  print(`${repository.id} · ${skills.length} ${skills.length === 1 ? 'skill' : 'skills'}`);
+  print(`${repository.id} · ${count(skills.length, 'skill')}`);
   for (const skill of skills) {
     print(skill.description ? `${skill.name} — ${firstSentence(skill.description)}` : skill.name);
     print(`  ${skillLink(repository, skill)}`);
     if (skill.copies.length > 0) print(`  also in ${skill.copies.join(', ')}`);
   }
+}
+
+/** `<org> · N skills in M of K repositories`, then each repository with skills, its count and link. */
+function printOrganization({ organization, repositories, scanned }: OrganizationResult, { print }: Context) {
+  const total = repositories.reduce((sum, result) => sum + result.skills.length, 0);
+  print(`${organization.id} · ${count(total, 'skill')} in ${repositories.length} of ${count(scanned, 'repository', 'repositories')}`);
+  for (const { repository, skills } of repositories) {
+    print(`${repository.id} · ${count(skills.length, 'skill')}`);
+    print(`  ${repository.url}`);
+  }
+}
+
+function count(n: number, one: string, many = `${one}s`): string {
+  return `${n} ${n === 1 ? one : many}`;
 }
 
 function firstSentence(text: string): string {

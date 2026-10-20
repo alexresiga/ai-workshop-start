@@ -1,8 +1,8 @@
 # Repository analysis
 ## Input
-A **GitHub repository** URL, or a local directory
+A **GitHub repository** URL, or a local directory; or a **GitHub organization**, `https://github.com/<org>`, a user's account, too
 ## Output
-Every `SKILL.md`: **name**, **description**, **link**
+Every `SKILL.md`: **name**, **description**, **link**; for an organization, the **count** of skills in each repository
 ## Architecture
 Core: fetch → find → parse. CLI: a *thin client*.
 Skill: id = `repo:path`, name, description, commit
@@ -12,6 +12,17 @@ Skill: id = `repo:path`, name, description, commit
 - The link pins the *scanned commit*
 - Malformed front matter → a *warning*, the scan goes on
 - Unreachable repository → a clear message, exit code 1
+- A fork: through its tree, with `GITHUB_TOKEN` too: code search leaves forks out
+## An organization
+- Each repository, scanned as on its own: the same skills, so the same count; copies are one skill, fixtures none
+- Organization → repository → skill: the repositories with skills, the **most skills** first, then by `owner/repo`; how many repositories in all
+- With `GITHUB_TOKEN`: one code search over the account (`org:` or `user:`) finds the repositories with a `SKILL.md`; only those, and the forks, are scanned.
+  More than the 1000 results a search returns → each repository searched on its own. Without a token, each repository's tree
+- Every page of repositories, 100 at a time; a few repositories scanned at a time
+- A repository that cannot be scanned, an empty one → a warning, `<owner/repo>: … ; skipped`, the scan goes on
+- What stops every repository, GitHub out of reach, the rate limit, a rejected token → the clear message, exit code 1
+- Unknown organization → `Organization not found: https://github.com/<org>`, exit code 1
+- Each warning led by its repository
 ## What is a project skill
 - SKILL.md files with **identical text**, or of the **same name** in an agent's folder (`<.agents, .claude, … or agent>/skills/<name>`) → one skill; the others are its *copies* (`also in`)
 - The one kept: the general one, in `.agents/skills`; else the first by path
