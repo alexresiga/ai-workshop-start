@@ -1,6 +1,7 @@
 // spec/web.md: the web view, served on a free port, with GitHub answering from tests/helpers.ts.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { request } from 'node:http';
 import { createServer, type AddressInfo } from 'node:net';
 import { test } from 'node:test';
 import { openGitHub } from '../src/core/github.ts';
@@ -103,6 +104,30 @@ test('anything else → 404', async () => {
 test('serve: a port or nothing; not available without a server', async () => {
   assert.deepEqual(await atlas(['serve', 'abc']), { code: 1, stdout: '', stderr: 'Usage: skill-atlas serve [port]' });
   assert.deepEqual(await atlas(['serve']), { code: 1, stdout: '', stderr: 'serve: not available here' });
+});
+
+/** The status for a request with this Host header, or none; fetch cannot set one. */
+function statusFor(host: string | undefined): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const { port } = new URL(base);
+    const headers = host === undefined ? {} : { host };
+    request({ host: '127.0.0.1', port, path: '/api/scan?url=JetBrains/example', headers, setHost: false }, (response) => {
+      response.resume();
+      resolve(response.statusCode ?? 0);
+    })
+      .on('error', reject)
+      .end();
+  });
+}
+
+test('only a loopback Host: a page that rebinds its name to 127.0.0.1 gets 403', async () => {
+  const { port } = new URL(base);
+  for (const host of [`127.0.0.1:${port}`, `localhost:${port}`, `[::1]:${port}`, 'localhost']) assert.equal(await statusFor(host), 200, host);
+  for (const host of [`evil.example.com:${port}`, 'evil.example.com', `127.0.0.1.evil.example.com:${port}`]) {
+    assert.equal(await statusFor(host), 403, host);
+  }
+  // No Host at all: Node refuses it before the server sees it, as HTTP/1.1 requires one.
+  assert.equal(await statusFor(undefined), 400);
 });
 
 test('serve: not a port → a clear message, exit code 1', async () => {

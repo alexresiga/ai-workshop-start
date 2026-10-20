@@ -11,6 +11,12 @@ import { parseSkill } from './core/parse.ts';
 import { scan, type Source } from './core/scan.ts';
 import { PAGE } from './page.ts';
 
+/**
+ * The names the server answers to. Any other Host is a page that rebound its own name to
+ * 127.0.0.1 to read the scans, and with them what GITHUB_TOKEN can see.
+ */
+const LOOPBACK = /^(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/i;
+
 /** The Markdown parser, sent to the browser as it is. */
 const MARKDOWN = readFileSync(new URL('./markdown.js', import.meta.url), 'utf8');
 
@@ -45,6 +51,7 @@ export function createWebServer(options: WebOptions): Server {
       response.end(body);
     };
     const json = (status: number, body: unknown) => send(status, 'application/json', JSON.stringify(body));
+    if (!LOOPBACK.test(request.headers.host ?? '')) return json(403, { error: 'Only http://127.0.0.1 or http://localhost' });
     if (request.method !== 'GET') return json(405, { error: 'Only GET' });
     if (url.pathname === '/') return send(200, 'text/html', PAGE);
     if (url.pathname === '/markdown.js') return send(200, 'text/javascript', MARKDOWN);

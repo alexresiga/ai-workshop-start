@@ -18,6 +18,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 ## Details
 - The same core as the CLI: the same skills, copies, warnings and links
 - **GitHub repositories only**: the page never reads the server's own directories; `./dir` is not `owner/repo`
+- On `127.0.0.1` only, and only for a loopback `Host` (`127.0.0.1`, `localhost`, `[::1]`); any other → status 403:
+  a page that rebinds its own name to 127.0.0.1 cannot read the scans, nor what `GITHUB_TOKEN` can see
 - `GET /api/scan?url=<owner/repo | GitHub URL>` → JSON `{ repository, skills, warnings }`; a skill also has its `text`, the
   other front matter keys as `properties`, and the `body`; a failure → status 400, `{ error }`
 - Nothing is stored
