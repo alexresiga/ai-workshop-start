@@ -50,6 +50,21 @@ const CASES: Case[] = [
     files: { '.claude/skills/fixtures/SKILL.md': skill('fixtures'), '.agents/skills/testData/SKILL.md': skill('testData') },
     skills: ['.agents/skills/testData/SKILL.md', '.claude/skills/fixtures/SKILL.md'],
   },
+  {
+    name: 'skip skills which are shipped as part of the product (JetBrains/MPS)',
+    files: {
+      '.agents/skills/a/SKILL.md': skill('a'),
+      'plugins/mcp-tools/resources/jetbrains/mps/agents/mcp/skills/mps-console/SKILL.md': skill('mps-console'),
+      'plugin/src/main/resources/skills/b/SKILL.md': skill('b'),
+      'app/resources/SKILL.md': skill('c'),
+    },
+    skills: ['.agents/skills/a/SKILL.md'],
+  },
+  {
+    name: 'a skill named resources is still a skill',
+    files: { '.claude/skills/resources/SKILL.md': skill('resources') },
+    skills: ['.claude/skills/resources/SKILL.md'],
+  },
 ];
 
 for (const c of CASES) {
