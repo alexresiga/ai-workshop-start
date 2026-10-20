@@ -79,5 +79,6 @@ for (const c of CASES) {
 test('this repository: its fixture is not a skill', async () => {
   const scanned = await atlas(['scan', REPOSITORY]);
   assert.equal(scanned.code, 0, scanned.stderr);
-  assert.match(scanned.stdout, /^[^\n]+ · 0 skills$/);
+  assert.match(scanned.stdout, /^[^\n]+ · 1 skill\n/);
+  assert.match(scanned.stdout, /\.agents\/skills\/code-review\/SKILL\.md$/);
 });
