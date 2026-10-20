@@ -2,7 +2,7 @@
 // not one. Each case is a small repository, scanned as a local directory and through GitHub.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { scanBothWays, skill, type Files } from './helpers.ts';
+import { atlas, REPOSITORY, scanBothWays, skill, type Files } from './helpers.ts';
 
 type Case = {
   name: string;
@@ -32,6 +32,24 @@ const CASES: Case[] = [
     },
     skills: ['community/.agents/skills/a/SKILL.md', 'SKILL.md', 'tools/release/SKILL.md'],
   },
+  {
+    name: 'skip a fixture for the project’s own tests, not a skill',
+    files: {
+      '.agents/skills/a/SKILL.md': skill('a'),
+      'fixture/.claude/skills/commits/SKILL.md': skill('commits'),
+      'src/test/fixtures/skills/x/SKILL.md': skill('x'),
+      'core/__fixtures__/SKILL.md': skill('y'),
+      'plugin/testData/skills/z/SKILL.md': skill('z'),
+      'plugin/testdata/w/SKILL.md': skill('w'),
+      'lib/test-data/v/SKILL.md': skill('v'),
+    },
+    skills: ['.agents/skills/a/SKILL.md'],
+  },
+  {
+    name: 'a skill named after a fixture folder is still a skill',
+    files: { '.claude/skills/fixtures/SKILL.md': skill('fixtures'), '.agents/skills/testData/SKILL.md': skill('testData') },
+    skills: ['.agents/skills/testData/SKILL.md', '.claude/skills/fixtures/SKILL.md'],
+  },
 ];
 
 for (const c of CASES) {
@@ -42,3 +60,9 @@ for (const c of CASES) {
     assert.deepEqual(paths(scanned.github), [...c.skills].sort(), 'GitHub');
   });
 }
+
+test('this repository: its fixture is not a skill', async () => {
+  const scanned = await atlas(['scan', REPOSITORY]);
+  assert.equal(scanned.code, 0, scanned.stderr);
+  assert.match(scanned.stdout, /^[^\n]+ · 0 skills$/);
+});

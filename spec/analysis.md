@@ -18,3 +18,4 @@ Skill: id = `repo:path`, name, description, commit
 - Any difference, a byte or a line ending → skills of their own
 - A warning once, for the one kept
 - the repository’s own workflow, outside .agents and .claude
+- skip A fixture for the project’s own tests, not a skill: a SKILL.md under `fixture`, `fixtures`, `__fixtures__`, `testData`, `testdata` or `test-data`; a skill in a `skills` folder may still be named so
