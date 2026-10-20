@@ -7,6 +7,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - In the header, a **dice** button (🎲): a random skill from `JetBrains/kotlin`; it scans `JetBrains/kotlin` first, unless
   it is the repository on the page, then empties the filter and selects a skill at random, never the selected one while there
   is another; a failed scan → its message, in the list; disabled while a scan runs
+- **Skill Atlas** in the header returns home: the page as it first opens, the input empty, no scan; the address with no `?repo=`
+  or `?org=`, so Back returns to the scan; a scan still running is dropped; Back or Forward to that address returns home too
 - The warnings, under the header
 - On the left, the skills sorted by **name**: the name, and the description on one line; the first is selected; ↑ and ↓ move
 - After a scan, above the skills, a **filter**: it keeps the skills whose name or description has *every word* typed, in any case,
