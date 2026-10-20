@@ -12,7 +12,7 @@
 #   feedback.sh note PR TEXT        post a comment that is not an answer
 set -euo pipefail
 
-repo='repos/{owner}/{repo}'
+repo='repos/alexresiga/ai-workshop-start'
 
 fetch() { # endpoint kind
   gh api --paginate "$repo/$1" --jq ".[] | {key: \"$2-\\(.id)\", id, author: .user.login,
