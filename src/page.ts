@@ -174,10 +174,11 @@ export const PAGE = `<!doctype html>
     $('filter').hidden = true;
     $('skills').classList.remove('repositories');
     $('skills').setAttribute('aria-label', 'Skills');
-    $('skills').replaceChildren(element('p.message', '${START}'));
+    $('skills').replaceChildren(element('p.message', ${JSON.stringify(START)}));
   }
 
   $('home').addEventListener('click', (event) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return; // a new tab or window: the browser's
     event.preventDefault();
     if (location.search) history.pushState(null, '', '/');
     home();
