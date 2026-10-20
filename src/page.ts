@@ -36,6 +36,10 @@ export const PAGE = `<!doctype html>
   button.scan { padding: .55rem 1.6rem; font: 500 1rem var(--sans); color: var(--accent-text); background: var(--accent);
     border: 0; border-radius: .5rem; cursor: pointer; }
   button.scan:disabled { opacity: .6; cursor: progress; }
+  button.dice { flex: none; width: 2.6rem; height: 2.6rem; padding: 0; font-size: 1.5rem; line-height: 1; color: var(--text);
+    background: var(--panel); border: 1px solid var(--line); border-radius: .5rem; cursor: pointer; }
+  button.dice:hover { background: var(--pill); }
+  button.dice:disabled { opacity: .6; cursor: progress; }
   #repository { display: flex; align-items: center; gap: .6rem; white-space: nowrap; }
   #repository a { font-family: var(--mono); color: var(--text); text-decoration: none; }
   #repository a:hover { text-decoration: underline; }
@@ -115,6 +119,8 @@ export const PAGE = `<!doctype html>
       autocomplete="off" spellcheck="false" required>
     <button id="button" class="scan" type="submit">Scan</button>
   </form>
+  <button id="dice" class="dice" type="button" title="A random skill from JetBrains/kotlin"
+    aria-label="A random skill from JetBrains/kotlin">🎲</button>
   <div id="repository" role="status"></div>
 </header>
 <ul id="warnings"></ul>
@@ -129,6 +135,7 @@ export const PAGE = `<!doctype html>
 <script type="module">
   import { markdown } from '/markdown.js';
   import { matches } from '/filter.js';
+  import { DICE_REPOSITORY, pick } from '/random.js';
 
   const $ = (id) => document.getElementById(id);
   /** An element with text, children and, for classes, \`.name\` in the tag: \`element('p.message.error', 'text')\`. */
@@ -144,6 +151,8 @@ export const PAGE = `<!doctype html>
   let latest = 0;
   /** An organization or a user, alone or as a GitHub link; \`owner/repo\` is a repository. */
   const ORGANIZATION = /^(?:(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/)?([a-z\\d][a-z\\d-]*)\\/?$/i;
+  /** The repository on the page, as \`owner/repo\`, after a scan. */
+  let onPage = '';
 
   $('scan').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -163,7 +172,9 @@ export const PAGE = `<!doctype html>
 
   async function load(api, url, render) {
     const mine = ++latest;
+    onPage = '';
     $('button').disabled = true;
+    $('dice').disabled = true;
     $('button').textContent = 'Scanning…';
     $('repository').replaceChildren();
     $('warnings').replaceChildren();
@@ -184,6 +195,7 @@ export const PAGE = `<!doctype html>
     } finally {
       if (mine === latest) {
         $('button').disabled = false;
+        $('dice').disabled = false;
         $('button').textContent = 'Scan';
       }
     }
@@ -233,6 +245,7 @@ export const PAGE = `<!doctype html>
 
   function show(answer) {
     skills = answer.skills;
+    onPage = answer.repository.id;
     const repository = element('a', answer.repository.id);
     repository.href = answer.repository.url;
     repository.target = '_blank';
@@ -286,6 +299,20 @@ export const PAGE = `<!doctype html>
       $('filter').value = '';
       filter();
     }
+  });
+
+  // The dice: a random skill from JetBrains/kotlin, scanned first unless it is on the page.
+  $('dice').addEventListener('click', async () => {
+    if (onPage.toLowerCase() !== DICE_REPOSITORY.toLowerCase()) {
+      $('url').value = DICE_REPOSITORY;
+      await scan(DICE_REPOSITORY, 'replace', false);
+      if (onPage.toLowerCase() !== DICE_REPOSITORY.toLowerCase()) return; // the scan failed: its message is in the list
+    }
+    $('filter').value = '';
+    filter();
+    const items = [...$('skills').querySelectorAll('button')];
+    const index = pick(skills.length, items.findIndex((item) => item.getAttribute('aria-current') === 'true'));
+    if (index >= 0) select(index);
   });
 
   function select(index) {
