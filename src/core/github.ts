@@ -91,10 +91,20 @@ export async function searchCode(
 
 type Tree = { truncated: boolean; tree: { path: string; mode: string; type: string; sha: string }[] };
 
-/** The whole tree at once, or only the skill roots when it is too large for one answer. */
-export async function treePaths(github: Client, id: string, ref: string, warnings: string[]): Promise<string[]> {
+/**
+ * The whole tree at once, or only the skill roots when it is too large for one answer: up to
+ * TRUNCATED_COST more requests, after `truncated`, which may stop the scan before they are spent.
+ */
+export async function treePaths(
+  github: Client,
+  id: string,
+  ref: string,
+  warnings: string[],
+  truncated?: () => Promise<void>,
+): Promise<string[]> {
   const tree = await github.json<Tree>(`${API}/repos/${id}/git/trees/${encodeURIComponent(ref)}?recursive=1`);
   if (!tree.truncated) return files(tree);
+  await truncated?.();
   warnings.push(`the tree is too large to list at once; looked only in ${SKILL_ROOTS.join(', ')} (GITHUB_TOKEN searches everywhere)`);
   const paths: string[] = [];
   for (const root of SKILL_ROOTS) {
@@ -105,6 +115,9 @@ export async function treePaths(github: Client, id: string, ref: string, warning
   }
   return paths;
 }
+
+/** The most a truncated tree adds: the root, then for each skill root its folder and its tree. */
+export const TRUNCATED_COST = 1 + 2 * SKILL_ROOTS.length;
 
 /** Walks down one level at a time; the directory's tree, or undefined if it does not exist. */
 async function directory(github: Client, id: string, ref: string, path: string): Promise<string | undefined> {

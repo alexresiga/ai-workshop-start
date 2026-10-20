@@ -3,7 +3,18 @@
 // for the whole account, the listing's own answers instead of a request per repository, and a check
 // of what is left of the limit before asking for each repository's tree.
 import { AtlasError, EmptyRepositoryError, GitHubError } from './errors.ts';
-import { API, client, repositorySource, searchCode, treePaths, utcTime, type Client, type Fetch, type GitHubOptions } from './github.ts';
+import {
+  API,
+  client,
+  repositorySource,
+  searchCode,
+  treePaths,
+  TRUNCATED_COST,
+  utcTime,
+  type Client,
+  type Fetch,
+  type GitHubOptions,
+} from './github.ts';
 import { scan } from './scan.ts';
 
 /** At most this many requests to GitHub at a time. */
@@ -42,8 +53,10 @@ export async function scanOrganization(input: string, options: GitHubOptions): P
   ]);
   const repositories = listed.filter((repository) => !repository.fork);
   // Without a complete search, each repository's tree; with one, only the repositories it found are read.
-  const trees = found ? 0 : repositories.length;
-  if (trees > 0) await checkBudget(github, trees, account.login, Boolean(options.token));
+  let trees = found ? 0 : repositories.length;
+  // A client of its own each time: the limit left changes as the scan goes.
+  const budget = (needed: number) => checkBudget(client(limited), needed, account.login, Boolean(options.token));
+  if (trees > 0) await budget(trees);
 
   const counts = new Map<string, number>();
   const warnings: string[] = [];
@@ -55,7 +68,12 @@ export async function scanOrganization(input: string, options: GitHubOptions): P
       // A client of its own: its answers are released once it is scanned.
       const github = client(limited);
       const listing: string[] = [];
-      const files = paths ?? (await treePaths(github, id, repository.default_branch, listing));
+      let files = paths;
+      if (!files) {
+        trees--;
+        // A tree too large for one answer costs more than the one request counted: checked again, then.
+        files = await treePaths(github, id, repository.default_branch, listing, () => budget(TRUNCATED_COST + trees));
+      }
       const result = await scan(repositorySource(github, id, repository.default_branch, files, listing));
       if (result.skills.length) counts.set(id, result.skills.length);
       warnings.push(...result.warnings.map((warning) => `${id}: ${warning}`));
