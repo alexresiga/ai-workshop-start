@@ -46,7 +46,9 @@ export const PAGE = `<!doctype html>
   #warnings:empty { display: none; }
 
   main { display: grid; grid-template-columns: minmax(16rem, 36%) 1fr; flex: 1; min-height: 0; }
-  nav { overflow-y: auto; padding: .9rem; border-right: 1px solid var(--line); }
+  .list { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
+  #filter { flex: none; margin: .9rem .9rem 0; }
+  nav { flex: 1; overflow-y: auto; padding: .9rem; }
   nav button { display: block; width: 100%; margin-bottom: .2rem; padding: .55rem 1rem; text-align: left; font: inherit; color: inherit;
     background: none; border: 0; border-left: 3px solid transparent; border-radius: .5rem; cursor: pointer; }
   nav button:hover { background: var(--pill); }
@@ -93,7 +95,7 @@ export const PAGE = `<!doctype html>
     header { flex-wrap: wrap; padding: .75rem 1rem; }
     form { order: 3; flex-basis: 100%; max-width: none; }
     main { grid-template-columns: 1fr; grid-template-rows: minmax(8rem, 35%) 1fr; }
-    nav { border-right: 0; border-bottom: 1px solid var(--line); }
+    .list { border-right: 0; border-bottom: 1px solid var(--line); }
     #detail { padding: 1.2rem 1rem 2rem; }
   }
 </style>
@@ -110,10 +112,14 @@ export const PAGE = `<!doctype html>
 </header>
 <ul id="warnings"></ul>
 <main>
-  <nav id="skills" aria-label="Skills"><p class="message">Paste a repository and press Scan.</p></nav>
+  <div class="list">
+    <input id="filter" type="search" placeholder="Filter skills" aria-label="Filter skills" autocomplete="off" spellcheck="false">
+    <nav id="skills" aria-label="Skills"><p class="message">Paste a repository and press Scan.</p></nav>
+  </div>
   <section id="detail" aria-live="polite"></section>
 </main>
 <script type="module">
+  import { filter } from '/filter.js';
   import { markdown } from '/markdown.js';
 
   const $ = (id) => document.getElementById(id);
@@ -125,16 +131,23 @@ export const PAGE = `<!doctype html>
     node.append(...children);
     return node;
   };
-  let skills = [];
+  /** The scanned skills, none before an answer; and those the filter leaves, as listed. */
+  let skills = null;
+  let shown = [];
 
   $('scan').addEventListener('submit', (event) => {
     event.preventDefault();
     scan($('url').value.trim());
   });
+  $('filter').addEventListener('input', () => {
+    if (skills) list();
+  });
 
   async function scan(url) {
     $('button').disabled = true;
     $('button').textContent = 'Scanning…';
+    skills = null;
+    $('filter').value = '';
     $('repository').replaceChildren();
     $('warnings').replaceChildren();
     $('detail').replaceChildren();
@@ -161,9 +174,16 @@ export const PAGE = `<!doctype html>
     repository.rel = 'noopener';
     $('repository').replaceChildren(repository, element('span.pill', skills.length + (skills.length === 1 ? ' skill' : ' skills')));
     $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    list();
+  }
+
+  /** The skills the filter leaves, the first one selected. */
+  function list() {
+    shown = filter(skills, $('filter').value);
+    const empty = skills.length ? 'No skill matches ' + $('filter').value.trim() : 'No SKILL.md in this repository.';
     $('skills').replaceChildren(
-      ...(skills.length ? [] : [element('p.message', 'No SKILL.md in this repository.')]),
-      ...skills.map((skill, index) => {
+      ...(shown.length ? [] : [element('p.message', empty)]),
+      ...shown.map((skill, index) => {
         const item = element('button', element('span.name', skill.name), element('span.description', skill.description));
         item.type = 'button';
         item.title = skill.name;
@@ -171,14 +191,15 @@ export const PAGE = `<!doctype html>
         return item;
       }),
     );
-    if (skills.length) select(0);
+    if (shown.length) select(0);
+    else $('detail').replaceChildren();
   }
 
   function select(index) {
     const items = [...$('skills').querySelectorAll('button')];
     items.forEach((item, i) => item.setAttribute('aria-current', String(i === index)));
     items[index].scrollIntoView({ block: 'nearest' });
-    const skill = skills[index];
+    const skill = shown[index];
 
     const github = element('a', 'Open on GitHub ↗');
     github.href = skill.link;

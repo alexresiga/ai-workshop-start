@@ -148,3 +148,230 @@ test('serve: a port already in use → a clear message, not a stack trace', asyn
   assert.equal(served.status, 1);
   assert.equal(served.stderr.trim(), `Port ${port} is already in use; try skill-atlas serve <another port>`);
 });
+
+/** The page's filter, as the server sends it to the browser. */
+async function pageFilter(): Promise<(skills: { name: string; description: string }[], filter: string) => { name: string }[]> {
+  const response = await fetch(`${base}/filter.js`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /text\/javascript/);
+  const module = await import(`data:text/javascript,${encodeURIComponent(await response.text())}`);
+  return module.filter;
+}
+
+const SKILLS = [
+  { name: 'analysis-api-create-cherry-pick-issue', description: 'Create a KTIJ cherry-pick tracking issue for a KT fix.' },
+  { name: 'build-bump-gradle-version', description: 'Bumps the Gradle wrapper/distribution version.' },
+  { name: 'build-tools-bump-gradle-api', description: 'Bumps the Gradle API version that Kotlin Gradle plugins are compiled against.' },
+  { name: 'minimize-repro-for-diagnostic-test', description: 'Makes a minimal reproduction of a Frontend-related issue.' },
+];
+const names = (skills: { name: string }[]) => skills.map((skill) => skill.name);
+
+test('the page: a Filter skills input above the list, with the filter from /filter.js', async () => {
+  const page = await (await fetch(`${base}/`)).text();
+  assert.match(page, /<input id="filter"[^>]*type="search"[^>]*placeholder="Filter skills"[^>]*aria-label="Filter skills"/);
+  assert.match(page, /<input id="filter"[\s\S]*<nav id="skills"/);
+  assert.match(page, /import \{ filter \} from '\/filter.js'/);
+  assert.match(page, /'No skill matches ' \+/);
+});
+
+test('filter: empty keeps every skill, in order', async () => {
+  const filter = await pageFilter();
+  assert.deepEqual(names(filter(SKILLS, '')), names(SKILLS));
+  assert.deepEqual(names(filter(SKILLS, '   ')), names(SKILLS));
+});
+
+test('filter: a word in the name', async () => {
+  const filter = await pageFilter();
+  assert.deepEqual(names(filter(SKILLS, 'cherry')), ['analysis-api-create-cherry-pick-issue']);
+});
+
+test('filter: a word in the description only', async () => {
+  const filter = await pageFilter();
+  assert.deepEqual(names(filter(SKILLS, 'kotlin')), ['build-tools-bump-gradle-api']);
+});
+
+test('filter: in any case', async () => {
+  const filter = await pageFilter();
+  assert.deepEqual(names(filter(SKILLS, 'FRONTEND')), ['minimize-repro-for-diagnostic-test']);
+});
+
+test('filter: every word, in any order, a part of a word too, in the name or the description', async () => {
+  const filter = await pageFilter();
+  assert.deepEqual(names(filter(SKILLS, 'gradle bump')), ['build-bump-gradle-version', 'build-tools-bump-gradle-api']);
+  assert.deepEqual(names(filter(SKILLS, 'wrap bump')), ['build-bump-gradle-version']);
+  assert.deepEqual(names(filter(SKILLS, 'issue ktij')), ['analysis-api-create-cherry-pick-issue']);
+});
+
+test('filter: a word in neither → no skill', async () => {
+  const filter = await pageFilter();
+  assert.deepEqual(names(filter(SKILLS, 'gradle maven')), []);
+  assert.deepEqual(names(filter(SKILLS, 'nothing')), []);
+});
+
+// The page's own script, run against the server with a small stand-in for the DOM: what a user
+// sees in the list and the detail as they type in the filter, press ↑ and ↓, and scan again.
+
+/** An element, as much of one as the page uses. */
+class Element {
+  children: (Element | Text)[] = [];
+  attributes: Record<string, string> = {};
+  listeners: Record<string, ((event: object) => void)[]> = {};
+  value = '';
+  readonly tagName: string;
+  constructor(tagName: string) {
+    this.tagName = tagName;
+  }
+  append(...children: (Element | Text | string)[]) {
+    this.children.push(...children.map((child) => (typeof child === 'string' ? new Text(child) : child)));
+  }
+  replaceChildren(...children: (Element | Text | string)[]) {
+    this.children = [];
+    this.append(...children);
+  }
+  get textContent(): string {
+    return this.children.map((child) => child.textContent).join('');
+  }
+  set textContent(text: string) {
+    this.replaceChildren(text);
+  }
+  setAttribute(key: string, value: string) {
+    this.attributes[key] = String(value);
+  }
+  getAttribute(key: string) {
+    return this.attributes[key] ?? null;
+  }
+  addEventListener(type: string, listener: (event: object) => void) {
+    (this.listeners[type] ??= []).push(listener);
+  }
+  dispatch(type: string, event: object = {}) {
+    for (const listener of this.listeners[type] ?? []) listener({ preventDefault() {}, ...event });
+  }
+  querySelectorAll(tag: string): Element[] {
+    return this.children.flatMap((child) =>
+      child instanceof Element ? [...(child.tagName === tag ? [child] : []), ...child.querySelectorAll(tag)] : [],
+    );
+  }
+  scrollIntoView() {}
+  focus() {}
+}
+class Text {
+  readonly textContent: string;
+  constructor(textContent: string) {
+    this.textContent = textContent;
+  }
+}
+
+let pages = 0;
+
+/** The page, opened at `?repo=example/repo` on a server with these skills, once its scan is shown. */
+async function openPage(t: { after(fn: () => void): void }, skills: { name: string; description: string }[]) {
+  const files = Object.fromEntries(
+    skills.map(({ name, description }) => [`.claude/skills/${name}/SKILL.md`, `---\nname: ${name}\ndescription: ${description}\n---\n# ${name}\n`]),
+  );
+  const server = createWebServer({ open: (url) => openGitHub(url, { fetch: replay(searchAnswers('example/repo', files)), token: 't' }) });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => server.close());
+  const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+
+  const live = globalThis.fetch;
+  const elements: Record<string, Element> = {};
+  for (const id of ['scan', 'url', 'button', 'repository', 'warnings', 'filter', 'skills', 'detail']) elements[id] = new Element(id);
+  const globals = {
+    document: {
+      getElementById: (id: string) => elements[id],
+      createElement: (tag: string) => new Element(tag),
+      createTextNode: (text: string) => new Text(text),
+    },
+    history: { replaceState() {} },
+    location: { search: '?repo=example/repo' },
+    fetch: (url: string) => live(origin + url),
+  };
+  const saved = Object.fromEntries(Object.keys(globals).map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  for (const [key, value] of Object.entries(globals)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+  t.after(() => {
+    for (const [key, descriptor] of Object.entries(saved)) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete (globalThis as Record<string, unknown>)[key];
+    }
+  });
+
+  const module = async (path: string) => `data:text/javascript,${encodeURIComponent(await (await live(origin + path)).text())}`;
+  const page = await (await live(`${origin}/`)).text();
+  const script = page
+    .match(/<script type="module">([\s\S]*)<\/script>/)![1]
+    .replace("'/filter.js'", JSON.stringify(await module('/filter.js')))
+    .replace("'/markdown.js'", JSON.stringify(await module('/markdown.js')));
+  await import(`data:text/javascript,${encodeURIComponent(`${script}\n// page ${++pages}`)}`);
+
+  const scanned = async () => {
+    for (let i = 0; i < 200 && (elements.button.textContent !== 'Scan' || !elements.skills.querySelectorAll('button').length); i++) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  };
+  await scanned();
+  return {
+    /** Types this in the filter. */
+    type(text: string) {
+      elements.filter.value = text;
+      elements.filter.dispatch('input');
+    },
+    key(key: string) {
+      elements.skills.dispatch('keydown', { key });
+    },
+    async scanAgain() {
+      elements.scan.dispatch('submit');
+      await scanned();
+    },
+    filter: () => elements.filter.value,
+    /** The names in the list, the selected one as `> name`; or the message in the list. */
+    list: () =>
+      elements.skills.querySelectorAll('button').length
+        ? elements.skills
+            .querySelectorAll('button')
+            .map((item) => (item.getAttribute('aria-current') === 'true' ? '> ' : '') + item.querySelectorAll('span')[0].textContent)
+        : elements.skills.textContent,
+    /** The name in the selected skill's card, or nothing. */
+    detail: () => elements.detail.querySelectorAll('dd')[0]?.textContent ?? '',
+  };
+}
+
+test('the page: the filter leaves the skills with every word, the first one selected', async (t) => {
+  const page = await openPage(t, SKILLS);
+  assert.deepEqual(page.list(), ['> ' + SKILLS[0].name, SKILLS[1].name, SKILLS[2].name, SKILLS[3].name]);
+  page.type('gradle bump');
+  assert.deepEqual(page.list(), ['> build-bump-gradle-version', 'build-tools-bump-gradle-api']);
+  assert.equal(page.detail(), 'build-bump-gradle-version');
+  page.type('KOTLIN');
+  assert.deepEqual(page.list(), ['> build-tools-bump-gradle-api']);
+  assert.equal(page.detail(), 'build-tools-bump-gradle-api');
+  page.type('');
+  assert.deepEqual(page.list(), ['> ' + SKILLS[0].name, SKILLS[1].name, SKILLS[2].name, SKILLS[3].name]);
+});
+
+test('the page: ↑ and ↓ move among the skills the filter leaves', async (t) => {
+  const page = await openPage(t, SKILLS);
+  page.type('gradle');
+  page.key('ArrowDown');
+  assert.deepEqual(page.list(), ['build-bump-gradle-version', '> build-tools-bump-gradle-api']);
+  assert.equal(page.detail(), 'build-tools-bump-gradle-api');
+  page.key('ArrowDown');
+  assert.deepEqual(page.list(), ['build-bump-gradle-version', '> build-tools-bump-gradle-api']);
+  page.key('ArrowUp');
+  assert.deepEqual(page.list(), ['> build-bump-gradle-version', 'build-tools-bump-gradle-api']);
+});
+
+test('the page: none left → No skill matches <filter>, in the list, and no SKILL.md', async (t) => {
+  const page = await openPage(t, SKILLS);
+  page.type(' gradle maven ');
+  assert.equal(page.list(), 'No skill matches gradle maven');
+  assert.equal(page.detail(), '');
+});
+
+test('the page: a new scan empties the filter', async (t) => {
+  const page = await openPage(t, SKILLS);
+  page.type('cherry');
+  assert.deepEqual(page.list(), ['> analysis-api-create-cherry-pick-issue']);
+  await page.scanAgain();
+  assert.equal(page.filter(), '');
+  assert.deepEqual(page.list(), ['> ' + SKILLS[0].name, SKILLS[1].name, SKILLS[2].name, SKILLS[3].name]);
+});
