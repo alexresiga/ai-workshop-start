@@ -3,6 +3,7 @@
 // server's own directories.
 import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { AtlasError } from './core/errors.ts';
 import { parseGitHubUrl } from './core/github.ts';
 import { skillLink } from './core/model.ts';
@@ -56,6 +57,26 @@ export function createWebServer(options: WebOptions): Server {
       if (error instanceof AtlasError) json(400, { error: error.message });
       else json(500, { error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}` });
     }
+  });
+}
+
+/**
+ * Serves on 127.0.0.1, so no other machine can reach it, until the server closes. A port it
+ * cannot listen on, one already in use above all, is an AtlasError: a message, not a stack trace.
+ */
+export function listen(server: Server, port: number, listening: (url: string) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    server.on('error', (error: NodeJS.ErrnoException) =>
+      reject(
+        new AtlasError(
+          error.code === 'EADDRINUSE'
+            ? `Port ${port} is already in use; try skill-atlas serve <another port>`
+            : `Cannot serve on port ${port}: ${error.message}`,
+        ),
+      ),
+    );
+    server.on('close', resolve);
+    server.listen(port, '127.0.0.1', () => listening(`http://127.0.0.1:${(server.address() as AddressInfo).port}`));
   });
 }
 
