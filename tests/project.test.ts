@@ -19,9 +19,9 @@ const CASES: Case[] = [
       '.claude/skills/b/SKILL.md': skill('b'),
       '.github/skills/c/SKILL.md': skill('c'),
       '.cursor/skills/d/SKILL.md': skill('d'),
-      'agent/skills/e/SKILL.md': skill('e'),
+      'agent/skills/writing-lint-checks/SKILL.md': skill('writing-lint-checks'), // JetBrains/android
     },
-    skills: ['.agents/skills/a/SKILL.md', '.claude/skills/b/SKILL.md', '.github/skills/c/SKILL.md', '.cursor/skills/d/SKILL.md', 'agent/skills/e/SKILL.md'],
+    skills: ['.agents/skills/a/SKILL.md', '.claude/skills/b/SKILL.md', '.github/skills/c/SKILL.md', '.cursor/skills/d/SKILL.md', 'agent/skills/writing-lint-checks/SKILL.md'],
   },
   {
     name: 'the repository’s own workflow outside .agents and .claude: a subproject, a folder of its own, the root',
