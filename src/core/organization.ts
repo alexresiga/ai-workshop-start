@@ -23,8 +23,8 @@ export type OrganizationResult = {
   warnings: string[];
 };
 
-/** A few repositories at a time: each scan is a handful of GitHub requests. */
-const AT_ONCE = 4;
+/** Repositories at a time: each asks the API one request after another; 16 stay well under GitHub's 100 at once. */
+const AT_ONCE = 16;
 
 /**
  * Each repository through the same scan as one on its own, so it counts the same skills. A

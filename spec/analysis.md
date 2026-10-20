@@ -18,10 +18,12 @@ Skill: id = `repo:path`, name, description, commit
 - Organization → repository → skill: the repositories with skills, the **most skills** first, then by `owner/repo`; how many repositories in all
 - With `GITHUB_TOKEN`: one code search over the account (`org:` or `user:`) finds the repositories with a `SKILL.md`; only those, and the forks, are scanned.
   More than the 1000 results a search returns → each repository searched on its own. Without a token, each repository's tree
-- Every page of repositories, 100 at a time; a few repositories scanned at a time
+- Every page of repositories, 100 at a time: the pages the account's public count tells of at once, then the next while a page is full;
+  the listing and the search at the same time; a search's pages one after another, GitHub answers 429 to searches at once;
+  16 repositories scanned at a time
 - A repository that cannot be scanned, an empty one → a warning, `<owner/repo>: … ; skipped`, the scan goes on; with
   `GITHUB_TOKEN`, one the search finds no `SKILL.md` in is not opened, so there is nothing to warn about
-- What stops every repository, GitHub out of reach, the rate limit, a rejected token → the clear message, exit code 1
+- What stops every repository, GitHub out of reach, the rate limit (any 429), a rejected token → the clear message, exit code 1
 - Unknown organization → `Organization not found: https://github.com/<org>`, exit code 1
 - Each warning led by its repository
 ## What is a project skill

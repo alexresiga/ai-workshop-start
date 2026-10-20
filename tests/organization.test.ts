@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import type { AddressInfo } from 'node:net';
 import { test } from 'node:test';
-import { openGitHub, openOrganization } from '../src/core/github.ts';
+import { openGitHub, openOrganization, type Fetch } from '../src/core/github.ts';
 import type { Recording } from '../src/core/replay.ts';
 import { createWebServer, type OrganizationAnswer } from '../src/web.ts';
 import { accountAnswers, atlas, recorded, skill, type Files } from './helpers.ts';
@@ -110,8 +110,8 @@ test('with a token, a repository the search finds no SKILL.md in is not opened: 
   assert.deepEqual(result, { code: 0, stdout: JETBRAINS_OUTPUT.replace('of 4 repositories', 'of 5 repositories'), stderr: '' });
 });
 
-test('a few repositories at a time, not all at once', async () => {
-  const many = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`JetBrains/repo-${i}`, { [`.claude/skills/s${i}/SKILL.md`]: skill(`s${i}`) }]));
+test('16 repositories at a time, not all at once', async () => {
+  const many = Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`JetBrains/repo-${i}`, { [`.claude/skills/s${i}/SKILL.md`]: skill(`s${i}`) }]));
   const answer = recorded(accountAnswers('JetBrains', 'Organization', many)).fetch;
   let open = 0;
   let most = 0;
@@ -122,8 +122,38 @@ test('a few repositories at a time, not all at once', async () => {
     return answer(url, init);
   };
   const result = await atlas(['scan', 'https://github.com/JetBrains'], { fetch, token: '' });
-  assert.match(result.stdout, /^JetBrains · 20 skills in 20 of 20 repositories\n/);
-  assert.ok(most > 1 && most <= 4, `at most ${most} requests at once`);
+  assert.match(result.stdout, /^JetBrains · 40 skills in 40 of 40 repositories\n/);
+  assert.ok(most > 4 && most <= 16, `at most ${most} requests at once`);
+});
+
+/** A fetch that answers after a while, and the most URLs asked for at once. */
+function slow(answer: Fetch): { fetch: Fetch; most: (part: string) => number } {
+  const open = new Map<string, number>();
+  const most = new Map<string, number>();
+  const part = (url: string) => url.replace(/&page=\d+/, '');
+  return {
+    fetch: async (url, init) => {
+      open.set(part(url), (open.get(part(url)) ?? 0) + 1);
+      most.set(part(url), Math.max(most.get(part(url)) ?? 0, open.get(part(url))!));
+      await new Promise((resolve) => setTimeout(resolve, 2));
+      open.set(part(url), open.get(part(url))! - 1);
+      return answer(url, init);
+    },
+    most: (url) => most.get(part(url)) ?? 0,
+  };
+}
+
+test('the pages of repositories the account counts, at once; then the next one while a page is full', async () => {
+  const many = Object.fromEntries(Array.from({ length: 301 }, (_, i) => [`empty-org/repo-${i}`, { 'README.md': '#\n' }]));
+  const recording = accountAnswers('empty-org', 'Organization', many);
+  recording['https://api.github.com/users/empty-org'] = { status: 200, body: { login: 'empty-org', type: 'Organization', public_repos: 250 } };
+  const list = (page: number) => `https://api.github.com/orgs/empty-org/repos?per_page=100&page=${page}`;
+  const all = recording[list(1)].body as unknown[];
+  for (let page = 1; page <= 4; page++) recording[list(page)] = { status: 200, body: all.slice((page - 1) * 100, page * 100) };
+  const { fetch, most } = slow(recorded(recording).fetch);
+  const result = await atlas(['scan', 'https://github.com/empty-org'], { fetch });
+  assert.deepEqual(result, { code: 0, stdout: 'empty-org · 0 skills in 0 of 301 repositories', stderr: '' });
+  assert.equal(most(list(1)), 3); // pages 1 to 3 at once; 4, the private ones past the count, after
 });
 
 test('warnings: each one led by its repository', async () => {
@@ -149,6 +179,19 @@ test('the rate limit, in any repository → the scan stops with the message, exi
     code: 1,
     stdout: '',
     stderr: 'GitHub rate limit reached; set GITHUB_TOKEN',
+  });
+});
+
+test('any 429, a search asked too often, say → the rate limit message, exit code 1', async () => {
+  const recording = accountAnswers('JetBrains', 'Organization', JETBRAINS);
+  recording['https://api.github.com/search/code?q=filename:SKILL.md+org:JetBrains&per_page=100&page=1'] = {
+    status: 429,
+    body: { message: 'try again in 13.5s' },
+  };
+  assert.deepEqual(await atlas(['scan', 'https://github.com/JetBrains'], { fetch: recorded(recording).fetch }), {
+    code: 1,
+    stdout: '',
+    stderr: 'GitHub rate limit reached; try again in a minute',
   });
 });
 

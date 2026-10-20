@@ -67,20 +67,15 @@ export async function openOrganization(input: string, options: GitHubOptions): P
   const name = parseGitHubOrganization(input);
   if (!name) throw new AtlasError(`Not a GitHub organization URL: ${input}`);
   const github = client(options);
-  const account = await github.json<{ login: string; type: string }>(
+  const account = await github.json<{ login: string; type: string; public_repos?: number }>(
     `${API}/users/${name}`,
     `Organization not found: https://github.com/${name}`,
   );
   const organization = account.type === 'Organization';
-  const listed: RepositoryInfo[] = [];
-  for (let page = 1; ; page++) {
-    const repositories = await github.json<RepositoryInfo[]>(
-      `${API}/${organization ? 'orgs' : 'users'}/${account.login}/repos?per_page=100&page=${page}`,
-    );
-    listed.push(...repositories);
-    if (repositories.length < 100) break;
-  }
-  const found = options.token ? await searchAccount(github, `${organization ? 'org' : 'user'}:${account.login}`) : undefined;
+  const [listed, found] = await Promise.all([
+    listRepositories(github, `${API}/${organization ? 'orgs' : 'users'}/${account.login}/repos`, account.public_repos ?? 0),
+    options.token ? searchAccount(github, `${organization ? 'org' : 'user'}:${account.login}`) : undefined,
+  ]);
   return {
     organization: { id: account.login, url: `https://github.com/${account.login}` },
     repositories: listed.map((info) => {
@@ -94,11 +89,24 @@ export async function openOrganization(input: string, options: GitHubOptions): P
   };
 }
 
+/**
+ * Every page, 100 repositories a page: the pages the public count tells of, at once; then, while a
+ * page is full, the next one: with a token, the private repositories are listed, too.
+ */
+async function listRepositories(github: Client, url: string, known: number): Promise<RepositoryInfo[]> {
+  const page = (number: number) => github.json<RepositoryInfo[]>(`${url}?per_page=100&page=${number}`);
+  const first = Math.max(1, Math.ceil(known / 100));
+  const listed = (await Promise.all(Array.from({ length: first }, (_, index) => page(index + 1)))).flat();
+  for (let number = first + 1; listed.length === (number - 1) * 100; number++) listed.push(...(await page(number)));
+  return listed;
+}
+
 type SearchResult = { total_count: number; items: { path: string; repository?: { full_name: string } }[] };
 
 /**
  * Code search, 100 results a page; GitHub returns at most 1000 results: ten pages. Above `wanted`
  * results, the first page is all: the rest would be thrown away, and searches are few a minute.
+ * One page after another: GitHub answers 429 to code searches asked at the same time.
  */
 async function search(github: Client, qualifier: string, wanted = Infinity): Promise<SearchResult> {
   const items: SearchResult['items'] = [];
@@ -187,7 +195,7 @@ function client({ fetch, token }: GitHubOptions) {
     const message = (body as { message?: unknown } | undefined)?.message;
     const text = typeof message === 'string' ? message : '';
     if (response.status === 404) throw new AtlasError(notFound);
-    if ((response.status === 403 || response.status === 429) && /rate limit/i.test(text)) {
+    if (response.status === 429 || (response.status === 403 && /rate limit/i.test(text))) {
       throw new GitHubError(`GitHub rate limit reached; ${token ? 'try again in a minute' : 'set GITHUB_TOKEN'}`);
     }
     if (response.status === 409 && /empty/i.test(text)) throw new AtlasError('the repository is empty');
