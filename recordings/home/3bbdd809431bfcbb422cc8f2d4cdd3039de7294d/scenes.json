@@ -1,0 +1,113 @@
+{
+  "title": "Skill Atlas returns home",
+  "head": "3bbdd809431bfcbb422cc8f2d4cdd3039de7294d",
+  "base": "64805b608bc1337d925d2e589102cf5ea68b6ca9",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 10,
+        "text": "**Skill Atlas** in the header returns home: the page as it first opens, the input empty, no scan"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Click Skill Atlas: the page as it first opens, the input empty, no scan",
+          "start": 0.929
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 10,
+        "text": "the address with no `?repo=` or `?org=`, so Back returns to the scan"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Back: the address has ?repo= again, and example/fixture is scanned, 3 skills",
+          "start": 3.267
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 11,
+        "text": "a scan still running is dropped"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Scan, and click Skill Atlas while it runs: the answer comes, and the page stays home",
+          "start": 7.05
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 11,
+        "text": "Back or Forward to that address returns home too"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Forward: home again",
+          "start": 5.156
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"Click Skill Atlas: the page as it first opens, the input empty, no scan\": locator.scrollIntoViewIfNeeded: Timeout 5000ms exceeded.\nCall log:\n  - waiting for getByRole('link', { name: 'Skill Atlas' })\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "4 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 14.0 s, 351 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 14.0 s, 349 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.3 s, 207 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.986"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.12 s, SSIM ≥ 0.995"
+    }
+  ]
+}
