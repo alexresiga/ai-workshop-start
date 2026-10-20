@@ -1,11 +1,13 @@
 // spec/web.md: the web view, served on a free port, with GitHub answering from tests/helpers.ts.
 import assert from 'node:assert/strict';
-import type { AddressInfo } from 'node:net';
+import { spawnSync } from 'node:child_process';
+import { createServer, type AddressInfo } from 'node:net';
 import { test } from 'node:test';
 import { openGitHub } from '../src/core/github.ts';
 import { replay } from '../src/core/replay.ts';
-import { createWebServer, type ScanAnswer } from '../src/web.ts';
-import { atlas, EXAMPLE_COMMIT, github, searchAnswers } from './helpers.ts';
+import { AtlasError } from '../src/core/errors.ts';
+import { createWebServer, listen, type ScanAnswer } from '../src/web.ts';
+import { atlas, CLI, EXAMPLE_COMMIT, github, searchAnswers } from './helpers.ts';
 
 const missing = replay({ 'https://api.github.com/repos/JetBrains/missing': { status: 404, body: { message: 'Not Found' } } }, github);
 const server = createWebServer({ open: (url) => openGitHub(url, { fetch: missing, token: 'test' }) });
@@ -101,4 +103,23 @@ test('anything else → 404', async () => {
 test('serve: a port or nothing; not available without a server', async () => {
   assert.deepEqual(await atlas(['serve', 'abc']), { code: 1, stdout: '', stderr: 'Usage: skill-atlas serve [port]' });
   assert.deepEqual(await atlas(['serve']), { code: 1, stdout: '', stderr: 'serve: not available here' });
+});
+
+test('serve: not a port → a clear message, exit code 1', async () => {
+  assert.deepEqual(await atlas(['serve', '99999']), { code: 1, stdout: '', stderr: 'Not a port: 99999; a port is 0 to 65535' });
+});
+
+test('serve: a port already in use → a clear message, not a stack trace', async (t) => {
+  const taken = createServer();
+  await new Promise<void>((resolve) => taken.listen(0, '127.0.0.1', resolve));
+  t.after(() => taken.close());
+  const port = (taken.address() as AddressInfo).port;
+  await assert.rejects(
+    listen(createWebServer({ open: () => Promise.reject(new Error('not scanned')) }), port, () => {}),
+    new AtlasError(`Port ${port} is already in use; try skill-atlas serve <another port>`),
+  );
+  // The real command, as a user runs it.
+  const served = spawnSync(process.execPath, [CLI, 'serve', String(port)], { encoding: 'utf8', timeout: 10_000 });
+  assert.equal(served.status, 1);
+  assert.equal(served.stderr.trim(), `Port ${port} is already in use; try skill-atlas serve <another port>`);
 });

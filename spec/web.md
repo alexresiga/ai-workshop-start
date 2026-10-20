@@ -1,6 +1,7 @@
 # Web view
 `./skill-atlas serve [port]`: the web view on `http://127.0.0.1:<port>`, 3000 by default.
 `GITHUB_TOKEN`, optional, as for the CLI. The look: [mockups/list-web-view.png](../mockups/list-web-view.png).
+A port already in use, or not a port (above 65535) → a clear message, exit code 1.
 ## The page
 - A header: **Skill Atlas**, an input for `owner/repo` or a **GitHub link**, a **Scan** button; then `<owner>/<repo>` and an `N skills` pill
 - The warnings, under the header

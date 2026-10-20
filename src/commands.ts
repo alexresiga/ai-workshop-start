@@ -45,8 +45,10 @@ async function scanCommand(args: string[], context: Context) {
 
 async function serveCommand(args: string[], context: Context) {
   if (args.length > 1 || !/^\d*$/.test(args[0] ?? '')) throw new AtlasError('Usage: skill-atlas serve [port]');
+  const port = args[0] ? Number(args[0]) : 3000;
+  if (port > 65535) throw new AtlasError(`Not a port: ${args[0]}; a port is 0 to 65535`);
   if (!context.serve) throw new AtlasError('serve: not available here');
-  await context.serve(args[0] ? Number(args[0]) : 3000);
+  await context.serve(port);
 }
 
 /** `<owner>/<repo> · N skills`, then each skill's name, first sentence and link. */
