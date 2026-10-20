@@ -145,7 +145,8 @@ export function client({ fetch, token, wait = (ms) => new Promise((resolve) => s
           await wait(1000);
           continue;
         }
-        throw new AtlasError(`Cannot reach GitHub: ${describe(error)}`);
+        // Not a blip: sent twice, so no other repository would get an answer either.
+        throw new GitHubError(`Cannot reach GitHub: ${describe(error)}`);
       }
       if (!(await limited(response))) return response;
       const delay = retryDelay(response);
