@@ -11,6 +11,8 @@ import { scan, type ScanResult } from '../src/core/scan.ts';
 import { openDirectory } from '../src/local.ts';
 
 export const FIXTURE = fileURLToPath(new URL('../fixture', import.meta.url));
+/** This repository: its own fixture is not a skill. */
+export const REPOSITORY = fileURLToPath(new URL('..', import.meta.url));
 export const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url));
 
 /** The commit GitHub answers for JetBrains/example. */
