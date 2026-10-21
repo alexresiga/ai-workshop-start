@@ -1,0 +1,80 @@
+{
+  "title": "A long link in an error message wraps in the list",
+  "head": "40bc1b02b2012a44ccf938f74833e94d2ab294e4",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 45,
+        "text": "a long name, description or path cut with …, a long word wrapped, a link in a message in the list too"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan a link to a SKILL.md deep in a repository: the error wraps in the list, no sideways scroll",
+          "start": 0.959
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 45,
+        "text": "a code block or a table wider than the window scrolls in its own box, the words in its cells whole"
+      },
+      "scenes": [],
+      "notShown": "unchanged, on the same line of the spec; recordings/layout and tests/layout.test.ts show it"
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"Scan a link to a SKILL.md deep in a repository: the error wraps in the list, no sideways scroll\": expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 0\nReceived:    456\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "1 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.7 s, 142 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.6 s, 141 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.0 s, 249 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.993"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.04 s, SSIM ≥ 0.998"
+    }
+  ]
+}
