@@ -53,6 +53,36 @@ test('a code span binds tighter than strong, emphasis, struck out and a link, as
   assert.deepEqual(inline('<https://a.example/`b> `c`'), [['a', { href: 'https://a.example/`b' }, 'https://a.example/`b'], ' ', ['code', {}, 'c']]);
 });
 
+test('strong inside emphasis: its closing ** does not end the emphasis, at the end of it either', () => {
+  assert.deepEqual(markdown('*Always **run** the tests*'), [['p', {}, ['em', {}, 'Always ', ['strong', {}, 'run'], ' the tests']]]);
+  assert.deepEqual(markdown('*Always **run***'), [['p', {}, ['em', {}, 'Always ', ['strong', {}, 'run']]]]);
+  assert.deepEqual(markdown('*a \\* b* and *c*'), [['p', {}, ['em', {}, 'a * b'], ' and ', ['em', {}, 'c']]]);
+});
+
+test('stars with a space on each side are text inside an emphasis, as on GitHub', () => {
+  assert.deepEqual(markdown('*5 * 60 seconds*'), [['p', {}, ['em', {}, '5 * 60 seconds']]]);
+  assert.deepEqual(markdown('*a ** b*'), [['p', {}, ['em', {}, 'a ** b']]]);
+});
+
+test('a code span inside an emphasis keeps its stars, a strong next to it too', () => {
+  assert.deepEqual(markdown('*Run `ls *.md` first*'), [['p', {}, ['em', {}, 'Run ', ['code', {}, 'ls *.md'], ' first']]]);
+  assert.deepEqual(markdown('*Glob `**/*.ts` **all** files*'), [['p', {}, ['em', {}, 'Glob ', ['code', {}, '**/*.ts'], ' ', ['strong', {}, 'all'], ' files']]]);
+});
+
+test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs and code spans after a lone *', () => {
+  for (const text of [
+    `*Note: paths look like C:${'\\dir'.repeat(30)} on Windows`,
+    `*${'\\'.repeat(44)}`,
+    `*a${' **x**'.repeat(25)}`,
+    `*a${' `x`'.repeat(5000)}`,
+    `*a${' `'.repeat(5000)}`,
+  ]) {
+    const start = performance.now();
+    markdown(text);
+    assert.ok(performance.now() - start < 1000, `${Math.round(performance.now() - start)} ms`);
+  }
+});
+
 test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
   assert.deepEqual(markdown('- one\n- two\n  - nested\n\n1. a\n\n2. b\n'), [
     ['ul', {}, ['li', {}, 'one'], ['li', {}, 'two', ['ul', {}, ['li', {}, 'nested']]]],
