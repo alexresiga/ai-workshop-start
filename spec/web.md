@@ -38,6 +38,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a card with the front matter, **name** and **description**, every other key as a tag (`key`, for a flag that is true; else `key: value`);
   then the body, **rendered Markdown**: headings, paragraphs, lists, code, fenced or indented, as it is, quotes, tables, links, emphasis;
   a table may follow a line of text with no blank line, as on GitHub
+- Links in the body as on GitHub: `[text](url)`, and reference links, `[text][label]`, `[text][]` or `[text]`, to a `[label]: url`
+  line anywhere in the file, which is not shown; a label in any case, its spaces collapsed; the first line of a label counts;
+  no such line → the text as it is written, brackets and all
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once

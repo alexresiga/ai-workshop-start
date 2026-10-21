@@ -85,3 +85,42 @@ test('every node is one of the tags the page builds', () => {
   };
   markdown('# a\n\n- **b** [c](d)\n\n> e\n\n```\nf\n```\n\n| g |\n|---|\n| h |\n\n***\n').forEach(walk);
 });
+
+test('reference links: [text][label], [text][] and [text], to a definition anywhere in the file, which is not shown', () => {
+  assert.deepEqual(markdown('See [the guide][guide].\n\n[guide]: https://example.com/guide\n'), [
+    ['p', {}, 'See ', ['a', { href: 'https://example.com/guide' }, 'the guide'], '.'],
+  ]);
+  assert.deepEqual(markdown('[docs]: docs/a.md\n\n[Docs][], [docs] and ![logo][L].\n\n[L]: <l.png> "The logo"\n'), [
+    ['p', {}, ['a', { href: 'docs/a.md' }, 'Docs'], ', ', ['a', { href: 'docs/a.md' }, 'docs'], ' and ', ['a', { href: 'l.png' }, 'logo'], '.'],
+  ]);
+});
+
+test('reference links: a label in any case, its spaces collapsed; the first definition counts', () => {
+  assert.deepEqual(markdown('[the *guide*][The  Guide]\n\n[the guide]: first.md\n[THE GUIDE]: second.md\n'), [
+    ['p', {}, ['a', { href: 'first.md' }, 'the ', ['em', {}, 'guide']]],
+  ]);
+});
+
+test('reference links: no definition → the text as it is written, brackets and all', () => {
+  assert.deepEqual(markdown('[the guide][nowhere], [none][], [ ] and [**bold**]\n'), [
+    ['p', {}, '[the guide][nowhere], [none][], [ ] and [', ['strong', {}, 'bold'], ']'],
+  ]);
+});
+
+test('reference links: definitions in a quote or a list count, not in code nor in the middle of a paragraph', () => {
+  assert.deepEqual(markdown('[q] [i] [c] [p]\n\n> [q]: q.md\n\n- [i]: i.md\n\n```\n[c]: c.md\n```\n\ntext\n[p]: p.md\n'), [
+    ['p', {}, ['a', { href: 'q.md' }, 'q'], ' ', ['a', { href: 'i.md' }, 'i'], ' [c] [p]'],
+    ['blockquote', {}],
+    ['ul', {}, ['li', {}]],
+    ['pre', {}, ['code', {}, '[c]: c.md']],
+    ['p', {}, 'text [p]: p.md'],
+  ]);
+});
+
+test('reference links: in headings, list items and table cells too', () => {
+  assert.deepEqual(markdown('# [x]\n\n- [x][]\n\n| [x] |\n|---|\n\n[x]: x.md\n'), [
+    ['h1', {}, ['a', { href: 'x.md' }, 'x']],
+    ['ul', {}, ['li', {}, ['a', { href: 'x.md' }, 'x']]],
+    ['table', {}, ['thead', {}, ['tr', {}, ['th', {}, ['a', { href: 'x.md' }, 'x']]]], ['tbody', {}]],
+  ]);
+});
