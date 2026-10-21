@@ -107,6 +107,7 @@ export const PAGE = `<!doctype html>
   .theme h3 .pill { font-weight: 400; }
   .theme ul { margin: 0; padding: 0; list-style: none; }
   .theme li { display: flex; align-items: baseline; gap: .75rem; padding: .2rem 0; white-space: nowrap; }
+  .theme li a, .theme li .in { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .theme li a { font-family: var(--mono); color: var(--accent); text-decoration: none; }
   .theme li a:hover { text-decoration: underline; }
   .theme li .in { font-family: var(--mono); font-size: .85rem; color: var(--muted); }

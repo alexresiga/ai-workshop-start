@@ -737,3 +737,27 @@ browserTest('no skills → no clusters, no Cluster skills button, the model not 
   await expect(page.locator('#clusters')).toHaveCount(0);
   assert.equal(asked, 0);
 });
+
+browserTest('375 px, a long skill name in an open cluster: its name and repository cut with …, no sideways scroll', async (t) => {
+  const repositories = {
+    'kotlin-multiplatform-gradle-plugin': { '.claude/skills/kotlin-multiplatform-gradle-plugin-release/SKILL.md': skill('kotlin-multiplatform-gradle-plugin-release') },
+    idea: { '.agents/skills/commits/SKILL.md': skill('commits') },
+  };
+  const base = await serve(t, async () => clusters([['Git', [1, 2]]]), repositories);
+  const page = await browser!.newPage({ viewport: { width: 375, height: 720 } });
+  t.after(() => page.close());
+  await page.goto(`${base}/?org=JetBrains`);
+  await headings(page).first().click();
+  const rows = page.locator('#clusters .theme li');
+  await expect(rows).toHaveCount(2);
+  for (const part of ['a', '.in', '.description']) {
+    for (const box of await rows.locator(part).evaluateAll((all) => all.map((element) => element.getBoundingClientRect().toJSON()))) {
+      assert.ok(box.left >= 0 && box.right <= 375, `${part} inside the window: ${box.left}–${box.right}`);
+    }
+  }
+  const name = rows.getByRole('link', { name: 'kotlin-multiplatform-gradle-plugin-release' });
+  assert.equal(await name.evaluate((link) => link.scrollWidth > link.clientWidth), true, 'the name cut');
+  assert.equal(await name.evaluate((link) => link.ownerDocument.defaultView!.getComputedStyle(link).textOverflow), 'ellipsis');
+  assert.equal(await page.evaluate('document.documentElement.scrollWidth'), 375, 'no sideways scroll');
+  assert.equal(await page.evaluate('document.body.scrollWidth'), 375, 'no sideways scroll');
+});
