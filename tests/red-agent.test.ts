@@ -1,7 +1,7 @@
 // spec/red-agent.md: a bug's steps recorded against the fixture, twice, and filed as one issue with its video.
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -91,6 +91,28 @@ reproTest('the steps: only one run fails → it fails in only 1 of 2 runs, exit 
   assert.equal(run.status, 1);
   assert.match(run.stderr, /it fails in only 1 of 2 runs/);
   assert.ok(!existsSync(run.out));
+});
+
+reproTest('the steps: the page never loads the fixture → the page never loaded, and its error, exit 1, no video', (t) => {
+  // A checkout whose page has no #repository: the recorder serves the checkout that holds the steps file.
+  mkdirSync(join(REPOSITORY, 'test-results'), { recursive: true });
+  const root = join(mkdtempSync(join(REPOSITORY, 'test-results', 'blank-')), 'checkout');
+  spawnSync('git', ['worktree', 'add', '--quiet', '--detach', root, 'HEAD'], { cwd: REPOSITORY });
+  t.after(() => {
+    spawnSync('git', ['worktree', 'remove', '--force', root], { cwd: REPOSITORY });
+    rmSync(join(root, '..'), { recursive: true, force: true });
+  });
+  symlinkSync(join(REPOSITORY, 'node_modules'), join(root, 'node_modules'));
+  const page = join(root, 'src/page.ts');
+  writeFileSync(page, readFileSync(page, 'utf8').replaceAll('id="repository"', 'id="gone"'));
+  const dir = join(root, 'recordings/bugs/blank');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'steps.ts'), `${HEAD}export const steps = [{ caption: 'Look', async run() {} }];\n`);
+  const run = spawnSync('node', [REPRO, join(dir, 'steps.ts')], { cwd: root, encoding: 'utf8', timeout: 120_000 });
+  assert.equal(run.status, 1, run.stderr);
+  assert.match(run.stderr, /^✗ the page never loaded example\/fixture, before the first step: file it by hand, with no video\nlocator\.waitFor: Timeout/);
+  assert.doesNotMatch(run.stderr, /\x1b|at record/);
+  assert.ok(!existsSync(join(dir, 'out')));
 });
 
 test('the steps: a missing title, expected or steps → <file> exports no <name>, exit 1, no video', (t) => {
