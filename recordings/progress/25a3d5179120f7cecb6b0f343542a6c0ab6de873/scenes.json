@@ -1,0 +1,163 @@
+{
+  "title": "A spinner while a scan runs, and an organization’s progress",
+  "head": "25a3d5179120f7cecb6b0f343542a6c0ab6de873",
+  "base": "25a3d5179120f7cecb6b0f343542a6c0ab6de873",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 13,
+        "text": "While a scan runs, in the list: a **spinner** and `Scanning <owner/repo>…`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan example/fixture: a spinner and Scanning example/fixture… while it runs; the button says Scanning…",
+          "start": 0.943
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 13,
+        "text": "the button says `Scanning…`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan example/fixture: a spinner and Scanning example/fixture… while it runs; the button says Scanning…",
+          "start": 0.943
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 13,
+        "text": "a slower spinner when the system asks for reduced motion"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Reduced motion: the spinner turns three times slower",
+          "start": 6.04
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 39,
+        "text": "While it scans, in the list: the spinner and `Listing <org>’s repositories…`, until they are listed"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Scan the organization example: the spinner and Listing example’s repositories…, until they are listed",
+          "start": 8.503
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 39,
+        "text": "then `Scanned N of M repositories` and a **progress bar**, moving on as each repository is done, a skipped one too"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Then Scanned N of 3 repositories and a bar, moving on as each is done; then the repositories",
+          "start": 12.838
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 58,
+        "text": "`GET /api/organization/progress?name=<org | org/ | GitHub URL>` → the same scan, as NDJSON, one JSON a line, as it goes: `{ progress: { scanned, of } }`, from `0` once the repositories are listed"
+      },
+      "scenes": [],
+      "notShown": "the server’s API has nothing on screen; tests/web.test.ts checks it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 59,
+        "text": "the last line, the answer of `/api/organization`, or `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the server’s API has nothing on screen; tests/web.test.ts checks it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 60,
+        "text": "not an organization → status 400, `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the server’s API has nothing on screen; tests/web.test.ts checks it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 60,
+        "text": "what the page reads"
+      },
+      "scenes": [],
+      "notShown": "the server’s API has nothing on screen; tests/progress.test.ts checks the page reads it"
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"Scan example/fixture: a spinner and Scanning example/fixture… while it runs; the button says Scanning…\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#skills #loading')\nExpected: \"Scanning example/fixture…\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" locator('#skills #loading') with timeout 5000ms\n  - waiting for locator('#skills #loading')\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "4 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 20.4 s, 509 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 20.2 s, 505 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 12.8 s, 320 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.996"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.994"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.13 s, SSIM ≥ 0.998"
+    }
+  ]
+}
