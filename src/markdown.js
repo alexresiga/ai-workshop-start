@@ -182,6 +182,9 @@ const SPANS = new RegExp(
   'g',
 );
 
+// A bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
+const BARE = /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/;
+
 // A link, not an image, nor an escaped `[`: a `!` or `\` right before it, after an even run of backslashes.
 const INNER_LINK = new RegExp(String.raw`(?<!(?<!\\)(?:\\\\)*[!\\])${LINK.source}`);
 
@@ -196,13 +199,13 @@ const INLINE = new RegExp(
     // on each side are text. Each character starts at most one piece, so text with no closing * fails fast.
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
     // 9, 10: struck out, as on GitHub: in one tilde or two, the closing run as long as the opening one; three or more are text,
-    // and an escaped ~ closes nothing.
-    /(?<!~)(~~?)(?=[^\s~])((?:\\[\s\S]|[^\\])*?(?:[^\s~\\]|\\[^\s~]))\9(?!~)/,
+    // and an escaped ~ closes nothing. As GFM has it, a run before punctuation opens only after a space or punctuation, and
+    // one after punctuation closes only before them: in "~/bin, see https://example.edu/~jdoe" no tilde is struck out.
+    /(?<!~)(~~?)(?=[^\s~])(?:(?<=(?:^|[\s!-/:-@[-`{-}])~+)|(?![!-/:-@[-`{-}]))((?:\\[\s\S]|[^\\])*?(?:[^\s~\\]|\\[^\s~]))\9(?!~)(?!(?<=[!-/:-@[-`{-}]~+)[^\s!-/:-@[-`{-~])/,
     /\\([!-/:-@[-`{-~])/, // 11: an escaped character
     // a hard line break, as on GitHub: a \ or two spaces at the end of a line; a run of spaces tried once, from its first
     /(?<! ) {2,}\n|\\\n/,
-    // 12: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
-    /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
+    BARE, // 12: a bare URL
   ]
     .map((part) => (typeof part === 'string' ? part : part.source))
     .join('|'),
@@ -211,17 +214,19 @@ const INLINE = new RegExp(
 
 /**
  * The text with each code span masked, as long as it was: a U+E001, then U+E000s, so the `*`, `_`,
- * `~` and `]` in it end nothing; those two characters in the text itself become U+E002. The code
- * spans' content, by where they start.
+ * `~` and `]` in it end nothing; those two characters in the text itself become U+E002. A `~` in an
+ * autolink, a link's destination or a bare URL is a U+E003, so it opens or closes no struck-out text,
+ * as on GitHub. The code spans' content, by where they start.
  */
 function mask(text) {
   const codes = new Map();
+  const urlTildes = (url) => url.replace(/~/g, '\uE003');
   const masked = text.replace(/[\uE000\uE001]/g, '\uE002').replace(SPANS, (span, ticks, _code, index) => {
-    if (ticks === undefined) return span;
+    if (ticks === undefined) return span.startsWith('\\') ? span : urlTildes(span);
     const code = text.slice(index + ticks.length, index + span.length - ticks.length).replace(/\n/g, ' ');
     codes.set(index, code.length > 2 && code.startsWith(' ') && code.endsWith(' ') ? code.slice(1, -1) : code);
     return '\uE001' + '\uE000'.repeat(span.length - 1);
-  });
+  }).replace(new RegExp(BARE, 'g'), (url) => urlTildes(trimURL(url)) + url.slice(trimURL(url).length));
   return { masked, codes };
 }
 

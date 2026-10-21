@@ -27,6 +27,9 @@ const answers = replay({
   ...searchAnswers('example/tilde', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nUse ~old~ new names.\n',
   }),
+  ...searchAnswers('example/tilde-url', {
+    '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nInstall to ~/bin, see [docs](https://example.edu/~jdoe/).\n',
+  }),
   ...searchAnswers('example/tasks', {
     '.claude/skills/release/SKILL.md': '---\nname: release\ndescription: Release steps.\n---\n- [ ] Tag the release\n- [x] Write the notes\n',
   }),
@@ -95,6 +98,16 @@ browserTest('text in one tilde is struck out, its tildes gone: "Use ~old~ new na
   await expect(paragraph).toHaveText('Use old new names.');
   await expect(paragraph.locator('del')).toHaveText('old');
   await expect(paragraph.locator('del')).toHaveCSS('text-decoration-line', 'line-through');
+});
+
+browserTest('a tilde in a link\'s destination strikes nothing out: "Install to ~/bin, see [docs](https://example.edu/~jdoe/)."', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/tilde-url`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('Install to ~/bin, see docs.');
+  await expect(paragraph.locator('del')).toHaveCount(0);
+  await expect(paragraph.locator('a')).toHaveAttribute('href', 'https://example.edu/~jdoe/');
 });
 
 browserTest('a task list: "- [ ] Tag the release" and "- [x] Write the notes" are checkboxes, unticked then ticked, and the text alone', async (t) => {

@@ -54,6 +54,29 @@ test('struck out in one tilde or two, as on GitHub: the same run closes it; thre
   assert.deepEqual(inline('~a `~` b~'), [['del', {}, 'a ', ['code', {}, '~'], ' b']]);
 });
 
+test('a tilde in a URL or after punctuation before a letter strikes nothing out, as on GitHub: ~/bin and /~jdoe', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  const link = (href: string, text = href) => ['a', { href }, text];
+  // In a link's destination, an autolink or a bare URL, a tilde opens and closes nothing.
+  assert.deepEqual(inline('Install to ~/bin, see [docs](https://example.edu/~jdoe/).'), [
+    'Install to ~/bin, see ',
+    link('https://example.edu/~jdoe/', 'docs'),
+    '.',
+  ]);
+  assert.deepEqual(inline('Ask ~alice or see [home](https://u.edu/~alice).'), ['Ask ~alice or see ', link('https://u.edu/~alice', 'home'), '.']);
+  assert.deepEqual(inline('Put it in ~/bin or <https://u.edu/~bob>'), ['Put it in ~/bin or ', link('https://u.edu/~bob')]);
+  assert.deepEqual(inline('Edit ~/.bashrc, see https://u.edu/~bob/notes'), ['Edit ~/.bashrc, see ', link('https://u.edu/~bob/notes')]);
+  assert.deepEqual(inline('Open https://u.edu/~bob, then ~done~'), ['Open ', link('https://u.edu/~bob'), ', then ', ['del', {}, 'done']]);
+  // Struck out around a URL: its trailing tilde is not the URL's.
+  assert.deepEqual(inline('~https://u.edu/~bob~'), [['del', {}, link('https://u.edu/~bob')]]);
+  // After punctuation, a tilde before a letter closes nothing; before punctuation, one after a letter opens nothing.
+  assert.deepEqual(inline('~/bin and ~/lib'), ['~/bin and ~/lib']);
+  assert.deepEqual(inline('~a.~b'), ['~a.~b']);
+  assert.deepEqual(inline('a~.b~'), ['a~.b~']);
+  // Punctuation inside, with a space, punctuation or the end around it, is struck out.
+  assert.deepEqual(inline('~(a)~ and ~a.~, ~.a~'), [['del', {}, '(a)'], ' and ', ['del', {}, 'a.'], ', ', ['del', {}, '.a']]);
+});
+
 test('a code span binds tighter than strong, emphasis, struck out and a link, as on GitHub', () => {
   const inline = (text: string) => markdown(text)[0].slice(2);
   assert.deepEqual(inline('**Pass `**kwargs` through**'), [['strong', {}, 'Pass ', ['code', {}, '**kwargs'], ' through']]);
