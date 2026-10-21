@@ -4,13 +4,15 @@
 //
 // A node is `[tag, attributes, ...children]`, a child a node or a string. The tags are only these:
 // h1–h6, p, pre, code, blockquote, ul, ol, li, hr, table, thead, tbody, tr, th, td, strong, em,
-// del and a; the only attribute is a link's `href`, as the file has it.
+// del, a and input; the only attributes are a link's `href`, as the file has it, and a task list item's
+// checkbox's `checked`.
 
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
 const RULE = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const QUOTE = /^ {0,3}> ?/;
 const ITEM = /^( {0,3})([-*+]|\d{1,9}[.)])(?:[ \t]+|$)/;
+const TASK = /^\[([ xX])\][ \t]+(?=\S)/;
 const INDENTED = /^(?: {4}|\t)/;
 const DELIMITER = /^ {0,3}\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
 
@@ -124,8 +126,21 @@ function list(lines, start, out) {
       }
     }
   }
-  out.push([ordered ? 'ol' : 'ul', {}, ...items.map((item) => ['li', {}, ...itemContent(blocks(item), loose)])]);
+  out.push([ordered ? 'ol' : 'ul', {}, ...items.map((item) => ['li', {}, ...itemContent(task(item) ?? blocks(item), loose)])]);
   return i;
+}
+
+/** A task list item's blocks, as on GitHub: `[ ]` or `[x]`, then text, is a checkbox before that text, in its first paragraph. */
+function task(item) {
+  const match = TASK.exec(item[0]);
+  if (!match) return undefined;
+  // Its paragraph's text starts with the marker: `[`, then no `](`, starts nothing else; a table is no paragraph.
+  const content = blocks(item);
+  const [paragraph] = content;
+  if (paragraph[0] !== 'p' || typeof paragraph[2] !== 'string') return undefined;
+  paragraph[2] = paragraph[2].slice(match[0].length);
+  paragraph.splice(2, paragraph[2] === '' ? 1 : 0, ['input', { checked: match[1] !== ' ' }]);
+  return content;
 }
 
 /** A tight list's paragraphs are only their text. */

@@ -152,6 +152,22 @@ test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
   ]);
 });
 
+test('task list items: "[ ]" and "[x]", then text, are a checkbox before the text alone, as on GitHub', () => {
+  const box = (checked: boolean) => ['input', { checked }];
+  assert.deepEqual(markdown('- [ ] Tag the release\n- [x] Write the notes\n- [X] **Ship** it\n'), [
+    ['ul', {}, ['li', {}, box(false), 'Tag the release'], ['li', {}, box(true), 'Write the notes'], ['li', {}, box(true), ['strong', {}, 'Ship'], ' it']],
+  ]);
+  // An ordered item too; in a loose list, the box is in the first paragraph; a tab after the marker; the text may look like a heading.
+  assert.deepEqual(markdown('1. [ ] one\n   more\n'), [['ol', {}, ['li', {}, box(false), 'one more']]]);
+  assert.deepEqual(markdown('- [ ] a\n\n- [x]\tb\n'), [['ul', {}, ['li', {}, ['p', {}, box(false), 'a']], ['li', {}, ['p', {}, box(true), 'b']]]]);
+  assert.deepEqual(markdown('- [ ] # h\n'), [['ul', {}, ['li', {}, box(false), '# h']]]);
+  // No text after it, another letter, no space, an escaped bracket, or outside a list: text.
+  assert.deepEqual(markdown('- [ ]\n- [x]  \n- [y] z\n- [x]a\n- \\[ ] e\n\n[ ] not in a list\n'), [
+    ['ul', {}, ['li', {}, '[ ]'], ['li', {}, '[x]'], ['li', {}, '[y] z'], ['li', {}, '[x]a'], ['li', {}, '[ ] e']],
+    ['p', {}, '[ ] not in a list'],
+  ]);
+});
+
 test('fenced code as it is, a quote, a table', () => {
   assert.deepEqual(markdown('```sh\n# not a heading\n  **kept**\n```\n\n> quoted *text*\n\n| a | b |\n|---|:-:|\n| 1 | `2` |\n'), [
     ['pre', {}, ['code', {}, '# not a heading\n  **kept**']],
@@ -186,15 +202,15 @@ test('HTML in a SKILL.md is text, never an element', () => {
 });
 
 test('every node is one of the tags the page builds', () => {
-  const tags = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'pre', 'code', 'blockquote', 'ul', 'ol', 'li', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'strong', 'em', 'del', 'a']);
+  const tags = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'pre', 'code', 'blockquote', 'ul', 'ol', 'li', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'strong', 'em', 'del', 'a', 'input']);
   const walk = (node: unknown): void => {
     if (typeof node === 'string') return;
     const [tag, attributes, ...children] = node as [string, Record<string, string>, ...unknown[]];
     assert.ok(tags.has(tag), tag);
-    assert.deepEqual(Object.keys(attributes), tag === 'a' ? ['href'] : []);
+    assert.deepEqual(Object.keys(attributes), tag === 'a' ? ['href'] : tag === 'input' ? ['checked'] : []);
     children.forEach(walk);
   };
-  markdown('# a\n\n- **b** [c](d)\n\n> e\n\n```\nf\n```\n\n| g |\n|---|\n| h |\n\n***\n').forEach(walk);
+  markdown('# a\n\n- **b** [c](d)\n- [x] i\n\n> e\n\n```\nf\n```\n\n| g |\n|---|\n| h |\n\n***\n').forEach(walk);
 });
 
 test('an email autolink is a mailto link, its text the address; one that is not an address is text', () => {

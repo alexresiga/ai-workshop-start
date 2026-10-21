@@ -43,6 +43,10 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   "the [beta] guide" a link; an unbalanced `[` is text, and a link holds no other link: in `[a [b](u) c](v)` only `b` is one
 - Emphasis may hold strong, as on GitHub: `*Always **run** the tests*` is the words in italics, `run` in bold too, no star left;
   a star with a space on each side is text in it: `*5 * 60 seconds*`
+- A list item that starts with `[ ]` or `[x]` (or `[X]`), then a space and text, is a task list item, as on GitHub (GFM's task list items):
+  a checkbox, unticked or ticked, that a click does not change, then the text alone, no bullet: "- [ ] Tag the release" is an
+  unticked box and "Tag the release"; in a loose list, the box is in the item's first paragraph; `[ ]` with no text after it,
+  `[y]`, `[x]text` or an escaped `\[ ]` is text
 - A bare `http://`, `https://` or `www.` URL in the body is a link, as on GitHub (GFM's autolinks): at the start of the text or after a space,
   `*`, `_`, `~` or `(`, without its trailing punctuation, an unmatched `)` or an `&amp;`: "See https://kotlinlang.org/docs." links
   `https://kotlinlang.org/docs`; `www.` links to `http://www.`; not in code, nor in a link's text

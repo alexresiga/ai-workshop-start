@@ -17,6 +17,9 @@ const answers = replay({
   ...searchAnswers('example/email', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nAsk <kotlin-team@example.com>.\n',
   }),
+  ...searchAnswers('example/tasks', {
+    '.claude/skills/release/SKILL.md': '---\nname: release\ndescription: Release steps.\n---\n- [ ] Tag the release\n- [x] Write the notes\n',
+  }),
 });
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: answers, token: 'test' }),
@@ -59,4 +62,19 @@ browserTest('an email autolink is a mailto link, without its brackets: "Ask <kot
   await expect(paragraph).toHaveText('Ask kotlin-team@example.com.');
   await expect(paragraph.locator('a')).toHaveAttribute('href', 'mailto:kotlin-team@example.com');
   await expect(paragraph.locator('a')).toHaveText('kotlin-team@example.com');
+});
+
+browserTest('a task list: "- [ ] Tag the release" and "- [x] Write the notes" are checkboxes, unticked then ticked, and the text alone', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/tasks`);
+  const items = page.locator('#detail .markdown li');
+  await expect(items).toHaveText(['Tag the release', 'Write the notes']);
+  const boxes = items.locator('> input[type=checkbox]');
+  await expect(boxes).toHaveCount(2);
+  await expect(boxes.nth(0)).not.toBeChecked();
+  await expect(boxes.nth(1)).toBeChecked();
+  await expect(boxes.nth(0)).toBeDisabled();
+  // No bullet beside the box, as on GitHub.
+  await expect(items.nth(0)).toHaveCSS('list-style-type', 'none');
 });
