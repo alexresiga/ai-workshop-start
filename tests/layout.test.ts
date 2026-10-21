@@ -34,6 +34,18 @@ const LONG = [
   '',
 ].join('\n');
 
+/** An ordinary table, five columns of whole words: too wide for a phone unless its words break. */
+const ORDINARY = [
+  '---',
+  'name: options',
+  'description: The options.',
+  '---',
+  '| Option | Environment | Type | Default | Description |',
+  '| --- | --- | --- | --- | --- |',
+  '| concurrency | ATLAS_CONCURRENCY | number | eight | parallelism |',
+  '',
+].join('\n');
+
 const answers = replay({
   ...searchAnswers('example/fixture', {
     '.github/skills/code-style/SKILL.md': fixture('.github/skills/code-style/SKILL.md'),
@@ -41,6 +53,7 @@ const answers = replay({
     '.agents/skills/release-checklist/SKILL.md': fixture('.agents/skills/release-checklist/SKILL.md'),
   }),
   ...searchAnswers('example/long', { '.claude/skills/a-skill-with-a-name-far-too-long/SKILL.md': LONG }),
+  ...searchAnswers('example/table', { '.claude/skills/options/SKILL.md': ORDINARY }),
 });
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: answers, token: 'test' }),
@@ -106,4 +119,22 @@ browserTest('a wide window, long lines: the list beside the SKILL.md, no sideway
   expect(list!.x + list!.width).toBeLessThanOrEqual(detail!.x);
   await expectInside(page.locator('aside, #detail, .markdown > *'), 1280);
   await expectNoSidewaysScroll(page, 1280);
+});
+
+browserTest('375 px, an ordinary table: each word in its cells stays whole, on one line, and the table scrolls in its box', async (t) => {
+  const page = await open(t, '/?repo=example/table', 375);
+  const cells = page.locator('.markdown th, .markdown td');
+  await expect(cells).toHaveCount(10);
+  const lines = await cells.evaluateAll((all) =>
+    all.map((cell) => {
+      const range = cell.ownerDocument.createRange();
+      range.selectNodeContents(cell);
+      return [cell.textContent, range.getClientRects().length];
+    }),
+  );
+  for (const [text, count] of lines) expect([text, count]).toEqual([text, 1]);
+  const box = page.locator('.markdown .table');
+  expect(await box.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+  await expectInside(box, 375);
+  await expectNoSidewaysScroll(page, 375);
 });

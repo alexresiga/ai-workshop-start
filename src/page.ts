@@ -153,7 +153,8 @@ export const PAGE = `<!doctype html>
   .markdown blockquote { padding-left: 1rem; color: var(--muted); border-left: 3px solid var(--line); }
   .markdown hr { border: 0; border-top: 1px solid var(--line); margin: 1.5rem 0; }
   .markdown .table { margin: 0 0 1rem; overflow-x: auto; }
-  .markdown .table table { margin: 0; }
+  /* break-word, not anywhere: a word in a cell stays whole, so a table that cannot fit scrolls instead. */
+  .markdown .table table { margin: 0; overflow-wrap: break-word; }
   .markdown table { border-collapse: collapse; }
   .markdown th, .markdown td { padding: .35rem .75rem; border: 1px solid var(--line); text-align: left; }
   .markdown .raw { white-space: pre-wrap; }
