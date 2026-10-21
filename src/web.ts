@@ -26,6 +26,8 @@ const FILTER = readFileSync(new URL('./filter.js', import.meta.url), 'utf8');
 const RANDOM = readFileSync(new URL('./random.js', import.meta.url), 'utf8');
 /** The list's source tags and filter marks, sent to the browser as it is. */
 const LIST = readFileSync(new URL('./list.js', import.meta.url), 'utf8');
+/** The skills' clusters by shared words, sent to the browser as it is. */
+const CLUSTER = readFileSync(new URL('./cluster.js', import.meta.url), 'utf8');
 
 export type WebOptions = {
   /** Opens a GitHub repository URL. */
@@ -70,6 +72,7 @@ export function createWebServer(options: WebOptions): Server {
     if (url.pathname === '/filter.js') return send(200, 'text/javascript', FILTER);
     if (url.pathname === '/random.js') return send(200, 'text/javascript', RANDOM);
     if (url.pathname === '/list.js') return send(200, 'text/javascript', LIST);
+    if (url.pathname === '/cluster.js') return send(200, 'text/javascript', CLUSTER);
     try {
       if (url.pathname === '/api/scan') {
         const input = repositoryUrl(url.searchParams.get('url') ?? '');

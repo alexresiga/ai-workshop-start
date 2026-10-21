@@ -74,6 +74,9 @@ export const PAGE = `<!doctype html>
   nav .more { color: var(--muted); background: var(--pill); }
   nav button[aria-current="true"] .source { background: var(--panel); }
   nav mark { color: var(--mark-text); background: var(--mark); border-radius: .2rem; }
+  nav .cluster { margin-bottom: .9rem; }
+  nav .cluster[hidden] { display: none; }
+  nav .cluster h2 { margin: 0 0 .3rem; padding: 0 1rem; font: 600 .8rem var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
   nav.repositories button { display: flex; align-items: center; gap: 1rem; }
   nav.repositories .name { flex: 1; min-width: 0; }
   nav.repositories .pill { flex: none; }
@@ -149,6 +152,7 @@ export const PAGE = `<!doctype html>
   import { matches } from '/filter.js';
   import { DICE_REPOSITORY, pick } from '/random.js';
   import { marks, source } from '/list.js';
+  import { clusters } from '/cluster.js';
 
   const $ = (id) => document.getElementById(id);
   /** An element with text, children and, for classes, \`.name\` in the tag: \`element('p.message.error', 'text')\`. */
@@ -283,7 +287,9 @@ export const PAGE = `<!doctype html>
   }
 
   function show(answer) {
-    skills = answer.skills;
+    // By the words their names share, each cluster under its heading; the list is in their order.
+    const groups = clusters(answer.skills);
+    skills = groups.length ? groups.flatMap((group) => group.skills) : answer.skills;
     onPage = answer.repository.id;
     const repository = element('a', answer.repository.id);
     repository.href = answer.repository.url;
@@ -296,28 +302,40 @@ export const PAGE = `<!doctype html>
     unmatched.id = 'unmatched';
     unmatched.hidden = true;
     $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    const items = skills.map((skill, index) => {
+      const head = element('span.head', element('span.name', skill.name));
+      const folder = source(skill.path);
+      if (folder) {
+        const tag = element('span.source', folder);
+        tag.title = skill.path;
+        head.append(tag);
+      }
+      if (skill.copies.length) {
+        const more = element('span.more', '+' + plural(skill.copies.length, 'copy'));
+        more.title = 'also in ' + skill.copies.join(', ');
+        head.append(more);
+      }
+      const item = element('button', head, skill.description ? element('span.description', skill.description) : element('span.description.none', 'No description'));
+      item.type = 'button';
+      item.title = skill.name;
+      item.addEventListener('click', () => select(index));
+      return item;
+    });
+    let next = 0;
+    const list = groups.length
+      ? groups.map((group) => {
+          const label = group.word ?? 'Other';
+          const cluster = element('div.cluster', element('h2', label + ' · ' + group.skills.length),
+            ...items.slice(next, (next += group.skills.length)));
+          cluster.setAttribute('role', 'group');
+          cluster.setAttribute('aria-label', label);
+          return cluster;
+        })
+      : items;
     $('skills').replaceChildren(
       ...(skills.length ? [] : [element('p.message', 'No SKILL.md in this repository.')]),
       unmatched,
-      ...skills.map((skill, index) => {
-        const head = element('span.head', element('span.name', skill.name));
-        const folder = source(skill.path);
-        if (folder) {
-          const tag = element('span.source', folder);
-          tag.title = skill.path;
-          head.append(tag);
-        }
-        if (skill.copies.length) {
-          const more = element('span.more', '+' + plural(skill.copies.length, 'copy'));
-          more.title = 'also in ' + skill.copies.join(', ');
-          head.append(more);
-        }
-        const item = element('button', head, skill.description ? element('span.description', skill.description) : element('span.description.none', 'No description'));
-        item.type = 'button';
-        item.title = skill.name;
-        item.addEventListener('click', () => select(index));
-        return item;
-      }),
+      ...list,
     );
     $('filter').hidden = !skills.length;
     if (skills.length) filter();
@@ -333,6 +351,7 @@ export const PAGE = `<!doctype html>
       item.querySelector('.name').replaceChildren(...marked(skills[i].name, text));
       if (skills[i].description) item.querySelector('.description').replaceChildren(...marked(skills[i].description, text));
     });
+    $('skills').querySelectorAll('.cluster').forEach((cluster) => (cluster.hidden = !cluster.querySelector('button:not([hidden])')));
     const shown = items.filter((item) => !item.hidden).length;
     const count = shown === skills.length ? String(skills.length) : shown + ' of ' + skills.length;
     $('count').textContent = count + (skills.length === 1 ? ' skill' : ' skills');
