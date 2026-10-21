@@ -147,8 +147,10 @@ function table(lines, start, out) {
   return i;
 }
 
-// A code span binds tighter than the rest, as on GitHub; only an escape or an autolink is read before it.
-const SPANS = /\\[!-/:-@[-`{-~]|<https?:\/\/[^\s<>]+>|(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g;
+// A code span binds tighter than the rest, as on GitHub; only an escape, an autolink, or a link's `](destination "title")`
+// after a `[`, is read before it.
+const SPANS =
+  /\\[!-/:-@[-`{-~]|<https?:\/\/[^\s<>]+>|(?<=\[(?:\\.|[^\]\\])*)\]\(\s*<?[^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)|(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g;
 
 const INLINE = new RegExp(
   [
