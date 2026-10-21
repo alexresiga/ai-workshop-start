@@ -173,6 +173,8 @@ const INLINE = new RegExp(
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
     /~~(?=\S)([\s\S]*?\S)~~/, // 8: struck out
     /\\([!-/:-@[-`{-~])/, // 9: an escaped character
+    // 10: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
+    /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:[\w-]+\.)*(?:[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
   ]
     .map((part) => (typeof part === 'string' ? part : part.source))
     .join('|'),
@@ -195,8 +197,8 @@ function mask(text) {
   return { masked, codes };
 }
 
-/** The inline content of a block: text, code, links, strong, emphasis. */
-export function inline(text) {
+/** The inline content of a block: text, code, links, strong, emphasis; in a link's text, no link. */
+export function inline(text, inLink = false) {
   const out = [];
   let last = 0;
   const push = (node) => {
@@ -214,15 +216,37 @@ export function inline(text) {
     push(text.slice(last, match.index));
     last = match.index + match[0].length;
     // Each part as the text has it, code spans and all.
-    const [, label, href, autolink, strong1, strong2, em1, em2, del, escaped] = match.indices.map((at) => at && text.slice(...at));
+    const [, label, href, autolink, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
     if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
-    else if (label !== undefined) push(['a', { href }, ...inline(label)]);
+    else if (label !== undefined) push(['a', { href }, ...inline(label, true)]);
     else if (autolink !== undefined) push(['a', { href: autolink }, autolink]);
-    else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2)]);
-    else if (em1 !== undefined || em2 !== undefined) push(['em', {}, ...inline(em1 ?? em2)]);
-    else if (del !== undefined) push(['del', {}, ...inline(del)]);
-    else push(escaped);
+    else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2, inLink)]);
+    else if (em1 !== undefined || em2 !== undefined) push(['em', {}, ...inline(em1 ?? em2, inLink)]);
+    else if (del !== undefined) push(['del', {}, ...inline(del, inLink)]);
+    else if (escaped !== undefined) push(escaped);
+    else {
+      // In a link's text, a URL is text, as on GitHub: no link in a link.
+      const url = trimURL(bare);
+      push(inLink ? url : ['a', { href: url.startsWith('www.') ? `http://${url}` : url }, url]);
+      last = match.index + url.length;
+      parts.lastIndex = last;
+    }
   }
   push(text.slice(last));
   return out;
+}
+
+/** A bare URL without what GitHub leaves after it: trailing punctuation, an unmatched `)`, an entity-like `&amp;`. */
+function trimURL(url) {
+  for (;;) {
+    let match;
+    if (/[?!.,:*_~'"]$/.test(url)) url = url.slice(0, -1);
+    else if (url.endsWith(')') && count(url, '(') < count(url, ')')) url = url.slice(0, -1);
+    else if ((match = /&[A-Za-z0-9]+;$/.exec(url))) url = url.slice(0, match.index);
+    else return url;
+  }
+}
+
+function count(text, character) {
+  return text.split(character).length - 1;
 }

@@ -69,13 +69,15 @@ test('a code span inside an emphasis keeps its stars, a strong next to it too', 
   assert.deepEqual(markdown('*Glob `**/*.ts` **all** files*'), [['p', {}, ['em', {}, 'Glob ', ['code', {}, '**/*.ts'], ' ', ['strong', {}, 'all'], ' files']]]);
 });
 
-test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs and code spans after a lone *', () => {
+test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs and code spans after a lone *; bare URLs too', () => {
   for (const text of [
     `*Note: paths look like C:${'\\dir'.repeat(30)} on Windows`,
     `*${'\\'.repeat(44)}`,
     `*a${' **x**'.repeat(25)}`,
     `*a${' `x`'.repeat(5000)}`,
     `*a${' `'.repeat(5000)}`,
+    `(www.a_b${'(www.a_b'.repeat(20000)}`,
+    `[${'(www.a.com'.repeat(20000)}](u)`,
   ]) {
     const start = performance.now();
     markdown(text);
@@ -106,6 +108,35 @@ test("a link's text may hold balanced brackets, as on GitHub; an unbalanced [ is
   assert.deepEqual(inline('[the [beta] guide](u "it`s") and `x`'), [['a', { href: 'u' }, 'the [beta] guide'], ' and ', ['code', {}, 'x']]);
   // A bracket in a code span in the text needs no partner.
   assert.deepEqual(inline('[a `[` b](u)'), [['a', { href: 'u' }, 'a ', ['code', {}, '['], ' b']]);
+});
+
+test('a bare http, https or www. URL is a link, without its trailing punctuation, as on GitHub', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  const link = (href: string, text = href) => ['a', { href }, text];
+  assert.deepEqual(inline('See https://kotlinlang.org/docs.'), ['See ', link('https://kotlinlang.org/docs'), '.']);
+  assert.deepEqual(inline('Run http://localhost:3000/x!'), ['Run ', link('http://localhost:3000/x'), '!']);
+  // www. links to http://, as on GitHub.
+  assert.deepEqual(inline('Visit www.commonmark.org/help, now'), ['Visit ', link('http://www.commonmark.org/help', 'www.commonmark.org/help'), ', now']);
+  // Trailing ?!.,:*_~'" are not the link's; nor an unmatched ), nor an entity-like &amp;.
+  assert.deepEqual(inline('(https://en.wikipedia.org/wiki/Markdown_(a)).'), ['(', link('https://en.wikipedia.org/wiki/Markdown_(a)'), ').']);
+  assert.deepEqual(inline('"Is it https://a.com/x?", she asked:'), ['"Is it ', link('https://a.com/x'), '?", she asked:']);
+  assert.deepEqual(inline('https://a.com/?q=1&amp; end'), [link('https://a.com/?q=1'), '&amp; end']);
+  // Inside strong, emphasis or struck out; a _ in its path is the link's.
+  assert.deepEqual(inline('**https://a.com** *www.b.com* ~~https://c.com~~ https://d.com/a_b_c'), [
+    ['strong', {}, link('https://a.com')],
+    ' ',
+    ['em', {}, link('http://www.b.com', 'www.b.com')],
+    ' ',
+    ['del', {}, link('https://c.com')],
+    ' ',
+    link('https://d.com/a_b_c'),
+  ]);
+  // Not after a letter, not with a _ in the last two parts of its domain, not in a link's text, not in code.
+  assert.deepEqual(inline('nohttps://a.com https://www.a_b.c_d'), ['nohttps://a.com https://www.a_b.c_d']);
+  assert.deepEqual(inline('[see https://a.com](u)'), [link('u', 'see https://a.com')]);
+  assert.deepEqual(inline('`https://a.com` https://b.com/`x`'), [['code', {}, 'https://a.com'], ' ', link('https://b.com/'), ['code', {}, 'x']]);
+  // A list item too.
+  assert.deepEqual(markdown('- www.a.com\n'), [['ul', {}, ['li', {}, link('http://www.a.com', 'www.a.com')]]]);
 });
 
 test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
