@@ -1,0 +1,99 @@
+{
+  "title": "A task list: - [ ] Tag the release, - [x] Write the notes",
+  "head": "6147a6d5df5ea62c0bb37778afcbf25d5bad511c",
+  "base": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 46,
+        "text": "A list item that starts with `[ ]` or `[x]` (or `[X]`), then a space and text, is a task list item, as on GitHub (GFM's task list items): a checkbox, unticked or ticked, that a click does not change, then the text alone, no bullet: \"- [ ] Tag the release\" is an unticked box and \"Tag the release\""
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's SKILL.md says \"- [ ] Tag the release\", \"- [x] Write the notes\": a box, unticked then ticked, and the text alone",
+          "start": 0.949
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 48,
+        "text": "in a loose list, the box is in the item's first paragraph"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "A loose list, a blank line between its items: each box is in its item's paragraph",
+          "start": 2.991
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 48,
+        "text": "`[ ]` with no text after it, `[y]`, `[x]text` or an escaped `\\[ ]` is text"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "\"- [ ]\" alone, \"- [y] Ship\", \"- [x]Ship\" and \"- \\[ ] Ship\" are text: no box",
+          "start": 4.976
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"code-style's SKILL.md says \"- [ ] Tag the release\", \"- [x] Write the notes\": a box, unticked then ticked, and the text alone\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#detail .markdown li')\nTimeout: 5000ms\n- Expected  - 2\n+ Received  + 2\n\n  Array [\n-   \"Tag the release\",\n-   \"Write the notes\",\n+   \"[ ] Tag the release\",\n+   \"[x] Write the notes\",\n  ]\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown li') with timeout 5000ms\n  - waiting for locator('#detail .markdown li')\n    14 × locator resolved to 2 elements\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "3 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.2 s, 180 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.2 s, 180 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 211 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.987"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.13 s, SSIM ≥ 0.996"
+    }
+  ]
+}
