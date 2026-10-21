@@ -66,6 +66,9 @@ export async function main(argv: string[]): Promise<number> {
     console.error(`no steps file: ${argv[0]}`);
     return 2;
   }
+  // A run that ends with no video leaves none: not even an earlier run's, which file.sh would take for this one.
+  const out = join(dirname(file), 'out');
+  rmSync(out, { recursive: true, force: true });
   const module: Partial<Steps> = await import(pathToFileURL(file).href);
   const missing: string[] = (['title', 'expected'] as const).filter((key) => typeof module[key] !== 'string' || !module[key]!.trim());
   if (!Array.isArray(module.steps) || !module.steps.length) missing.push('steps');
@@ -76,11 +79,9 @@ export async function main(argv: string[]): Promise<number> {
   const steps = module as Steps;
   const repository = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: dirname(file), encoding: 'utf8' }).trim();
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repository, encoding: 'utf8' }).trim();
-  const out = join(dirname(file), 'out');
   const work = mkdtempSync(join(tmpdir(), 'red-agent-'));
   const scenes = steps.steps.map((step) => ({ ...step, covers: [] }));
   try {
-    rmSync(out, { recursive: true, force: true });
     const runs: Run[] = [];
     for (let i = 0; i < RUNS; i++) {
       mkdirSync(out, { recursive: true });
