@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.990 --> 00:00:03.025
+code-style's SKILL.md says "See https://kotlinlang.org/docs.": the URL is a link, its period is not
+
+2
+00:00:03.025 --> 00:00:05.005
+Now "Read www.kotlinlang.org/docs, then commit": the www. URL links to http://www.kotlinlang.org/docs
+
+3
+00:00:05.005 --> 00:00:07.013
+A URL in code stays code, and one in a link's text is that link's text: one link, to the guide
