@@ -12,7 +12,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a click with Ctrl, ⌘, Shift or Alt is the browser's, as on any link: home in a new tab or window, and this one keeps its scan
 - While a scan runs, in the list: a **spinner** and `Scanning <owner/repo>…`; the button says `Scanning…`; a slower spinner
   when the system asks for reduced motion
-- The warnings, under the header
+- The warnings, under the header, **hidden by default**: a `⚠ N warnings` button shows them, and hides them again; a new scan,
+  or home, hides them; the clustering's warnings change the count, not whether they are shown; none → nothing under the header
 - On the left, the skills, cluster by cluster: the name, and the description on one line; the first is selected; ↑ and ↓ move, across the clusters too
 - Beside each name, a **tag** with the folder it lives in: the one that holds its `skills` folder (`.claude`, `.agents`, `agent`), else
   the first; none for a SKILL.md at the root or in a top `skills` folder; its path when hovered

@@ -49,9 +49,14 @@ export const PAGE = `<!doctype html>
   #repository a:hover { text-decoration: underline; }
   .pill { padding: .1rem .7rem; font-size: .9rem; color: var(--muted); background: var(--pill); border-radius: 1rem; }
 
-  #warnings { margin: 0; padding: .5rem 2rem; list-style: none; font-size: .85rem; color: var(--warning); background: var(--warning-bg);
-    border-bottom: 1px solid var(--line); }
-  #warnings:empty { display: none; }
+  #notices { padding: .35rem 2rem; font-size: .85rem; color: var(--warning); background: var(--warning-bg); border-bottom: 1px solid var(--line); }
+  #notices[hidden] { display: none; }
+  #notices > button { padding: .15rem 0; font: inherit; font-weight: 600; color: inherit; background: none; border: 0; cursor: pointer; }
+  #notices > button::after { content: " ▸"; }
+  #notices > button[aria-expanded="true"]::after { content: " ▾"; }
+  #notices > button:hover { text-decoration: underline; }
+  #warnings { margin: 0; padding: .15rem 0 .2rem; list-style: none; }
+  #warnings[hidden] { display: none; }
 
   main { display: grid; grid-template-columns: minmax(16rem, 36%) 1fr; flex: 1; min-height: 0; }
   aside { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
@@ -162,7 +167,10 @@ export const PAGE = `<!doctype html>
     aria-label="A random skill from JetBrains/kotlin">🎲</button>
   <div id="repository" role="status"></div>
 </header>
-<ul id="warnings"></ul>
+<div id="notices" hidden>
+  <button id="warnings-toggle" type="button" aria-expanded="false" aria-controls="warnings"></button>
+  <ul id="warnings" hidden></ul>
+</div>
 <main>
   <aside>
     <input id="filter" type="search" placeholder="Filter by name or description" aria-label="Filter skills"
@@ -195,6 +203,24 @@ export const PAGE = `<!doctype html>
   /** The repository on the page, as \`owner/repo\`, after a scan. */
   let onPage = '';
 
+  /**
+   * The warnings under the header, hidden behind an \`N warnings\` toggle; \`collapse\`, for a new scan or home, hides them again;
+   * none → nothing under the header.
+   */
+  function warn(warnings, collapse = false) {
+    $('warnings').replaceChildren(...warnings.map((warning) => element('li', 'warning: ' + warning)));
+    $('warnings-toggle').textContent = '⚠ ' + plural(warnings.length, 'warning');
+    $('notices').hidden = !warnings.length;
+    if (collapse) expand(false);
+  }
+
+  function expand(open) {
+    $('warnings-toggle').setAttribute('aria-expanded', String(open));
+    $('warnings').hidden = !open;
+  }
+
+  $('warnings-toggle').addEventListener('click', () => expand($('warnings').hidden));
+
   /** Home: the page as it first opens, with no scan; one still running is dropped. */
   function home() {
     latest++;
@@ -205,7 +231,7 @@ export const PAGE = `<!doctype html>
     $('dice').disabled = false;
     $('button').textContent = 'Scan';
     $('repository').replaceChildren();
-    $('warnings').replaceChildren();
+    warn([], true);
     $('detail').replaceChildren();
     $('filter').value = '';
     $('filter').hidden = true;
@@ -292,7 +318,7 @@ export const PAGE = `<!doctype html>
     $('dice').disabled = true;
     $('button').textContent = 'Scanning…';
     $('repository').replaceChildren();
-    $('warnings').replaceChildren();
+    warn([], true);
     $('detail').replaceChildren();
     $('filter').value = '';
     $('filter').hidden = true;
@@ -333,7 +359,7 @@ export const PAGE = `<!doctype html>
     const repositories = element('span.pill', answer.repositories.length + ' of ' + plural(answer.scanned, 'repository'));
     repositories.id = 'repositories';
     $('repository').replaceChildren(link, count, repositories);
-    $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    warn(answer.warnings);
     $('skills').classList.add('repositories');
     $('skills').setAttribute('aria-label', 'Repositories');
     $('skills').replaceChildren(
@@ -371,7 +397,7 @@ export const PAGE = `<!doctype html>
   async function cluster(organization, warnings) {
     const mine = latest;
     // The scan's warnings, without the last answer's.
-    $('warnings').replaceChildren(...warnings.map((warning) => element('li', 'warning: ' + warning)));
+    warn(warnings);
     $('cluster').disabled = true;
     $('cluster').textContent = 'Clustering…';
     $('clusters').replaceChildren(loading('Listing ' + organization + '’s repositories…', 'clustering'));
@@ -401,7 +427,7 @@ export const PAGE = `<!doctype html>
 
   /** Each cluster: its theme and an \`N skills\` pill, then its skills, each with its repository and first sentence. */
   function showClusters(answer) {
-    $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    warn(answer.warnings);
     $('clusters').replaceChildren(
       element('p', plural(answer.skills, 'skill') + ' in ' + plural(answer.clusters.length, 'cluster') + '.'),
       ...answer.clusters.map((cluster) =>
@@ -441,7 +467,7 @@ export const PAGE = `<!doctype html>
     const unmatched = element('p.message');
     unmatched.id = 'unmatched';
     unmatched.hidden = true;
-    $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    warn(answer.warnings);
     const items = skills.map((skill, index) => {
       const head = element('span.head', element('span.name', skill.name));
       const folder = source(skill.path);
