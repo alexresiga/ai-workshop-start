@@ -54,7 +54,7 @@ export const scenes: Scene[] = [
   },
   {
     caption: 'Scan example/build: a heading over each cluster, build · 3, java · 2, kotlin · 2, Other · 2, each by name',
-    covers: ['Each cluster under a heading'],
+    covers: ['Each cluster under a heading', 'cluster by cluster', 'the first is selected'],
     async run(page, act) {
       await page.route('**/api/scan?url=example%2Fbuild', (route) => route.fulfill({ json: BUILD }));
       await input(page).fill('');
@@ -63,6 +63,8 @@ export const scenes: Scene[] = [
       await expect(page.locator('#count')).toHaveText('9 skills');
       await expect(headings(page)).toHaveText(['build · 3', 'java · 2', 'kotlin · 2', 'Other · 2']);
       await expect(cluster(page, 'kotlin')).toHaveText(['kotlin-lint', 'kotlin-test']);
+      await expect(shown(page)).toHaveText(['build-cache', 'build-docs', 'gradle-build', 'java-lint', 'java-test', 'kotlin-lint', 'kotlin-test', 'commits', 'gradle-bump']);
+      await expect(selected(page)).toHaveText('build-cache');
     },
   },
   {
@@ -103,7 +105,7 @@ export const scenes: Scene[] = [
   },
   {
     caption: '↑ and ↓ move across the clusters: from build-docs, ↓ to gradle-build, ↓ to java-lint, ↑ back',
-    covers: ['move across them'],
+    covers: ['across the clusters too'],
     async run(page, act) {
       await act.click(page.locator('#skills button', { hasText: 'build-docs' }));
       await act.press('ArrowDown');
