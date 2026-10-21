@@ -78,4 +78,17 @@ export const scenes: Scene[] = [
       await act.pause();
     },
   },
+  {
+    caption: '"Build takes ~2 min. Old step ~deprecated~.": only "deprecated" is struck out; "~a ~b~ c~" is struck out, "b" twice',
+    covers: ['a closing tilde ends the nearest one that opens'],
+    async run(page, act) {
+      await withBody(page, 'Build takes ~2 min. Old step ~deprecated~.\n\nUse ~a ~b~ c~ here.\n');
+      const paragraphs = page.locator('#detail .markdown p');
+      await expect(paragraphs).toHaveText(['Build takes ~2 min. Old step deprecated.', 'Use a b c here.']);
+      await expect(paragraphs.nth(0).locator('del')).toHaveText(['deprecated']);
+      await expect(paragraphs.nth(1).locator('> del')).toHaveText(['a b c']);
+      await expect(paragraphs.nth(1).locator('> del > del')).toHaveText(['b']);
+      await act.pause();
+    },
+  },
 ];
