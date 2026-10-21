@@ -78,6 +78,9 @@ test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs
     `*a${' `'.repeat(5000)}`,
     `(www.a_b${'(www.a_b'.repeat(20000)}`,
     `[${'(www.a.com'.repeat(20000)}](u)`,
+    `https://a.com/${')'.repeat(40000)}`,
+    `https://a.com/${'.)'.repeat(40000)}`,
+    `https://a.com/${'&a;'.repeat(40000)}`,
   ]) {
     const start = performance.now();
     markdown(text);

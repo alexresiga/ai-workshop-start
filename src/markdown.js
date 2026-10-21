@@ -236,14 +236,20 @@ export function inline(text, inLink = false) {
   return out;
 }
 
-/** A bare URL without what GitHub leaves after it: trailing punctuation, an unmatched `)`, an entity-like `&amp;`. */
+/**
+ * A bare URL without what GitHub leaves after it: trailing punctuation, an unmatched `)`, an entity-like `&amp;`. One
+ * walk back from its end, the parentheses counted once, so a long tail of them fails fast.
+ */
 function trimURL(url) {
+  let end = url.length;
+  let unmatched = count(url, ')') - count(url, '(');
   for (;;) {
-    let match;
-    if (/[?!.,:*_~'"]$/.test(url)) url = url.slice(0, -1);
-    else if (url.endsWith(')') && count(url, '(') < count(url, ')')) url = url.slice(0, -1);
-    else if ((match = /&[A-Za-z0-9]+;$/.exec(url))) url = url.slice(0, match.index);
-    else return url;
+    const last = url[end - 1];
+    const amp = last === ';' ? url.lastIndexOf('&', end - 1) : -1;
+    if ("?!.,:*_~'\"".includes(last)) end--;
+    else if (last === ')' && unmatched > 0) end--, unmatched--;
+    else if (amp >= 0 && /^&[A-Za-z0-9]+;$/.test(url.slice(amp, end))) end = amp;
+    else return url.slice(0, end);
   }
 }
 
