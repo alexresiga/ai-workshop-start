@@ -118,7 +118,10 @@ export function createWebServer(options: WebOptions): Server {
         const input = organizationUrl(url.searchParams.get('name') ?? '');
         if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
         if (!options.ask) throw new AtlasError('Clustering is not available here');
-        json(200, await clustersAnswer(await options.organization(input), options.ask));
+        // The page closed or reloaded: the model is stopped rather than left to run for no one.
+        const waiting = new AbortController();
+        response.on('close', () => response.writableFinished || waiting.abort());
+        json(200, await clustersAnswer(await options.organization(input), options.ask, waiting.signal));
       } else json(404, { error: `Not found: ${url.pathname}` });
     } catch (error) {
       json(error instanceof AtlasError ? 400 : 500, { error: failure(error) });
@@ -170,8 +173,8 @@ function organizationUrl(input: string): string {
 }
 
 /** The organization's skills by theme, each linked to its SKILL.md; the scan's warnings, then the model's. */
-async function clustersAnswer(result: OrganizationResult, ask: Ask): Promise<ClustersAnswer> {
-  const { clusters, warnings } = await clusterSkills(result.skills, ask);
+async function clustersAnswer(result: OrganizationResult, ask: Ask, signal: AbortSignal): Promise<ClustersAnswer> {
+  const { clusters, warnings } = await clusterSkills(result.skills, ask, signal);
   // Each skill's link is at the commit its repository was scanned at, its default branch.
   const link = (skill: Skill) => {
     const [organization, name] = skill.repository.split('/');
