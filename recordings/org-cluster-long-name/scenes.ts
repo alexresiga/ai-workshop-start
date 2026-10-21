@@ -9,7 +9,10 @@ export const ask = async () => '{"clusters":[{"theme":"Git","skills":[1,2]},{"th
 const LONG = 'kotlin-multiplatform-gradle-plugin-release';
 /** No sideways scroll: the page and the SKILL.md side are as wide as the window. */
 const overflow = (page: Page) =>
-  page.locator('#detail').evaluate((detail) => detail.scrollWidth - detail.clientWidth + detail.ownerDocument.documentElement.scrollWidth - innerWidth);
+  page.locator('#detail').evaluate((detail) => {
+    const html = detail.ownerDocument.documentElement;
+    return detail.scrollWidth - detail.clientWidth + html.scrollWidth - html.clientWidth;
+  });
 const rows = (page: Page) => page.locator('#clusters .theme li:visible');
 // The recorder compares each scene's end to its 1280 × 720 video, so a scene that narrows the window widens it again before it ends.
 const WIDE = { width: 1280, height: 720 };
@@ -32,7 +35,7 @@ export const scenes: Scene[] = [
       await act.click(page.locator('.theme button.toggle').first());
       await expect(rows(page)).toHaveCount(2);
       for (const row of await rows(page).all()) {
-        const lines = await row.evaluate((li) => getComputedStyle(li).whiteSpace);
+        const lines = await row.evaluate((li) => li.ownerDocument.defaultView!.getComputedStyle(li).whiteSpace);
         expect(lines).toBe('nowrap');
         const box = (await row.boundingBox())!;
         expect(box.height).toBeLessThan(40);
