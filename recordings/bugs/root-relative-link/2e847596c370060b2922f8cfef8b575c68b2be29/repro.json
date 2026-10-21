@@ -1,0 +1,22 @@
+{
+  "title": "A root-relative link (`[guide](/docs/guide.md)`) in a SKILL.md opens github.com/docs/guide.md, outside the repository",
+  "expected": "`spec/web.md`, the SKILL.md: \"Links in the body resolve next to the SKILL.md on GitHub\". On GitHub, a link starting with `/` in a Markdown file is relative to the repository's root, so `[guide](/docs/guide.md)` in `example/fixture` goes to `https://github.com/example/fixture/blob/<commit>/docs/guide.md`; the page resolves it against `github.com` itself and links to `https://github.com/docs/guide.md`, a 404.",
+  "head": "2e847596c370060b2922f8cfef8b575c68b2be29",
+  "failed": {
+    "step": 2,
+    "caption": "The link should open docs/guide.md in example/fixture, at the scanned commit",
+    "error": "expect(locator).toHaveAttribute(expected) failed\n\nLocator:  locator('#detail .markdown a')\nExpected: \"https://github.com/example/fixture/blob/0123456789abcdef0123456789abcdef01234567/docs/guide.md\"\nReceived: \"https://github.com/docs/guide.md\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 260 frames"
+    }
+  ]
+}
