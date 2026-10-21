@@ -1,0 +1,85 @@
+{
+  "title": "A quote's second line without \">\" stays in the quote",
+  "head": "763e132f9d8dec66e70761dd360e8f5cfdcc32d8",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 40,
+        "text": "a line with no `>` right after a quoted line goes on with the quote's paragraph, as on GitHub: `> Never push to main` then `on a Friday.` is one quote, `Never push to main on a Friday.`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "A quote whose second line has no \">\": both lines are the quote, \"Never push to main on a Friday.\"",
+          "start": 0.937
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 41,
+        "text": "a blank line or a new block ends the quote, as does a line after a quote that ends in code"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "A blank line ends the quote, and so does code: the line after each is a paragraph of its own",
+          "start": 3.901
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"A quote whose second line has no \">\": both lines are the quote, \"Never push to main on a Friday.\"\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown').locator('blockquote')\nExpected: \"Never push to main on a Friday.\"\nReceived: \"Never push to main\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown').locator('blockquote') with timeout 5000ms\n  - waiting for locator('#detail .markdown').locator('blockquote')\n    14 × locator resolved to <blockquote>…</blockquote>\n       - unexpected value \"Never push to main\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.0 s, 176 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.0 s, 175 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 209 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.10 s, SSIM ≥ 0.996"
+    }
+  ]
+}
