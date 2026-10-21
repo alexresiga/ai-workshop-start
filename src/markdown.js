@@ -174,7 +174,7 @@ const INLINE = new RegExp(
     /~~(?=\S)([\s\S]*?\S)~~/, // 8: struck out
     /\\([!-/:-@[-`{-~])/, // 9: an escaped character
     // 10: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
-    /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:[\w-]+\.)*(?:[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
+    /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
   ]
     .map((part) => (typeof part === 'string' ? part : part.source))
     .join('|'),

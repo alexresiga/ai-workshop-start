@@ -136,6 +136,9 @@ test('a bare http, https or www. URL is a link, without its trailing punctuation
   ]);
   // Not after a letter, not with a _ in the last two parts of its domain, not in a link's text, not in code.
   assert.deepEqual(inline('nohttps://a.com https://www.a_b.c_d'), ['nohttps://a.com https://www.a_b.c_d']);
+  assert.deepEqual(inline('www.a_b.com https://a_b.com www.a.b_c.com'), ['www.a_b.com https://a_b.com www.a.b_c.com']);
+  // A _ before the last two parts is fine.
+  assert.deepEqual(inline('https://a_b.x.com/p www.com'), [link('https://a_b.x.com/p'), ' ', link('http://www.com', 'www.com')]);
   assert.deepEqual(inline('[see https://a.com](u)'), [link('u', 'see https://a.com')]);
   assert.deepEqual(inline('`https://a.com` https://b.com/`x`'), [['code', {}, 'https://a.com'], ' ', link('https://b.com/'), ['code', {}, 'x']]);
   // A list item too.
