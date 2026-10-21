@@ -1,0 +1,22 @@
+{
+  "title": "On a phone, a warning with a long path runs past the right edge and the page scrolls sideways",
+  "expected": "`spec/web.md`, the page: \"**Fits the window**, at any width, a phone's 375 px too: no sideways scroll; … a long word wrapped\". A warning naming `plugins/kotlinGradlePluginIntegrationTests/src/testData/.claude/skills/releaseChecklist/SKILL.md`, shown with `⚠ 1 warning`, should wrap in the 375 px window; `#warnings li` has no `overflow-wrap`, so the path stays on one line and widens the page.",
+  "head": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "failed": {
+    "step": 3,
+    "caption": "It should wrap in the window: no sideways scroll",
+    "error": "expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 0\nReceived:    253\n\nCall Log:\n- Timeout 3000ms exceeded while waiting on the predicate"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 3 of 3, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.2 s, 281 frames"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.958 --> 00:00:02.923
+A 375 px window; release-checklist's warning names a skill deep in a repository
+
+2
+00:00:02.923 --> 00:00:05.791
+Show the warning
+
+3
+00:00:05.792 --> 00:00:09.891
+✗ It should wrap in the window: no sideways scroll
