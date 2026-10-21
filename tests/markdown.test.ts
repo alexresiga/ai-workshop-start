@@ -83,6 +83,26 @@ test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs
   }
 });
 
+test("a link's text may hold balanced brackets, as on GitHub; an unbalanced [ is text, and a link holds no other link", () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('Read [the [beta] guide](https://kotlinlang.org/docs).'), ['Read ', ['a', { href: 'https://kotlinlang.org/docs' }, 'the [beta] guide'], '.']);
+  assert.deepEqual(inline('[a [b] c [d] e](u)'), [['a', { href: 'u' }, 'a [b] c [d] e']]);
+  assert.deepEqual(inline('[a [b [c] b] a](u)'), [['a', { href: 'u' }, 'a [b [c] b] a']]);
+  assert.deepEqual(inline('[the [*beta*] guide](u)'), [['a', { href: 'u' }, 'the [', ['em', {}, 'beta'], '] guide']]);
+  // Escaped brackets are text, balanced or not.
+  assert.deepEqual(inline('[a \\[b](u)'), [['a', { href: 'u' }, 'a [b']]);
+  assert.deepEqual(inline('[a \\] b](u)'), [['a', { href: 'u' }, 'a ] b']]);
+  // An unbalanced [ before a link is text.
+  assert.deepEqual(inline('[a [b](u)'), ['[a ', ['a', { href: 'u' }, 'b']]);
+  // A link in a link's text: only the inner one is a link; an image in one is still fine.
+  assert.deepEqual(inline('[a [b](u) c](v)'), ['[a ', ['a', { href: 'u' }, 'b'], ' c](v)']);
+  assert.deepEqual(inline('[![logo](l.png)](u)'), [['a', { href: 'u' }, ['a', { href: 'l.png' }, 'logo']]]);
+  // A backtick in the destination or title of a link with brackets in its text is still the link's.
+  assert.deepEqual(inline('[the [beta] guide](u "it`s") and `x`'), [['a', { href: 'u' }, 'the [beta] guide'], ' and ', ['code', {}, 'x']]);
+  // A bracket in a code span in the text needs no partner.
+  assert.deepEqual(inline('[a `[` b](u)'), [['a', { href: 'u' }, 'a ', ['code', {}, '['], ' b']]);
+});
+
 test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
   assert.deepEqual(markdown('- one\n- two\n  - nested\n\n1. a\n\n2. b\n'), [
     ['ul', {}, ['li', {}, 'one'], ['li', {}, 'two', ['ul', {}, ['li', {}, 'nested']]]],
