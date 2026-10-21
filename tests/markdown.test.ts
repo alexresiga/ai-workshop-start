@@ -34,6 +34,20 @@ test('inline: code, strong, emphasis, struck out, links, an image as its link, e
   ]);
 });
 
+test('a code span binds tighter than strong, emphasis, struck out and a link, as on GitHub', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('**Pass `**kwargs` through**'), [['strong', {}, 'Pass ', ['code', {}, '**kwargs'], ' through']]);
+  assert.deepEqual(inline('*a `b* c` d*'), [['em', {}, 'a ', ['code', {}, 'b* c'], ' d']]);
+  assert.deepEqual(inline('_a `b_ c` d_'), [['em', {}, 'a ', ['code', {}, 'b_ c'], ' d']]);
+  assert.deepEqual(inline('~~a `~~` b~~'), [['del', {}, 'a ', ['code', {}, '~~'], ' b']]);
+  assert.deepEqual(inline('[a `]` b](u)'), [['a', { href: 'u' }, 'a ', ['code', {}, ']'], ' b']]);
+  // A code span opened inside emphasis, closed after it: the code wins, as on GitHub.
+  assert.deepEqual(inline('**a `b** c`'), ['**a ', ['code', {}, 'b** c']]);
+  // An escaped backtick opens no code span; an autolink is read before one.
+  assert.deepEqual(inline('**\\`a** b`'), [['strong', {}, '`a'], ' b`']);
+  assert.deepEqual(inline('<https://a.example/`b> `c`'), [['a', { href: 'https://a.example/`b' }, 'https://a.example/`b'], ' ', ['code', {}, 'c']]);
+});
+
 test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
   assert.deepEqual(markdown('- one\n- two\n  - nested\n\n1. a\n\n2. b\n'), [
     ['ul', {}, ['li', {}, 'one'], ['li', {}, 'two', ['ul', {}, ['li', {}, 'nested']]]],

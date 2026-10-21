@@ -37,7 +37,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - On the right, the selected skill's **SKILL.md**: its path, *Open on GitHub* at the scanned commit, `also in <paths>` for copies;
   a card with the front matter, **name** and **description**, every other key as a tag (`key`, for a flag that is true; else `key: value`);
   then the body, **rendered Markdown**: headings, paragraphs, lists, code, fenced or indented, as it is, quotes, tables, links, emphasis;
-  a table may follow a line of text with no blank line, as on GitHub
+  a table may follow a line of text with no blank line, as on GitHub; a code span binds tighter than emphasis, struck-out text
+  and a link's text, as on GitHub: ``**Pass `**kwargs` through**`` is "Pass **kwargs through" in bold, its `**kwargs` as code
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once
