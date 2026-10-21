@@ -34,6 +34,9 @@ const LONG = [
   '',
 ].join('\n');
 
+/** A skill deep in a repository, its folders with no hyphen to break at: its path, in a warning, wider than a phone. */
+const DEEP = 'plugins/kotlinGradlePluginIntegrationTests/src/integrationTestSources/.claude/skills/releaseChecklist/SKILL.md';
+
 /** An ordinary table, five columns of whole words: too wide for a phone unless its words break. */
 const ORDINARY = [
   '---',
@@ -53,6 +56,7 @@ const answers = replay({
     '.agents/skills/release-checklist/SKILL.md': fixture('.agents/skills/release-checklist/SKILL.md'),
   }),
   ...searchAnswers('example/long', { '.claude/skills/a-skill-with-a-name-far-too-long/SKILL.md': LONG }),
+  ...searchAnswers('example/deep', { [DEEP]: fixture('.agents/skills/release-checklist/SKILL.md') }),
   ...searchAnswers('example/table', { '.claude/skills/options/SKILL.md': ORDINARY }),
 });
 const server = createWebServer({
@@ -109,6 +113,15 @@ browserTest('375 px, long lines: the skill is cut with …, the SKILL.md fits, i
   for (const wide of [page.locator('.markdown pre'), page.locator('.markdown .table')]) {
     expect(await wide.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
   }
+  await expectNoSidewaysScroll(page, 375);
+});
+
+browserTest('375 px, a warning naming a long path: it wraps inside the window, no sideways scroll', async (t) => {
+  const page = await open(t, '/?repo=example/deep', 375);
+  await expect(page.locator('#warnings-toggle')).toHaveText('⚠ 1 warning');
+  await page.locator('#warnings-toggle').click();
+  await expect(page.locator('#warnings li')).toContainText(DEEP);
+  await expectInside(page.locator('#notices, #warnings li'), 375);
   await expectNoSidewaysScroll(page, 375);
 });
 

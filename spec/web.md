@@ -50,7 +50,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once
 - **Fits the window**, at any width, a phone's 375 px too: no sideways scroll; the list beside the SKILL.md, or above it below 50rem;
-  a long name, description or path cut with …, a long word wrapped; a code block or a table wider than the window scrolls in its own box, the words in its cells whole
+  a long name, description or path cut with …, a long word wrapped, in a warning too; a code block or a table wider than the window scrolls in its own box, the words in its cells whole
 ## An organization
 - `<org>`, `<org>/` or `github.com/<org>` in the input scans the organization: `?org=<org>` in the address, and it scans at once
 - While it scans, in the list: the spinner and `Listing <org>’s repositories…`, until they are listed; then
