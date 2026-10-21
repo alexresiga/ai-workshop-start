@@ -1,0 +1,85 @@
+{
+  "title": "An escaped star is a plain star",
+  "head": "2e847596c370060b2922f8cfef8b575c68b2be29",
+  "base": "2e847596c370060b2922f8cfef8b575c68b2be29",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 40,
+        "text": "a code span binds tighter than emphasis, struck-out text and a link's text, as on GitHub: ``**Pass `**kwargs` through**`` is \"Pass **kwargs through\" in bold, its `**kwargs` as code"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "\"Pass `**kwargs` through\" in ** **: still all of it bold, **kwargs as code",
+          "start": 3.907
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "an escaped `\\*`, `\\_` or `\\~` is a plain character, and never opens or ends emphasis, strong or struck-out text, as on GitHub: `Use *\\*.kt* files` is \"Use *.kt files\", \"*.kt\" in italics"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "\"Use *\\*.kt* files\": \"*.kt\" in italics, its star kept, no backslash, no stray star",
+          "start": 0.944
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"\"Use *\\*.kt* files\": \"*.kt\" in italics, its star kept, no backslash, no stray star\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown').locator('p').first()\nExpected: \"Use *.kt files\"\nReceived: \"Use \\\\.kt* files\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown').locator('p').first() with timeout 5000ms\n  - waiting for locator('#detail .markdown').locator('p').first()\n    14 × locator resolved to <p>…</p>\n       - unexpected value \"Use \\.kt* files\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.0 s, 176 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.0 s, 175 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 210 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.08 s, SSIM ≥ 0.996"
+    }
+  ]
+}

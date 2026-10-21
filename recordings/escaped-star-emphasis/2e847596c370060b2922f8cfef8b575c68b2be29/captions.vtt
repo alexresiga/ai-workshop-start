@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.944 --> 00:00:03.907
+"Use *\*.kt* files": "*.kt" in italics, its star kept, no backslash, no stray star
+
+2
+00:00:03.907 --> 00:00:06.782
+"Pass `**kwargs` through" in ** **: still all of it bold, **kwargs as code
