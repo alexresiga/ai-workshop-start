@@ -56,7 +56,7 @@ function blocks(lines) {
     } else {
       // A paragraph, up to a blank line or a block that interrupts it; a table does, as on GitHub.
       const paragraph = [lines[i++].trim()];
-      for (; i < lines.length && lines[i].trim() && !startsBlock(lines[i]) && !isTable(lines, i); i++) paragraph.push(lines[i].trim());
+      for (; i < lines.length && lines[i].trim() && !interruptsParagraph(lines[i]) && !isTable(lines, i); i++) paragraph.push(lines[i].trim());
       out.push(['p', {}, ...inline(paragraph.join(' '))]);
     }
   }
@@ -86,6 +86,13 @@ function cells(line) {
 
 function startsBlock(line) {
   return FENCE.test(line) || HEADING.test(line) || RULE.test(line) || QUOTE.test(line) || ITEM.test(line);
+}
+
+/** As on GitHub, a list interrupts a paragraph only with an item that has text, and an ordered one only from 1. */
+function interruptsParagraph(line) {
+  const match = ITEM.exec(line);
+  if (!match) return startsBlock(line);
+  return line.slice(match[0].length).trim() !== '' && (!/\d/.test(match[2]) || parseInt(match[2], 10) === 1);
 }
 
 /** A list from line `start`: its items, each with the lines indented under it. */
