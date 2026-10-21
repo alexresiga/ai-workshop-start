@@ -102,14 +102,19 @@ test("a link's text may hold balanced brackets, as on GitHub; an unbalanced [ is
   assert.deepEqual(inline('[a \\] b](u)'), [['a', { href: 'u' }, 'a ] b']]);
   // An unbalanced [ before a link is text.
   assert.deepEqual(inline('[a [b](u)'), ['[a ', ['a', { href: 'u' }, 'b']]);
-  // A link in a link's text: only the inner one is a link; an image in one is still fine.
+  // A link in a link's text: only the inner one is a link.
   assert.deepEqual(inline('[a [b](u) c](v)'), ['[a ', ['a', { href: 'u' }, 'b'], ' c](v)']);
-  assert.deepEqual(inline('[![logo](l.png)](u)'), [['a', { href: 'u' }, ['a', { href: 'l.png' }, 'logo']]]);
+  // An image in a link's text is its text, so a badge is one link, to where its link goes; an image alone is a link to it.
+  assert.deepEqual(inline('[![build](https://ci.example.com/badge.svg)](https://ci.example.com)'), [['a', { href: 'https://ci.example.com' }, 'build']]);
+  assert.deepEqual(inline('[![logo](l.png)](u)'), [['a', { href: 'u' }, 'logo']]);
+  assert.deepEqual(inline('[Docs ![*logo*](l.png) here](u)'), [['a', { href: 'u' }, 'Docs ', ['em', {}, 'logo'], ' here']]);
+  assert.deepEqual(inline('**[![logo](l.png)](u)**'), [['strong', {}, ['a', { href: 'u' }, 'logo']]]);
+  assert.deepEqual(inline('See ![logo](l.png).'), ['See ', ['a', { href: 'l.png' }, 'logo'], '.']);
   // An escaped backslash or ! before the inner link escapes neither its [ nor makes it an image.
   assert.deepEqual(inline('[a \\\\[b](u) c](v)'), ['[a \\', ['a', { href: 'u' }, 'b'], ' c](v)']);
   assert.deepEqual(inline('[a \\![b](u) c](v)'), ['[a !', ['a', { href: 'u' }, 'b'], ' c](v)']);
   assert.deepEqual(inline('[a \\[b](u) c](v)'), [['a', { href: 'u' }, 'a [b'], ' c](v)']);
-  assert.deepEqual(inline('[a \\\\![b](u) c](v)'), [['a', { href: 'v' }, 'a \\', ['a', { href: 'u' }, 'b'], ' c']]);
+  assert.deepEqual(inline('[a \\\\![b](u) c](v)'), [['a', { href: 'v' }, 'a \\b c']]);
   // A backtick in the destination or title of a link with brackets in its text is still the link's.
   assert.deepEqual(inline('[the [beta] guide](u "it`s") and `x`'), [['a', { href: 'u' }, 'the [beta] guide'], ' and ', ['code', {}, 'x']]);
   // A bracket in a code span in the text needs no partner.

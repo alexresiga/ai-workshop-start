@@ -188,7 +188,7 @@ const INNER_LINK = new RegExp(String.raw`(?<!(?<!\\)(?:\\\\)*[!\\])${LINK.source
 const INLINE = new RegExp(
   [
     /\uE001\uE000*/, // a code span, masked
-    `!?${LINK.source}`, // 1, 2: a link; an image as its link
+    `!?${LINK.source}`, // 1, 2: a link; an image as its link, or its text in a link's text
     /<(https?:\/\/[^\s<>]+)>/, // 3: an autolink
     `<(${EMAIL})>`, // 4: an email autolink
     /\*\*(?=\S)([\s\S]*?\S)\*\*|__(?=\S)([\s\S]*?\S)__(?!\w)/, // 5, 6: strong
@@ -250,7 +250,12 @@ export function inline(text, inLink = false) {
     // Each part as the text has it, code spans and all.
     const [, label, href, autolink, email, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
     if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
-    else if (label !== undefined) push(['a', { href: decode(href) }, ...inline(label, true)]);
+    else if (label !== undefined) {
+      // An image in a link's text is its text: the link around it is the one link, as on GitHub, where a badge goes where its link does.
+      const image = masked[match.index] === '!';
+      if (inLink && image) inline(label, true).forEach(push);
+      else push(['a', { href: decode(href) }, ...inline(label, true)]);
+    }
     else if (autolink !== undefined) push(['a', { href: decode(autolink) }, decode(autolink)]);
     else if (email !== undefined) push(['a', { href: `mailto:${email}` }, email]);
     else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2, inLink)]);
