@@ -108,7 +108,7 @@ export const scenes: Scene[] = [
       await expect(loading(page)).toHaveText('Scanned 1 of 3 repositories');
       await expect(bar).toHaveJSProperty('value', 1);
       // Marked, to see the next step updates the spinner and the bar rather than building new ones.
-      await loading(page).evaluate((status) => status.querySelectorAll('.spinner, progress').forEach((node) => node.setAttribute('data-kept', '')));
+      await loading(page).locator('.spinner, progress').evaluateAll((nodes) => nodes.forEach((node) => node.setAttribute('data-kept', '')));
       await expect(loading(page)).toHaveText('Scanned 2 of 3 repositories');
       await expect(bar).toHaveJSProperty('value', 2);
       await expect(bar).toHaveJSProperty('max', 3);

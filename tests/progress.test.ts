@@ -91,7 +91,7 @@ browserTest('an organization: Listing <org>’s repositories…, then Scanned N 
   await expect(bar).toHaveJSProperty('max', 5);
   await expect(bar).toHaveJSProperty('value', 0);
   // Marked, to see the next line updates them rather than building new ones: the spinner keeps turning, the bar eases.
-  await loading.evaluate((status) => status.querySelectorAll('.spinner, progress').forEach((node) => node.setAttribute('data-kept', '')));
+  await loading.locator('.spinner, progress').evaluateAll((nodes) => nodes.forEach((node) => node.setAttribute('data-kept', '')));
   organization.step();
   await expect(loading).toHaveText('Scanned 2 of 5 repositories');
   await expect(bar).toHaveJSProperty('value', 2);
