@@ -43,6 +43,11 @@ test('a code span binds tighter than strong, emphasis, struck out and a link, as
   assert.deepEqual(inline('[a `]` b](u)'), [['a', { href: 'u' }, 'a ', ['code', {}, ']'], ' b']]);
   // A code span opened inside emphasis, closed after it: the code wins, as on GitHub.
   assert.deepEqual(inline('**a `b** c`'), ['**a ', ['code', {}, 'b** c']]);
+  // A backtick in a link's destination or title is the link's, as on GitHub; one before the `](` opens a code span.
+  assert.deepEqual(inline('[a](u "it`s") and `x`'), [['a', { href: 'u' }, 'a'], ' and ', ['code', {}, 'x']]);
+  assert.deepEqual(inline('[a](https://e.com/a`b) and `x`'), [['a', { href: 'https://e.com/a`b' }, 'a'], ' and ', ['code', {}, 'x']]);
+  assert.deepEqual(inline('[not a `link](/foo`)'), ['[not a ', ['code', {}, 'link](/foo'], ')']);
+  assert.deepEqual(inline('no link](u `x`)'), ['no link](u ', ['code', {}, 'x'], ')']);
   // An escaped backtick opens no code span; an autolink is read before one.
   assert.deepEqual(inline('**\\`a** b`'), [['strong', {}, '`a'], ' b`']);
   assert.deepEqual(inline('<https://a.example/`b> `c`'), [['a', { href: 'https://a.example/`b' }, 'https://a.example/`b'], ' ', ['code', {}, 'c']]);
