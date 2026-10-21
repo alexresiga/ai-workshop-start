@@ -138,3 +138,18 @@ browserTest('375 px, an ordinary table: each word in its cells stays whole, on o
   await expectInside(box, 375);
   await expectNoSidewaysScroll(page, 375);
 });
+
+/** A GitHub link to a SKILL.md deep in a repository: not a repository's link, so the server refuses it, the link in its message. */
+const DEEP = 'https://github.com/example/fixture/blob/main/plugins/kotlinGradlePluginIntegrationTests/src/testData/.claude/skills/code-style/SKILL.md';
+
+for (const width of [375, 1280]) {
+  browserTest(`${width} px, a long link that cannot be scanned: its message wraps in the list, no sideways scroll`, async (t) => {
+    const page = await open(t, '/?repo=example/fixture', width);
+    await page.locator('#url').fill(DEEP);
+    await page.locator('#button').click();
+    await expect(page.locator('#skills .message.error')).toContainText('Not a GitHub repository URL');
+    expect(await page.locator('#skills').evaluate((list) => list.scrollWidth - list.clientWidth)).toBeLessThanOrEqual(0);
+    await expectInside(page.locator('#skills .message.error'), width);
+    await expectNoSidewaysScroll(page, width);
+  });
+}
