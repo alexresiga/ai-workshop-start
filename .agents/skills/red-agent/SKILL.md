@@ -77,7 +77,9 @@ export const steps: Step[] = [
 ];
 ```
 
-`act.click`, `act.type`, `act.press` and `act.pause` work as in record-feature. To start elsewhere, call
+`act.click`, `act.type`, `act.press` and `act.pause` work as in record-feature. For steps that cluster an organization's
+skills (`?org=example`, **Cluster skills**), export `ask(prompt)`: what the model answers. The recorder never runs `claude`,
+and with no `ask` every clustering fails, which is not a bug. To start elsewhere, call
 `page.goto(new URL('/?org=…', page.url()).href)`.
 
 ## Common mistakes

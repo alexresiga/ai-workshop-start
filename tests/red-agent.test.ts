@@ -115,6 +115,24 @@ reproTest('the steps: the page never loads the fixture → the page never loaded
   assert.ok(!existsSync(join(dir, 'out')));
 });
 
+reproTest('the steps: an ask → what the model answers, for steps that cluster', (t) => {
+  const dir = bugDir(t);
+  writeFileSync(join(dir, 'steps.ts'), `import { expect } from '@playwright/test';\n${HEAD}let asked = 0;
+export async function ask() { asked++; return JSON.stringify({ clusters: [{ theme: 'Docs', skills: [1, 2, 3] }] }); }
+export const steps = [
+  { caption: 'Cluster example: the model is asked', async run(page, act) {
+    const before = asked;
+    await page.goto(new URL('/?org=example', page.url()).href);
+    await act.click(page.getByRole('button', { name: 'Cluster skills', exact: true }));
+    await expect.poll(() => asked).toBe(before + 1);
+  } },
+  { caption: 'The pill shows the count', async run(page) { ${WRONG} } },
+];\n`);
+  const run = spawnSync('node', [REPRO, join(dir, 'steps.ts')], { cwd: REPOSITORY, encoding: 'utf8', timeout: 240_000 });
+  // With no ask, the first step would fail: the model never answers.
+  assert.equal(run.status, 0, run.stderr);
+});
+
 test('the steps: a missing title, expected or steps → <file> exports no <name>, exit 1, no video', (t) => {
   const dir = bugDir(t);
   writeFileSync(join(dir, 'steps.ts'), "export const title = '  ';\nexport const steps = [];\n");
