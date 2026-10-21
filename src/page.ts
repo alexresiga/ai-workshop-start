@@ -76,7 +76,7 @@ export const PAGE = `<!doctype html>
   nav mark { color: var(--mark-text); background: var(--mark); border-radius: .2rem; }
   nav .cluster { margin-bottom: .9rem; }
   nav .cluster[hidden] { display: none; }
-  nav .cluster h2 { margin: 0 0 .3rem; padding: 0 1rem; font: 600 .8rem var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  nav .cluster h2 { margin: 0 0 .3rem; padding: 0 1rem; font: 600 .8rem var(--sans); color: var(--muted); }
   nav.repositories button { display: flex; align-items: center; gap: 1rem; }
   nav.repositories .name { flex: 1; min-width: 0; }
   nav.repositories .pill { flex: none; }
