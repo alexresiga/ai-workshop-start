@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.946 --> 00:00:02.976
+code-style's SKILL.md starts "Code style", then a line of =
+
+2
+00:00:02.976 --> 00:00:09.195
+✗ "Code style" should be a heading, with no ===== left
