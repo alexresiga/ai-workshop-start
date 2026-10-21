@@ -41,6 +41,18 @@ test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
   ]);
 });
 
+test('a list interrupts a paragraph as on GitHub: a bullet, or an ordered item from 1, each with text', () => {
+  assert.deepEqual(markdown('The format changed in\n2024. Use the new one.\n'), [['p', {}, 'The format changed in 2024. Use the new one.']]);
+  assert.deepEqual(markdown('Steps\n2) later\n'), [['p', {}, 'Steps 2) later']]);
+  assert.deepEqual(markdown('Steps:\n1. one\n2. two\n'), [['p', {}, 'Steps:'], ['ol', {}, ['li', {}, 'one'], ['li', {}, 'two']]]);
+  assert.deepEqual(markdown('Steps:\n01) one\n'), [['p', {}, 'Steps:'], ['ol', {}, ['li', {}, 'one']]]);
+  assert.deepEqual(markdown('Notes:\n- one\n'), [['p', {}, 'Notes:'], ['ul', {}, ['li', {}, 'one']]]);
+  assert.deepEqual(markdown('Total\n1.\n'), [['p', {}, 'Total 1.']]);
+  assert.deepEqual(markdown('A\n*\n'), [['p', {}, 'A *']]);
+  assert.deepEqual(markdown('> In\n> 2024. it changed\n'), [['blockquote', {}, ['p', {}, 'In 2024. it changed']]]);
+  assert.deepEqual(markdown('2024. A list may start anywhere\n'), [['ol', {}, ['li', {}, 'A list may start anywhere']]]);
+});
+
 test('fenced code as it is, a quote, a table', () => {
   assert.deepEqual(markdown('```sh\n# not a heading\n  **kept**\n```\n\n> quoted *text*\n\n| a | b |\n|---|:-:|\n| 1 | `2` |\n'), [
     ['pre', {}, ['code', {}, '# not a heading\n  **kept**']],
