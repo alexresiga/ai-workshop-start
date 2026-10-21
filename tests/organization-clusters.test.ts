@@ -173,13 +173,59 @@ test('a character split between two chunks of the answer stays whole, in the the
   assert.match(failed.error, /could not cluster the skills: Erreur: accès refusé$/);
 });
 
+/** Whether `check` comes true within 4 s. */
+const until = async (check: () => boolean) => {
+  for (let i = 0; i < 200 && !check(); i++) await new Promise((done) => setTimeout(done, 20));
+  return check();
+};
+
 test('more than the time allowed → claude stopped, the clear message, status 400', async (t) => {
   const claude = fakeClaude(t, reply(ANSWER), 0, 60_000);
   const base = await serve(t, (prompt) => askClaude(prompt, { binary: claude.binary, timeout: 300 }));
   const response = await fetch(`${base}/api/clusters?name=JetBrains`);
   assert.equal(response.status, 400);
   assert.match(((await response.json()) as { error: string }).error, /claude\.cjs took too long to cluster the skills$/);
-  assert.equal(alive(claude.started()!.pid), false);
+  assert.equal(await until(() => !alive(claude.started()!.pid)), true);
+});
+
+/** A `claude` that runs `body` once it has its question; its pid and its child's, if it starts one, in `pids.json`. */
+function stubClaude(t: TestContext, body: string) {
+  const dir = mkdtempSync(join(tmpdir(), 'skill-atlas-claude-'));
+  const pids = () => (existsSync(join(dir, 'pids.json')) ? (JSON.parse(readFileSync(join(dir, 'pids.json'), 'utf8')) as number[]) : []);
+  t.after(() => {
+    for (const pid of pids()) if (alive(pid)) process.kill(pid, 'SIGKILL');
+    rmSync(dir, { recursive: true, force: true });
+  });
+  const binary = join(dir, 'claude.cjs');
+  writeFileSync(
+    binary,
+    `#!/usr/bin/env node
+const { writeFileSync } = require('node:fs');
+const pids = (more = []) => writeFileSync(${JSON.stringify(join(dir, 'pids.json'))}, JSON.stringify([process.pid, ...more]));
+pids();
+process.stdin.resume().on('end', () => {${body}});
+`,
+  );
+  chmodSync(binary, 0o755);
+  return { binary, pids };
+}
+
+test('a claude that ignores SIGTERM → the clear message at the time allowed; killed after its grace', async (t) => {
+  const claude = stubClaude(t, `process.on('SIGTERM', () => {}); setInterval(() => {}, 1000);`);
+  const started = Date.now();
+  await assert.rejects(askClaude('question', { binary: claude.binary, timeout: 300, grace: 300 }), /took too long to cluster the skills$/);
+  assert.ok(Date.now() - started < 2000);
+  const [pid] = claude.pids();
+  assert.equal(await until(() => !alive(pid)), true);
+});
+
+test('a claude gone, but a process it started still holding its stdout → the clear message at the time allowed', async (t) => {
+  const grandchild = `require('node:child_process').spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'inherit' })`;
+  const claude = stubClaude(t, `const child = ${grandchild}; pids([child.pid]); process.exit(0);`);
+  const started = Date.now();
+  await assert.rejects(askClaude('question', { binary: claude.binary, timeout: 300 }), /took too long to cluster the skills$/);
+  assert.ok(Date.now() - started < 2000);
+  assert.equal(claude.pids().length, 2);
 });
 
 test('the page closed while it runs → claude stopped', async (t) => {
@@ -192,7 +238,7 @@ test('the page closed while it runs → claude stopped', async (t) => {
   page.abort();
   await request;
   assert.match(String(await stopped), /No one is waiting for the clusters/);
-  assert.equal(alive(claude.started()!.pid), false);
+  assert.equal(await until(() => !alive(claude.started()!.pid)), true);
 });
 
 test('the question: the description’s first sentence, cut at 160 characters', async (t) => {
