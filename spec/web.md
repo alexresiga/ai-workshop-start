@@ -60,6 +60,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   code point 0, past U+10FFFF or a surrogate → U+FFFD; an unknown name, or no `;`, as typed; in text, a link's text and
   its destination, an autolink `<…>` and a bare URL; not in code, nor after a backslash; the character is text, never Markdown nor HTML
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
+- A link's destination may be in `<…>`, as on GitHub (CommonMark's link destinations): then it may hold spaces and parentheses,
+  not a line break, `<` nor `>`; "Read [the guide](<docs/my guide.md>)." is "Read the guide.", "the guide" a link to
+  `docs/my%20guide.md` next to the SKILL.md; a `<` with no `>`, `[the guide](<docs/my guide.md)`, is text
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once
 - **Fits the window**, at any width, a phone's 375 px too: no sideways scroll; the list beside the SKILL.md, or above it below 50rem;

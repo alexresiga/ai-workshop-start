@@ -17,6 +17,9 @@ const answers = replay({
   ...searchAnswers('example/autolink', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nSee https://kotlinlang.org/docs.\n',
   }),
+  ...searchAnswers('example/pointy', {
+    '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nRead [the guide](<docs/my guide.md>).\n',
+  }),
   ...searchAnswers('example/email', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nAsk <kotlin-team@example.com>.\n',
   }),
@@ -58,6 +61,16 @@ browserTest('a bare URL is a link, without its trailing period: "See https://kot
   await expect(paragraph).toHaveText('See https://kotlinlang.org/docs.');
   await expect(paragraph.locator('a')).toHaveAttribute('href', 'https://kotlinlang.org/docs');
   await expect(paragraph.locator('a')).toHaveText('https://kotlinlang.org/docs');
+});
+
+browserTest('a destination in <…> may hold a space: "Read [the guide](<docs/my guide.md>)." links docs/my%20guide.md', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/pointy`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('Read the guide.');
+  await expect(paragraph.locator('a')).toHaveText('the guide');
+  await expect(paragraph.locator('a')).toHaveAttribute('href', /\/\.claude\/skills\/code-style\/docs\/my%20guide\.md$/);
 });
 
 browserTest('an email autolink is a mailto link, without its brackets: "Ask <kotlin-team@example.com>."', async (t) => {
