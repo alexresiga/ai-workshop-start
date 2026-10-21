@@ -1,0 +1,22 @@
+{
+  "title": "A line ending in \"\\\" shows the backslash, not a line break: \"Tag the release.\\ Push the tag.\"",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, **rendered Markdown**: … paragraphs\", as on GitHub, where a backslash at the end of a line is a hard line break (CommonMark, \"Hard line breaks\"): \"Tag the release.\\\" then \"Push the tag.\" are two lines of one paragraph, no backslash; `markdown.js` joins them with a space and keeps the `\\`.",
+  "head": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "failed": {
+    "step": 2,
+    "caption": "It should be two lines, with no backslash",
+    "error": "expect(locator).not.toContainText(expected) failed\n\nLocator: locator('#detail .markdown p')\nExpected substring: not \"\\\\\"\nReceived string: \"Tag the release.\\\\ Push the tag.\"\nTimeout: 5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.3 s, 258 frames"
+    }
+  ]
+}
