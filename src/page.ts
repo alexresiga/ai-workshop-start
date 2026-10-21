@@ -158,6 +158,8 @@ export const PAGE = `<!doctype html>
   .markdown .table table { margin: 0; overflow-wrap: break-word; }
   .markdown table { border-collapse: collapse; }
   .markdown th, .markdown td { padding: .35rem .75rem; border: 1px solid var(--line); text-align: left; }
+  .markdown li.task { list-style: none; }
+  .markdown li.task input { margin: 0 .4em .2em -1.4em; vertical-align: middle; }
   .markdown .raw { white-space: pre-wrap; }
 
   @media (max-width: 50rem) {
@@ -731,6 +733,12 @@ export const PAGE = `<!doctype html>
     if (typeof node === 'string') return document.createTextNode(node);
     const [tag, attributes, ...children] = node;
     const result = document.createElement(tag);
+    if (tag === 'input') {
+      // A task list item's checkbox, as on GitHub: shown, not ticked by a click.
+      result.type = 'checkbox';
+      result.checked = attributes.checked;
+      result.disabled = true;
+    }
     if (tag === 'a') {
       try {
         const url = new URL(attributes.href, base);
@@ -742,6 +750,7 @@ export const PAGE = `<!doctype html>
       } catch {}
     }
     result.append(...children.map((child) => build(child, base)));
+    if (tag === 'li' && result.querySelector(':scope > input, :scope > p:first-child > input:first-child')) result.className = 'task';
     if (tag !== 'table') return result;
     // A wide table scrolls in its own box, as code does, not the page.
     const box = document.createElement('div');
