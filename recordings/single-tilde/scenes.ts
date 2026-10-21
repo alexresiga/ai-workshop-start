@@ -53,4 +53,29 @@ export const scenes: Scene[] = [
       await act.pause();
     },
   },
+  {
+    caption: '"~/bin and ~/lib" is text: a tilde after punctuation, before a letter, closes nothing; "~(a)~" is struck out',
+    covers: ['as in GFM, a tilde before punctuation opens only'],
+    async run(page, act) {
+      await withBody(page, 'Use ~/bin and ~/lib.\n\nUse ~(a)~ here.\n');
+      const paragraphs = page.locator('#detail .markdown p');
+      await expect(paragraphs).toHaveText(['Use ~/bin and ~/lib.', 'Use (a) here.']);
+      await expect(page.locator('#detail .markdown del')).toHaveText(['(a)']);
+      await act.pause();
+    },
+  },
+  {
+    caption: '"Install to ~/bin, see [docs](https://example.edu/~jdoe/).": nothing struck out, the link goes to ~jdoe',
+    covers: ["a tilde in an autolink `<…>`, a link's destination or a bare URL"],
+    async run(page, act) {
+      await withBody(page, 'Install to ~/bin, see [docs](https://example.edu/~jdoe/).\n\nOpen https://example.edu/~jdoe/ or <https://example.edu/~jdoe/>.\n');
+      const paragraphs = page.locator('#detail .markdown p');
+      await expect(paragraphs).toHaveText(['Install to ~/bin, see docs.', 'Open https://example.edu/~jdoe/ or https://example.edu/~jdoe/.']);
+      await expect(page.locator('#detail .markdown del')).toHaveCount(0);
+      const links = page.locator('#detail .markdown a');
+      await expect(links).toHaveCount(3);
+      for (const link of await links.all()) await expect(link).toHaveAttribute('href', 'https://example.edu/~jdoe/');
+      await act.pause();
+    },
+  },
 ];
