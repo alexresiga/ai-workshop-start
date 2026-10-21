@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.956 --> 00:00:02.977
+code-style's SKILL.md: "See [the guide][guide]." and "[guide]: https://example.com/guide"
+
+2
+00:00:02.977 --> 00:00:09.197
+✗ It should read "See the guide.", a link to https://example.com/guide, and nothing else

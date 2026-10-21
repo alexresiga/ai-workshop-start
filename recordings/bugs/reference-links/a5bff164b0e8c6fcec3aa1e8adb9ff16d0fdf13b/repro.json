@@ -1,0 +1,22 @@
+{
+  "title": "A reference link (`[the guide][guide]`) shows its brackets, and its `[guide]: https://…` line as a paragraph",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, **rendered Markdown**: … links\", as on GitHub. \"See [the guide][guide].\" with `[guide]: https://example.com/guide` below it reads \"See the guide.\", \"the guide\" a link to https://example.com/guide, and the definition line is not shown; `markdown.js` knows only inline links, `[text](url)`.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"See the guide.\", a link to https://example.com/guide, and nothing else",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown')\nExpected: \"See the guide.\"\nReceived: \"See [the guide][guide].[guide]: https://example.com/guide\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 260 frames"
+    }
+  ]
+}
