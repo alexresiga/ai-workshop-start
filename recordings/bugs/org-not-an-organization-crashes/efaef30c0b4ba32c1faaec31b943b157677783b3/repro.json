@@ -1,0 +1,22 @@
+{
+  "title": "Opening `?org=example/fixture` throws a TypeError and leaves the page on its start screen",
+  "expected": "`spec/web.md`, an organization: \"Unreachable repository or not a GitHub URL → the clear message, in the list\"; and no uncaught error. Instead `ORGANIZATION.exec(text)[1]` in `scan()` throws `Cannot read properties of null (reading '1')` and the list keeps saying \"Paste a repository or an organization and press Scan.\"",
+  "head": "efaef30c0b4ba32c1faaec31b943b157677783b3",
+  "failed": {
+    "step": 2,
+    "caption": "The list should give the clear message, not stay on the start screen",
+    "error": "expect(locator).toBeVisible() failed\n\nLocator: locator('#skills .message.error')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.3 s, 257 frames"
+    }
+  ]
+}

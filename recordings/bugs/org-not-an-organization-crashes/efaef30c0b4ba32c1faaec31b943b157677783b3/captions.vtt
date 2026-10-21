@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.948 --> 00:00:02.895
+Open ?org=example/fixture, an address that is not an organization
+
+2
+00:00:02.895 --> 00:00:09.111
+✗ The list should give the clear message, not stay on the start screen
