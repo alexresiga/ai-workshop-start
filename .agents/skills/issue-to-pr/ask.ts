@@ -48,9 +48,9 @@ export async function main(args: string[], env = process.env): Promise<number> {
     return 2;
   }
   const token = env.SLACK_BOT_TOKEN;
-  const channel = env.CHANNEL_ID;
+  const channel = env.SLACK_CHANNEL_ID;
   if (!token || !channel) {
-    console.error(`${!token ? 'SLACK_BOT_TOKEN' : 'CHANNEL_ID'} is not set: it is needed to ask in Slack`);
+    console.error(`${!token ? 'SLACK_BOT_TOKEN' : 'SLACK_CHANNEL_ID'} is not set: it is needed to ask in Slack`);
     return 2;
   }
   const api = (env.SLACK_API || 'https://slack.com/api').replace(/\/$/, '');
@@ -87,10 +87,20 @@ export async function main(args: string[], env = process.env): Promise<number> {
         .sort((a, b) => Number(a.ts) - Number(b.ts));
       if (replies.length) {
         for (const m of replies) console.log(`${m.user ?? m.username ?? m.bot_id ?? 'someone'}: ${m.text ?? ''}`);
+        const refused: string[] = [];
         for (const m of replies) {
           const name = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
           const reacted = await slack(api, token, 'reactions.add', { channel, timestamp: m.ts, name }).catch((error: Error) => ({ ok: false, error: error.message }));
-          if (!reacted.ok) console.error(`warning: could not mark the reply ${m.ts} as read: ${reacted.error}`);
+          if (!reacted.ok) {
+            console.error(`warning: could not mark the reply ${m.ts} as read: ${reacted.error}`);
+            refused.push(`:${name}:`);
+          }
+        }
+        // No reactions:write scope, most likely: the funny emojis go in the thread instead, with chat:write.
+        if (refused.length) {
+          const text = `Read, thanks ${refused.join(' ')}`;
+          const receipt = await slack(api, token, 'chat.postMessage', { channel, thread_ts: ts, text }).catch((error: Error) => ({ ok: false, error: error.message }));
+          if (!receipt.ok) console.error(`warning: could not post the read receipt in the thread: ${receipt.error}`);
         }
         return 0;
       }
