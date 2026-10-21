@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.937 --> 00:00:03.871
+A quote whose second line has no ">": both lines are the quote, "Never push to main on a Friday."
+
+2
+00:00:03.871 --> 00:00:06.764
+A blank line ends the quote, and so does code: the line after each is a paragraph of its own
