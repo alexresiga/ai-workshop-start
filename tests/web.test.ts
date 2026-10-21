@@ -89,6 +89,13 @@ test('the page gets the Markdown parser, as JavaScript', async () => {
   assert.match(await response.text(), /export function markdown\(text\)/);
 });
 
+test('the page gets the named entities markdown.js reads, as JavaScript', async () => {
+  const response = await fetch(`${base}/entities.js`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /text\/javascript/);
+  assert.match(await response.text(), /export const ENTITIES = /);
+});
+
 test('scan: an unreachable repository → status 400 and the clear message', async () => {
   const response = await scanFor('https://github.com/JetBrains/missing');
   assert.equal(response.status, 400);

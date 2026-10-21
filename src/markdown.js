@@ -5,7 +5,10 @@
 // A node is `[tag, attributes, ...children]`, a child a node or a string. The tags are only these:
 // h1–h6, p, pre, code, blockquote, ul, ol, li, hr, table, thead, tbody, tr, th, td, strong, em,
 // del, a and input; the only attributes are a link's `href`, as the file has it, and a task list item's
-// checkbox's `checked`.
+// checkbox's `checked`. An entity reference, `&amp;`, `&#38;` or `&#x26;`, is its character, as on GitHub;
+// still text, never HTML.
+
+import { ENTITIES } from './entities.js';
 
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
@@ -221,6 +224,8 @@ function mask(text) {
 export function inline(text, inLink = false) {
   const out = [];
   let last = 0;
+  // Text as the file has it, its entities decoded; an escaped character or code is pushed as it is.
+  const pushText = (from, to) => push(decode(text.slice(from, to)));
   const push = (node) => {
     if (typeof node === 'string' && typeof out.at(-1) === 'string') out[out.length - 1] += node;
     else if (node !== '') out.push(node);
@@ -233,12 +238,12 @@ export function inline(text, inLink = false) {
       parts.lastIndex = match.index + 1;
       continue;
     }
-    push(text.slice(last, match.index));
+    pushText(last, match.index);
     last = match.index + match[0].length;
     // Each part as the text has it, code spans and all.
     const [, label, href, autolink, email, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
     if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
-    else if (label !== undefined) push(['a', { href }, ...inline(label, true)]);
+    else if (label !== undefined) push(['a', { href: decode(href) }, ...inline(label, true)]);
     else if (autolink !== undefined) push(['a', { href: autolink }, autolink]);
     else if (email !== undefined) push(['a', { href: `mailto:${email}` }, email]);
     else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2, inLink)]);
@@ -248,13 +253,26 @@ export function inline(text, inLink = false) {
     else {
       // In a link's text, a URL is text, as on GitHub: no link in a link.
       const url = trimURL(bare);
-      push(inLink ? url : ['a', { href: url.startsWith('www.') ? `http://${url}` : url }, url]);
+      const shown = decode(url);
+      push(inLink ? shown : ['a', { href: url.startsWith('www.') ? `http://${shown}` : shown }, shown]);
       last = match.index + url.length;
       parts.lastIndex = last;
     }
   }
-  push(text.slice(last));
+  pushText(last);
   return out;
+}
+
+// An entity reference, as CommonMark reads it: a name the HTML5 list has, or 1–7 decimal or 1–6 hex digits, then `;`.
+const ENTITY = /&(?:#(\d{1,7})|#[xX]([\dA-Fa-f]{1,6})|([A-Za-z][A-Za-z\d]{0,31}));/g;
+
+/** The text with each entity reference as its character; an unknown name stays as typed; code point 0, or none, → U+FFFD. */
+function decode(text) {
+  return text.replace(ENTITY, (reference, decimal, hex, name) => {
+    if (name !== undefined) return ENTITIES.get(name) ?? reference;
+    const code = decimal !== undefined ? Number(decimal) : parseInt(hex, 16);
+    return code === 0 || code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff) ? '\uFFFD' : String.fromCodePoint(code);
+  });
 }
 
 /**

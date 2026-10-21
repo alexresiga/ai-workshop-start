@@ -21,6 +21,8 @@ const LOOPBACK = /^(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/i;
 
 /** The Markdown parser, sent to the browser as it is. */
 const MARKDOWN = readFileSync(new URL('./markdown.js', import.meta.url), 'utf8');
+/** The HTML5 named character references markdown.js reads, sent to the browser as it is. */
+const ENTITIES = readFileSync(new URL('./entities.js', import.meta.url), 'utf8');
 /** The skill filter, sent to the browser as it is. */
 const FILTER = readFileSync(new URL('./filter.js', import.meta.url), 'utf8');
 /** The dice's random pick, sent to the browser as it is. */
@@ -103,6 +105,7 @@ export function createWebServer(options: WebOptions): Server {
     if (request.method !== 'GET') return json(405, { error: 'Only GET' });
     if (url.pathname === '/') return send(200, 'text/html', PAGE);
     if (url.pathname === '/markdown.js') return send(200, 'text/javascript', MARKDOWN);
+    if (url.pathname === '/entities.js') return send(200, 'text/javascript', ENTITIES);
     if (url.pathname === '/filter.js') return send(200, 'text/javascript', FILTER);
     if (url.pathname === '/random.js') return send(200, 'text/javascript', RANDOM);
     if (url.pathname === '/list.js') return send(200, 'text/javascript', LIST);

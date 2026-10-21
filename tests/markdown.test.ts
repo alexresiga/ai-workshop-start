@@ -123,7 +123,7 @@ test('a bare http, https or www. URL is a link, without its trailing punctuation
   // Trailing ?!.,:*_~'" are not the link's; nor an unmatched ), nor an entity-like &amp;.
   assert.deepEqual(inline('(https://en.wikipedia.org/wiki/Markdown_(a)).'), ['(', link('https://en.wikipedia.org/wiki/Markdown_(a)'), ').']);
   assert.deepEqual(inline('"Is it https://a.com/x?", she asked:'), ['"Is it ', link('https://a.com/x'), '?", she asked:']);
-  assert.deepEqual(inline('https://a.com/?q=1&amp; end'), [link('https://a.com/?q=1'), '&amp; end']);
+  assert.deepEqual(inline('https://a.com/?q=1&amp; end'), [link('https://a.com/?q=1'), '& end']);
   // Inside strong, emphasis or struck out; a _ in its path is the link's.
   assert.deepEqual(inline('**https://a.com** *www.b.com* ~~https://c.com~~ https://d.com/a_b_c'), [
     ['strong', {}, link('https://a.com')],
@@ -192,6 +192,37 @@ test('a table right after a line of text, as on GitHub; only with as many column
     ['table', {}, ['thead', {}, ['tr', {}, ['th', {}, 'Level'], ['th', {}, 'Meaning']]], ['tbody', {}, ['tr', {}, ['td', {}, '1'], ['td', {}, 'low']]]],
   ]);
   assert.deepEqual(markdown('a | b\n|---|\n'), [['p', {}, 'a | b |---|']]);
+});
+
+test('an entity reference is its character, as on GitHub: named, decimal or hex; still text, never HTML', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(markdown('Replace &lt;version&gt; &amp; tag it.'), [['p', {}, 'Replace <version> & tag it.']]);
+  assert.deepEqual(inline('&copy; &mdash; &nbsp; &ngE; &#35; &#x1F600; &#X22;'), ['\u00a9 \u2014 \u00a0 \u2267\u0338 # \u{1F600} "']);
+  // Code point 0, past U+10FFFF or a surrogate → U+FFFD.
+  assert.deepEqual(inline('&#0; &#x110000; &#xD800;'), ['\uFFFD \uFFFD \uFFFD']);
+  // An unknown name, no ;, too many digits, a space, or a name in the wrong case: as typed.
+  assert.deepEqual(inline('&nosuch; &amp &#12345678; &#x1234567; & amp; &AMp; AT&T'), ['&nosuch; &amp &#12345678; &#x1234567; & amp; &AMp; AT&T']);
+  // An entity that is a Markdown character is text, never Markdown; nor HTML.
+  assert.deepEqual(inline('&ast;not emphasis&ast; &lt;script&gt;alert(1)&lt;/script&gt;'), ['*not emphasis* <script>alert(1)</script>']);
+  // Not in code; not after a backslash.
+  assert.deepEqual(inline('`&amp;` \\&amp;'), [['code', {}, '&amp;'], ' &amp;']);
+  assert.deepEqual(markdown('```\n&lt;x&gt;\n```\n\n    &amp;\n'), [['pre', {}, ['code', {}, '&lt;x&gt;']], ['pre', {}, ['code', {}, '&amp;']]]);
+  // In a heading, a list, a table, strong, emphasis, struck out, a link's text and its destination; a bare URL too.
+  assert.deepEqual(markdown('# a &amp; b\n\n- &lt;x&gt;\n\n| &amp; |\n|---|\n| &gt; |\n'), [
+    ['h1', {}, 'a & b'],
+    ['ul', {}, ['li', {}, '<x>']],
+    ['table', {}, ['thead', {}, ['tr', {}, ['th', {}, '&']]], ['tbody', {}, ['tr', {}, ['td', {}, '>']]]],
+  ]);
+  assert.deepEqual(inline('**&lt;** *&gt;* ~~&amp;~~ [&lt;v&gt;](a?b=1&amp;c=2)'), [
+    ['strong', {}, '<'],
+    ' ',
+    ['em', {}, '>'],
+    ' ',
+    ['del', {}, '&'],
+    ' ',
+    ['a', { href: 'a?b=1&c=2' }, '<v>'],
+  ]);
+  assert.deepEqual(inline('https://a.com/?b=1&amp;c=2'), [['a', { href: 'https://a.com/?b=1&c=2' }, 'https://a.com/?b=1&c=2']]);
 });
 
 test('HTML in a SKILL.md is text, never an element', () => {
