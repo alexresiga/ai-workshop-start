@@ -53,6 +53,18 @@ test('a code span binds tighter than strong, emphasis, struck out and a link, as
   assert.deepEqual(inline('<https://a.example/`b> `c`'), [['a', { href: 'https://a.example/`b' }, 'https://a.example/`b'], ' ', ['code', {}, 'c']]);
 });
 
+test('a run of backticks with no closing run as long is text, as on GitHub: a code span opens only at the start of a run', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('Wrap code in ``` fences; use `x` inline.'), ['Wrap code in ``` fences; use ', ['code', {}, 'x'], ' inline.']);
+  assert.deepEqual(inline('a `` b'), ['a `` b']);
+  assert.deepEqual(inline('a ```foo`` bar`'), ['a ```foo`` bar`']);
+  // A shorter run inside a span is the span's; the run after it closes it.
+  assert.deepEqual(inline('a ```b``c``` d'), ['a ', ['code', {}, 'b``c'], ' d']);
+  // After an escaped backtick, the rest of the run opens a span.
+  assert.deepEqual(inline('\\```a``'), ['`', ['code', {}, 'a']]);
+  assert.deepEqual(inline('\\``a``'), ['``a``']);
+});
+
 test('strong inside emphasis: its closing ** does not end the emphasis, at the end of it either', () => {
   assert.deepEqual(markdown('*Always **run** the tests*'), [['p', {}, ['em', {}, 'Always ', ['strong', {}, 'run'], ' the tests']]]);
   assert.deepEqual(markdown('*Always **run***'), [['p', {}, ['em', {}, 'Always ', ['strong', {}, 'run']]]]);

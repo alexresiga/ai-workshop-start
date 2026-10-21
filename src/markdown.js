@@ -176,9 +176,10 @@ const LABEL_PART = '[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?';
 const EMAIL = String.raw`[A-Za-z0-9.!#$%&'*+/=?^_\`{|}~-]+@${LABEL_PART}(?:\.${LABEL_PART})*`;
 
 // A code span binds tighter than the rest, as on GitHub; only an escape, an autolink, an email one, or a link's `](destination "title")`
-// after a `[`, is read before it.
+// after a `[`, is read before it. It opens at the start of a run of backticks, not after an unescaped one: a run with no closing run
+// as long is text, as typed.
 const SPANS = new RegExp(
-  String.raw`\\[!-/:-@[-\`{-~]|<https?:\/\/[^\s<>]+>|<${EMAIL}>|(?<=\[${LABEL})\]${DESTINATION.replace('<?(', '<?(?:')}|(\`+)([^\`]|[^\`][\s\S]*?[^\`])\1(?!\`)`,
+  String.raw`\\[!-/:-@[-\`{-~]|<https?:\/\/[^\s<>]+>|<${EMAIL}>|(?<=\[${LABEL})\]${DESTINATION.replace('<?(', '<?(?:')}|(?<!(?<!\\)(?:\\\\)*\`)(\`+)([^\`]|[^\`][\s\S]*?[^\`])\1(?!\`)`,
   'g',
 );
 
