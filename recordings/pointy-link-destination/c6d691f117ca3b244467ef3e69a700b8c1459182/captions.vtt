@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.969 --> 00:00:03.048
+code-style's SKILL.md says "Read [the guide](<docs/my guide.md>).": "the guide" links docs/my%20guide.md next to it
+
+2
+00:00:03.048 --> 00:00:05.034
+In <…>, parentheses need no partner: "[the draft](<docs/my guide (draft.md>)" is a link too
+
+3
+00:00:05.034 --> 00:00:07.025
+Now "[the guide](<docs/my guide.md)", with no closing >: it stays text, as on GitHub

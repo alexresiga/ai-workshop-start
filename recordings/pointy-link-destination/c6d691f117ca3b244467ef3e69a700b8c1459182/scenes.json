@@ -1,0 +1,99 @@
+{
+  "title": "A link to a path with a space: Read [the guide](<docs/my guide.md>).",
+  "head": "c6d691f117ca3b244467ef3e69a700b8c1459182",
+  "base": "e47857d1ba3a836eab05bbe5eb7e4212cf2a25e0",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 60,
+        "text": "A link's destination may be in `<…>`, as on GitHub (CommonMark's link destinations): then it may hold spaces and parentheses, not a line break, `<` nor `>`"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "In <…>, parentheses need no partner: \"[the draft](<docs/my guide (draft.md>)\" is a link too",
+          "start": 3.048
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 61,
+        "text": "\"Read [the guide](<docs/my guide.md>).\" is \"Read the guide.\", \"the guide\" a link to `docs/my%20guide.md` next to the SKILL.md"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's SKILL.md says \"Read [the guide](<docs/my guide.md>).\": \"the guide\" links docs/my%20guide.md next to it",
+          "start": 0.969
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 62,
+        "text": "a `<` with no `>`, `[the guide](<docs/my guide.md)`, is text"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Now \"[the guide](<docs/my guide.md)\", with no closing >: it stays text, as on GitHub",
+          "start": 5.034
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"code-style's SKILL.md says \"Read [the guide](<docs/my guide.md>).\": \"the guide\" links docs/my%20guide.md next to it\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Read the guide.\"\nReceived: \"Read [the guide](<docs/my guide.md>).\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown p') with timeout 5000ms\n  - waiting for locator('#detail .markdown p')\n    14 × locator resolved to <p>Read [the guide](<docs/my guide.md>).</p>\n       - unexpected value \"Read [the guide](<docs/my guide.md>).\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "3 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.3 s, 183 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.2 s, 179 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.5 s, 212 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.17 s, SSIM ≥ 0.996"
+    }
+  ]
+}
