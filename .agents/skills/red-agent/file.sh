@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # spec/red-agent.md: files a recorded bug. Puts its out/ on the media branch, under recordings/bugs/<slug>/<head commit>/,
-# then opens one issue, labelled "delegated to AI", with issue.md as the body, its {{media}} filled in; then posts it in Slack.
+# then opens one issue, labelled "delegated to AI" and "bug", with issue.md as the body, its {{media}} filled in; then posts it in Slack.
 #
 #   file.sh [--dry-run] <bug dir> [footer]
 set -euo pipefail
 
 repo='alexresiga/ai-workshop-start'
-label='delegated to AI'
+labels=('delegated to AI' bug)
 
 dry=false
 if [[ ${1:-} == --dry-run ]]; then dry=true; shift; fi
@@ -44,7 +44,7 @@ $2"
 if $dry; then
   echo "would push to media:$dest/"
   (cd "$out" && ls -1)
-  echo "would open an issue labelled \"$label\": $title"
+  echo "would open an issue labelled \"${labels[0]}\" and \"${labels[1]}\": $title"
   echo "$body"
   echo "would post it in Slack: ${SLACK_CHANNEL_ID:-no SLACK_CHANNEL_ID}"
   exit 0
@@ -62,6 +62,6 @@ cp "$out"/* "$work/media/$dest/"
 git -C "$work/media" add "$dest"
 git -C "$work/media" commit --quiet -m "Bug: $dest"
 git -C "$work/media" push --quiet origin HEAD:refs/heads/media
-url=$(gh issue create --repo "$repo" --title "$title" --label "$label" --body "$body")
+url=$(gh issue create --repo "$repo" --title "$title" --label "${labels[0]}" --label "${labels[1]}" --body "$body")
 echo "$url"
 bash "$(dirname "$0")/announce.sh" "$url" "$title"

@@ -182,18 +182,41 @@ function file({ dir, bin }: { dir: string; bin: string }, issues: { title: strin
 
 const OK = [{ name: 'ffprobe repro.mp4', ok: true, detail: '1280×720' }];
 
-test('filing: --dry-run prints what it would push and file, labelled "delegated to AI", {{media}} filled in, the footer under a rule', (t) => {
+test('filing: --dry-run prints what it would push and file, labelled "delegated to AI" and "bug", {{media}} filled in, the footer under a rule', (t) => {
   const run = file(recorded(t, OK), [{ title: 'The pill says 9 of 9 and more', url: 'https://github.com/x/1' }], 'Produced by a test');
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /would push to media:recordings\/bugs\/pill-count\/abc123\/\n/);
   assert.match(run.stdout, /repro\.mp4/);
-  assert.match(run.stdout, /would open an issue labelled "delegated to AI": The pill says 9 of 9\n/);
+  assert.match(run.stdout, /would open an issue labelled "delegated to AI" and "bug": The pill says 9 of 9\n/);
   const media = 'https://raw.githubusercontent.com/alexresiga/ai-workshop-start/media/recordings/bugs/pill-count/abc123';
   assert.ok(run.stdout.includes(`![preview](${media}/preview.gif)\n[Video](${media}/repro.mp4)\n\n---\nProduced by a test\n`), run.stdout);
   // Every open issue, matched by its title here: a search would read a `:` or `(` in the title as its syntax.
   assert.match(run.calls, /^issue list --repo alexresiga\/ai-workshop-start --state open --json title,url --limit 1000\n/);
   assert.match(run.stdout, /would post it in Slack: C9\n$/);
   assert.doesNotMatch(run.calls, /issue create/);
+});
+
+test('filing: pushes out/ to the media branch, then opens one issue labelled "delegated to AI" and "bug"', (t) => {
+  const { dir, bin } = recorded(t, OK);
+  // A git that only logs, so nothing is pushed; and a gh that answers the search with no issues and the create with a URL.
+  writeFileSync(join(bin, 'git'), `#!/bin/sh\necho "git $*" >> "$(dirname "$0")/calls"\n[ "$1" = rev-parse ] && echo ${JSON.stringify(REPOSITORY)}\nexit 0\n`);
+  writeFileSync(join(bin, 'gh'), '#!/bin/sh\nprintf "gh" >> "$(dirname "$0")/calls"\nfor a; do printf " [%s]" "$a" >> "$(dirname "$0")/calls"; done\necho >> "$(dirname "$0")/calls"\n'
+    + 'case "$2" in list) echo "[]" ;; create) echo https://github.com/alexresiga/ai-workshop-start/issues/99 ;; esac\n');
+  chmodSync(join(bin, 'git'), 0o755);
+  const run = spawnSync('bash', [FILE, dir, 'Produced by a test'], {
+    cwd: REPOSITORY,
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, SLACK_BOT_TOKEN: '', SLACK_CHANNEL_ID: '' },
+  });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(run.stdout, 'https://github.com/alexresiga/ai-workshop-start/issues/99\n');
+  const calls = readFileSync(join(bin, 'calls'), 'utf8');
+  assert.match(calls, /^git .* push --quiet origin HEAD:refs\/heads\/media$/m);
+  const creates = calls.split('\n').filter((line) => line.startsWith('gh [issue] [create]'));
+  assert.equal(creates.length, 1, calls);
+  assert.ok(creates[0].startsWith('gh [issue] [create] [--repo] [alexresiga/ai-workshop-start] [--title] [The pill says 9 of 9] '
+    + '[--label] [delegated to AI] [--label] [bug] [--body] '), creates[0]);
+  assert.match(run.stderr, /not posted in Slack/);
 });
 
 test('filing: an open issue with the same title → already open: <url>, exit 1, nothing filed', (t) => {

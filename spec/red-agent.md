@@ -1,5 +1,5 @@
 # Red agent
-Breaks the web view and files one issue per bug, with its steps and a video, labelled `delegated to AI`, so the
+Breaks the web view and files one issue per bug, with its steps and a video, labelled `bug` and `delegated to AI`, so the
 `issue-to-pr` automation fixes it. The skill: [red-agent](../.agents/skills/red-agent/SKILL.md).
 ## The steps
 `node .agents/skills/red-agent/repro.ts <steps.ts>`: a bug, recorded against the web view of this checkout.
@@ -26,7 +26,7 @@ Breaks the web view and files one issue per bug, with its steps and a video, lab
 ## Filing
 `bash .agents/skills/red-agent/file.sh [--dry-run] <bug dir> [footer]`: `out/` on the `media` branch, under
 `recordings/bugs/<bug dir name>/<commit>/`; then one issue on `alexresiga/ai-workshop-start`, its title the steps' title,
-its body `issue.md` with `{{media}}` filled in and the footer under a rule, labelled `delegated to AI`.
+its body `issue.md` with `{{media}}` filled in and the footer under a rule, labelled `delegated to AI` and `bug`.
 - No recording, or a check that failed → listed, exit 1, nothing filed
 - An open issue with the same title → `already open: <url>`, exit 1, nothing filed
 - `--dry-run`: prints what it would push, file and post, and changes nothing
@@ -39,4 +39,4 @@ in the channel, as `SLACK_BOT_TOKEN` and `SLACK_CHANNEL_ID` set for [asking](ask
 ## The skill
 - A bug: the page disagrees with `spec/`; or a crash, a console error, a stuck page, a broken layout, repository text as HTML
 - At most 5 issues a run, most severe first; none for a bug already open
-- A bug that only shows on a live repository → filed by hand, its steps, no video
+- A bug that only shows on a live repository → filed by hand, its steps, no video, labelled `delegated to AI` and `bug` too

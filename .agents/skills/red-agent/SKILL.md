@@ -1,12 +1,12 @@
 ---
 name: red-agent
-description: Use when asked to break, attack, bug-hunt or QA this repo's web view, and to file what breaks as issues, one per bug, with steps and a video, labelled "delegated to AI", each posted in Slack.
+description: Use when asked to break, attack, bug-hunt or QA this repo's web view, and to file what breaks as issues, one per bug, with steps and a video, labelled "delegated to AI" and "bug", each posted in Slack.
 ---
 
 # Red agent
 
 Break the web view (`./skill-atlas serve`), then file **one issue per bug**, each with its steps and a video, labelled
-`delegated to AI`, so the issue-to-pr automation fixes it, and post each one in Slack. The video is **evidence that the bug exists**: its last step
+`bug` and `delegated to AI`, so the issue-to-pr automation fixes it, and post each one in Slack. The video is **evidence that the bug exists**: its last step
 ends on a Playwright `expect` of what `spec/` promises, and that `expect` fails, in both runs. Contract: [spec/red-agent.md](../../../spec/red-agent.md).
 
 ## What a bug is
@@ -48,7 +48,7 @@ ends on a Playwright `expect` of what `spec/` promises, and that `expect` fails,
 **At most 5 issues per run**, the most severe first: each one starts an issue-to-pr run.
 
 A bug that only shows on a live repository cannot be recorded on the fixture. File it by hand, with
-`gh issue create --label "delegated to AI"`, giving the repository, the steps, the expected and actual behaviour, and
+`gh issue create --label "delegated to AI" --label bug`, giving the repository, the steps, the expected and actual behaviour, and
 "no video: needs <repo>".
 
 ## A steps file
@@ -90,5 +90,5 @@ and with no `ask` every clustering fails, which is not a bug. To start elsewhere
 | An `expect` of what the page does now | An `expect` of what the spec says; the step fails while the bug is there |
 | Expected values computed with the code under test | Values from the spec, worked out by hand for the fixture |
 | A `timeout` so short the step fails anyway | Let the right state have time to show; the repro must also pass once fixed |
-| Filing without `file.sh` | `file.sh`: it publishes the video, checks for duplicates, adds the label and posts it in Slack |
+| Filing without `file.sh` | `file.sh`: it publishes the video, checks for duplicates, adds the labels and posts it in Slack |
 | Fixing the bug | Only file it; the issue-to-pr automation fixes it |
