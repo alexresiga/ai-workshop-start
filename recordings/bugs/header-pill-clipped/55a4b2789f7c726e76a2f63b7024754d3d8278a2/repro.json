@@ -1,0 +1,22 @@
+{
+  "title": "Just above 50rem wide, an organization’s \"3 of 5 repositories\" pill is cut off at the header’s right edge",
+  "expected": "`spec/web.md`, an organization: \"The header: the organization, an `N skills` pill and an `M of N repositories` pill\"; at 820 px wide the whole `3 of 5 repositories` pill is on screen, with no sideways scroll (a broken layout otherwise)",
+  "head": "55a4b2789f7c726e76a2f63b7024754d3d8278a2",
+  "failed": {
+    "step": 2,
+    "caption": "Narrow the window to 820 px: the whole pill should still show",
+    "error": "expect(locator).toBeInViewport() failed\n\nLocator:  locator('#repositories')\nExpected: in viewport\nReceived: viewport ratio 0.8784269690513611\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.1 s, 278 frames"
+    }
+  ]
+}
