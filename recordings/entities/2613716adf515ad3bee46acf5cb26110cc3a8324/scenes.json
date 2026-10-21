@@ -1,0 +1,173 @@
+{
+  "title": "An entity reference is its character: Replace <version> & tag it.",
+  "head": "2613716adf515ad3bee46acf5cb26110cc3a8324",
+  "base": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 49,
+        "text": "An entity reference in the body is its character, as on GitHub (CommonMark's entity and numeric character references): `Replace &lt;version&gt; &amp; tag it.` reads \"Replace <version> & tag it.\""
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's SKILL.md says \"Replace &lt;version&gt; &amp; tag it.\": it reads \"Replace <version> & tag it.\"",
+          "start": 0.958
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 50,
+        "text": "any HTML5 name, `&#35;` or `&#x23;`, then `;`"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Any HTML5 name, a decimal or a hex reference: \"&copy; 2026 &mdash; issue &#35;88 &#x2713;\" is \"© 2026 — issue #88 ✓\"",
+          "start": 2.998
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 51,
+        "text": "code point 0, past U+10FFFF or a surrogate → U+FFFD"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Code point 0, one past U+10FFFF and a surrogate are each the replacement character, �",
+          "start": 4.963
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 51,
+        "text": "an unknown name, or no `;`, as typed"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "An unknown name, or one with no ;, reads as typed: \"AT&T &nosuch; &amp more\"",
+          "start": 6.945
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 51,
+        "text": "in text, a link's text and its destination, and a bare URL"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "In a link's text and its destination, and in a bare URL: \"<docs>\" links to ?a=1&b=2, the bare URL is ?x=1&y=2",
+          "start": 8.922
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 52,
+        "text": "not in code, nor after a backslash"
+      },
+      "scenes": [
+        {
+          "index": 6,
+          "caption": "In code, and after a backslash, &amp; stays as typed",
+          "start": 10.915
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 52,
+        "text": "the character is text, never Markdown nor HTML"
+      },
+      "scenes": [
+        {
+          "index": 7,
+          "caption": "The character is text: \"&ast;not italic&ast; &lt;b&gt;bold?&lt;/b&gt;\" has no italics and no bold, only text",
+          "start": 12.896
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 108,
+        "text": "`GET /markdown.js` and `GET /entities.js`, the parser the page runs and the HTML5 entity names it reads, as JavaScript"
+      },
+      "scenes": [],
+      "notShown": "what the server sends the page has nothing on screen of its own"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 109,
+        "text": "`src/entities.js` generated from the WHATWG's `entities.json` by `node scripts/entities.ts`"
+      },
+      "scenes": [],
+      "notShown": "how a source file is generated has nothing on screen"
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"code-style's SKILL.md says \"Replace &lt;version&gt; &amp; tag it.\": it reads \"Replace <version> & tag it.\"\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Replace <version> & tag it.\"\nReceived: \"Replace &lt;version&gt; &amp; tag it.\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown p') with timeout 5000ms\n  - waiting for locator('#detail .markdown p')\n    14 × locator resolved to <p>Replace &lt;version&gt; &amp; tag it.</p>\n       - unexpected value \"Replace &lt;version&gt; &amp; tag it.\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "7 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 15.1 s, 378 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 15.0 s, 375 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.3 s, 208 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.987"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.13 s, SSIM ≥ 0.996"
+    }
+  ]
+}
