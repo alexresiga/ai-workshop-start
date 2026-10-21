@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.948 --> 00:00:02.953
+code-style's SKILL.md: "Call my__init__ first."
+
+2
+00:00:02.953 --> 00:00:09.170
+✗ It should read "Call my__init__ first.", nothing bold

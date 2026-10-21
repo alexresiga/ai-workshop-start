@@ -1,0 +1,22 @@
+{
+  "title": "`my__init__` in a SKILL.md shows \"my\" and a bold \"init\", its underscores gone",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … emphasis\", as on GitHub. Underscores inside a word are not emphasis: GitHub shows \"Call my__init__ first.\" as it is; `markdown.js` has no `(?<!\\w)` before `__` for strong, as it has for `_`, so it makes \"init\" bold and drops the four underscores.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Call my__init__ first.\", nothing bold",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Call my__init__ first.\"\nReceived: \"Call myinit first.\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 259 frames"
+    }
+  ]
+}
