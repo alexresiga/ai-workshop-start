@@ -1,0 +1,118 @@
+{
+  "title": "Hide the warnings by default",
+  "head": "b2f14e8c23e61bc439e32649778870816cc52cbf",
+  "base": "55a4b2789f7c726e76a2f63b7024754d3d8278a2",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 15,
+        "text": "The warnings, under the header, **hidden by default**: a `⚠ N warnings` button shows them, and hides them again"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "example/fixture has a warning: hidden, only a ⚠ 1 warning button under the header",
+          "start": 0.948
+        },
+        {
+          "index": 2,
+          "caption": "Click it: the warning shows; click again: hidden",
+          "start": 2.842
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 15,
+        "text": "a new scan, or home, hides them"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Shown, then home: nothing under the header; Back scans again, and the warning is hidden",
+          "start": 6.683
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 16,
+        "text": "the clustering's warnings change the count, not whether they are shown"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Cluster: the model’s warning, hidden; show it, cluster again: ⚠ 2 warnings, still shown",
+          "start": 14.069
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 16,
+        "text": "none → nothing under the header"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Scan JetBrains, no warnings: nothing under the header",
+          "start": 9.944
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"example/fixture has a warning: hidden, only a ⚠ 1 warning button under the header\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#warnings-toggle')\nExpected: \"⚠ 1 warning\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" locator('#warnings-toggle') with timeout 5000ms\n  - waiting for locator('#warnings-toggle')\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "5 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 18.8 s, 469 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 18.8 s, 470 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.8 s, 221 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.986"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.04 s, SSIM ≥ 0.995"
+    }
+  ]
+}
