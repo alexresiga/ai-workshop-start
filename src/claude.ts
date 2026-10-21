@@ -10,6 +10,9 @@ export const MODEL = 'haiku';
 /** How long the model may take: longer, and it is stopped. */
 export const TIMEOUT = 5 * 60_000;
 
+/** How long `claude` has to stop on SIGTERM before it is killed. */
+export const GRACE = 5_000;
+
 /**
  * Tools for the model: none. The question carries descriptions from any repository on GitHub, so
  * no built-in tool, and no MCP server, the operator's own included.
@@ -32,6 +35,7 @@ export type AskOptions = {
   /** `CLAUDE`, else `claude` on the PATH. */
   binary?: string;
   timeout?: number;
+  grace?: number;
   /** Aborted when no one waits for the answer any more: `claude` is stopped. */
   signal?: AbortSignal;
 };
@@ -42,17 +46,24 @@ export type AskOptions = {
  * answer from its JSON. Not there, an error, too long, or aborted → an AtlasError.
  */
 export function askClaude(prompt: string, options: AskOptions = {}): Promise<string> {
-  const { binary = process.env.CLAUDE || 'claude', timeout = TIMEOUT, signal } = options;
+  const { binary = process.env.CLAUDE || 'claude', timeout = TIMEOUT, grace = GRACE, signal } = options;
   if (signal?.aborted) return Promise.reject(new AtlasError('No one is waiting for the clusters'));
   const cwd = mkdtempSync(join(tmpdir(), 'skill-atlas-claude-'));
   return new Promise<string>((resolve, reject) => {
     const child = spawn(binary, ARGS, { cwd, stdio: ['pipe', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
-    let stopped: AtlasError | undefined;
+    let stopped = false;
+    // Settled at once, not on close: a claude that ignores SIGTERM, or a process it started that
+    // still holds its stdout, would keep close from ever coming.
     const stop = (reason: AtlasError) => {
-      stopped = reason;
+      stopped = true;
       child.kill();
+      setTimeout(() => child.exitCode === null && child.signalCode === null && child.kill('SIGKILL'), grace).unref();
+      child.stdout.destroy();
+      child.stderr.destroy();
+      done();
+      reject(reason);
     };
     const timer = setTimeout(() => stop(new AtlasError(`${binary} took too long to cluster the skills`)), timeout);
     timer.unref();
@@ -81,8 +92,8 @@ export function askClaude(prompt: string, options: AskOptions = {}): Promise<str
       );
     });
     child.on('close', (code) => {
+      if (stopped) return;
       done();
-      if (stopped) return reject(stopped);
       let answer: { result?: unknown; is_error?: unknown } | undefined;
       try {
         answer = JSON.parse(stdout);

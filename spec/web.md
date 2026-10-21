@@ -60,7 +60,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   `CLAUDE`, optional: another `claude` binary
 - **No tools**, the descriptions being any repository's text: no built-in tool, no MCP server, the operator's own included; in an empty
   directory of its own, so no project's `CLAUDE.md`, settings or `.mcp.json`
-- More than **5 minutes** → stopped, `claude took too long to cluster the skills`; the page closed or reloaded while it runs → stopped
+- More than **5 minutes** → stopped, `claude took too long to cluster the skills`, at once, whatever `claude` does: killed if SIGTERM
+  has not stopped it 5 s later; the page closed or reloaded while it runs → stopped
 - The question, on stdin: each skill numbered, sorted by name, with its name and its description's first sentence, cut at 160 characters;
   skills with the same line, a skill copied into many repositories, share a number; the answer asked for as JSON,
   `{"clusters": [{"theme", "skills": [<numbers>]}]}`, read even inside a code fence
