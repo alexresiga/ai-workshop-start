@@ -177,7 +177,7 @@ test('organization progress: not an organization → status 400; a failure while
 
 test('the page: an organization lists its repositories with their counts; a repository scans it, Back returns', async () => {
   const page = await (await fetch(`${base}/`)).text();
-  assert.match(page, /'\/api\/organization\/progress\?name=' \+ encodeURIComponent\(name\)/);
+  assert.match(page, /'\/api\/clusters\/progress\?name=' \+ encodeURIComponent\(name\)/);
   assert.match(page, /'\?org=' : '\?repo='/);
   assert.match(page, /setAttribute\('aria-label', 'Repositories'\)/);
   assert.match(page, /' of ' \+ plural\(answer.scanned, 'repository'\)/);

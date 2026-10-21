@@ -51,19 +51,23 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - The header: the organization, an `N skills` pill and an `M of N repositories` pill
 - On the left, the repositories with skills, *most first*: the name and an `N skills` pill; ↑ and ↓ move; no filter.
   None → `No SKILL.md in any of <org>’s N repositories.`
-- On the right, the totals, and `Pick a repository to see its skills.`; then a **Cluster skills** button, unless there are no skills
+- On the right, the totals, and `Pick a repository to see its skills.`; then, unless there are no skills, its clusters, which
+  start by themselves: [an organization’s clusters](#an-organizations-clusters)
 - Clicking a repository scans it, `?repo=` in the address; **Back** returns to the organization, Forward to the repository
 - Only the latest scan's answer is shown, whichever comes back last
 - Unreachable repository or not a GitHub URL → the clear message, in the list
 - Light and dark, as the system is
 ## An organization’s clusters
-- **Cluster skills**: the organization scanned again, nothing is stored, and its skills grouped by theme by a small model;
-  while it runs, under the button: the spinner and `Listing <org>’s repositories…`, then `Scanned N of M repositories` and the
-  progress bar, as the organization's own scan shows them; then `Clustering N skills with haiku…` and a **progress bar** of
-  the skills, in the repositories' bar's place, from 0; as the model's answer streams, `Clustered K of N skills with haiku…`,
-  the bar moving on with each skill it puts in a cluster; the same spinner throughout; the button disabled;
-  a new scan, or home, drops the answer
-- Under the button, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill; its skills by **name**, each
+- Once the organization is scanned, its skills are grouped by theme by a small model, **at once**, from that same scan: the
+  organization is not scanned again; its repositories shown meanwhile, the Scan button enabled again
+- While it runs, under the totals: the spinner and `Clustering N skills with haiku…` and a **progress bar** of the skills, from 0;
+  as the model's answer streams, `Clustered K of N skills with haiku…`, the bar moving on with each skill it puts in a cluster;
+  the same spinner throughout; a new scan, or home, drops the answer, and stops the model
+- A failure → the clear message, and a **Cluster skills** button, to try again: nothing is stored, so the organization scanned
+  again; while it runs, under the button: the spinner and `Listing <org>’s repositories…`, then `Scanned N of M repositories`
+  and the progress bar, as the organization's own scan shows them; then `Clustering N skills with haiku…` and the skills' bar,
+  in the repositories' bar's place, as above; the button disabled; the clusters come → the button hidden again
+- Under the totals, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill; its skills by **name**, each
   linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*
 - Each cluster **collapsed by default**: its theme and pill are a button, ▸ or ▾ (`aria-expanded`), that shows its skills, and hides
   them again; each new answer comes collapsed
@@ -83,7 +87,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - The question, on stdin: each skill numbered, sorted by name, with its name and its description's first sentence, cut at 160 characters;
   skills with the same line, a skill copied into many repositories, share a number; the answer asked for as JSON,
   `{"clusters": [{"theme", "skills": [<numbers>]}]}`, read even inside a code fence
-- No `claude`, an error from it (not logged in, …), or an answer that is not the clusters → the clear message, under the button
+- No `claude`, an error from it (not logged in, …), or an answer that is not the clusters → the clear message, under the totals
 ## Details
 - The same core as the CLI: the same skills, copies, warnings and links
 - **GitHub repositories only**: the page never reads the server's own directories; `./dir` is not `owner/repo`
@@ -95,11 +99,12 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   not an organization, or a failure → status 400, `{ error }`
 - `GET /api/organization/progress?name=<org | org/ | GitHub URL>` → the same scan, as NDJSON, one JSON a line, as it goes:
   `{ progress: { scanned, of } }`, from `0` once the repositories are listed; the last line, the answer of `/api/organization`,
-  or `{ error }`; not an organization → status 400, `{ error }`; what the page reads
+  or `{ error }`; not an organization → status 400, `{ error }`, no line
 - `GET /api/clusters?name=<org | org/ | GitHub URL>` → JSON `{ organization: { id, url }, skills, clusters: [{ theme, skills: [{ name,
   description, repository, path, link }] }], warnings }`, `skills` the count; not an organization, or a failure → status 400, `{ error }`
 - `GET /api/clusters/progress?name=<org | org/ | GitHub URL>` → the same, as NDJSON, one JSON a line, as it goes: `{ progress: { scanned, of } }`
-  as the organization is scanned again; `{ clustering }`, how many skills the model is asked about, unless there are none;
-  `{ clustered: { skills, of } }` each time the model's answer has put more of them in a cluster; the last line,
-  the answer of `/api/clusters`, or `{ error }`; not an organization → status 400, `{ error }`; what the page reads
+  as the organization is scanned; `{ scan }`, the answer of `/api/organization`, once it is scanned; `{ clustering }`, how many skills
+  the model is asked about, unless there are none; `{ clustered: { skills, of } }` each time the model's answer has put more of
+  them in a cluster; the last line, the answer of `/api/clusters`, or `{ error }`; no model on the server → `{ error }` after
+  `{ scan }`; not an organization → status 400, `{ error }`, as above; what the page reads for an organization
 - Nothing is stored

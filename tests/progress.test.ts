@@ -114,15 +114,20 @@ browserTest('an organization: Listing <org>’s repositories…, then Scanned N 
   await expect(page.locator('#button')).toHaveText('Scan');
 });
 
-browserTest('an organization: the page reads /api/organization/progress, then shows the repositories', async (t) => {
+browserTest('an organization: the page reads /api/clusters/progress alone, then shows the repositories', async (t) => {
   const page = await open(t);
   // The lines themselves: tests/web.test.ts.
-  const asked = page.waitForRequest((request) => new URL(request.url()).pathname === '/api/organization/progress');
+  const read: string[] = [];
+  page.on('request', (request) => new URL(request.url()).pathname.startsWith('/api/') && read.push(new URL(request.url()).pathname));
+  const asked = page.waitForRequest((request) => new URL(request.url()).pathname === '/api/clusters/progress');
   await page.getByLabel('Repository or organization link').fill('JetBrains');
   await page.getByRole('button', { name: 'Scan' }).click();
   assert.equal(new URL((await asked).url()).searchParams.get('name'), 'JetBrains');
   await expect(page.locator('#skills .name')).toHaveText(['JetBrains/idea', 'JetBrains/android', 'JetBrains/kotlin']);
   await expect(page.locator('#loading')).toHaveCount(0);
+  // No model on this server: its message under the totals, the one scan's repositories shown all the same.
+  await expect(page.locator('#clusters .error')).toHaveText('Clustering is not available here');
+  assert.deepEqual(read, ['/api/clusters/progress']);
 });
 
 browserTest('an organization that fails as it scans: its message, in the list, and no spinner', async (t) => {

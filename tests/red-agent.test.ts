@@ -120,10 +120,9 @@ reproTest('the steps: an ask → what the model answers, for steps that cluster'
   writeFileSync(join(dir, 'steps.ts'), `import { expect } from '@playwright/test';\n${HEAD}let asked = 0;
 export async function ask() { asked++; return JSON.stringify({ clusters: [{ theme: 'Docs', skills: [1, 2, 3] }] }); }
 export const steps = [
-  { caption: 'Cluster example: the model is asked', async run(page, act) {
+  { caption: 'Scan example: its skills clustered, the model asked', async run(page) {
     const before = asked;
     await page.goto(new URL('/?org=example', page.url()).href);
-    await act.click(page.getByRole('button', { name: 'Cluster skills', exact: true }));
     await expect.poll(() => asked).toBe(before + 1);
   } },
   { caption: 'The pill shows the count', async run(page) { ${WRONG} } },
