@@ -30,6 +30,10 @@ const answers = replay({
   ...searchAnswers('example/line-break', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nTag the release.\\\nPush the tag.\n',
   }),
+  ...searchAnswers('example/list-fence', {
+    '.claude/skills/code-style/SKILL.md':
+      '---\nname: code-style\ndescription: Kotlin style.\n---\n- Run the tests:\n\n    ```\n    npm test\n    ```\n\n```\nnpm test\n```\n',
+  }),
 });
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: answers, token: 'test' }),
@@ -118,4 +122,12 @@ browserTest('a line ending in a backslash is a line break, as on GitHub: "Tag th
   await expect(paragraph).not.toContainText('\\');
   await expect(paragraph.locator('> br')).toHaveCount(1);
   expect(await paragraph.evaluate((p) => p.innerText)).toBe('Tag the release.\nPush the tag.');
+});
+
+browserTest('a fence indented under a list item takes that indentation off: its code is "npm test", as in the fence below it', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/list-fence`);
+  await expect(page.locator('#detail .markdown li pre code')).toHaveJSProperty('textContent', 'npm test');
+  await expect(page.locator('#detail .markdown > pre code')).toHaveJSProperty('textContent', 'npm test');
 });

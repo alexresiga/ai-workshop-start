@@ -184,6 +184,16 @@ test('fenced code as it is, a quote, a table', () => {
   ]);
 });
 
+test('a fence takes its indentation off its lines, as on GitHub: in a list item too, a line indented less as it is', () => {
+  assert.deepEqual(markdown('- Run the tests:\n\n    ```\n    npm test\n    ```\n\n```\nnpm test\n```\n'), [
+    ['ul', {}, ['li', {}, ['p', {}, 'Run the tests:'], ['pre', {}, ['code', {}, 'npm test']]]],
+    ['pre', {}, ['code', {}, 'npm test']],
+  ]);
+  // A tight item; at the top level; a line indented less, or more, keeps what is left.
+  assert.deepEqual(markdown('- Run:\n  ```\n  npm test\n  ```\n'), [['ul', {}, ['li', {}, 'Run:', ['pre', {}, ['code', {}, 'npm test']]]]]);
+  assert.deepEqual(markdown('   ```\n   a\n  b\nc\n     d\n   ```\n'), [['pre', {}, ['code', {}, 'a\nb\nc\n  d']]]);
+});
+
 test('indented code as it is, line by line; an indented line inside a paragraph is still the paragraph', () => {
   assert.deepEqual(markdown('Run this:\n\n    git checkout -b fix\n    git commit -m "x"\n\n    git push\n\nAfter.\n'), [
     ['p', {}, 'Run this:'],

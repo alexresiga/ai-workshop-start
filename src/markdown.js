@@ -10,7 +10,7 @@
 
 import { ENTITIES } from './entities.js';
 
-const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+const FENCE = /^( {0,3})(`{3,}|~{3,})(.*)$/;
 const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/;
 const RULE = /^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$/;
 const QUOTE = /^ {0,3}> ?/;
@@ -39,9 +39,10 @@ function blocks(lines) {
       while (!code.at(-1)?.trim()) code.pop();
       out.push(['pre', {}, ['code', {}, code.join('\n')]]);
     } else if ((match = FENCE.exec(line))) {
-      const fence = match[1];
+      // Its lines without the fence's indentation, as on GitHub: up to as many spaces as it has.
+      const [, indent, fence] = match;
       const code = [];
-      for (i++; i < lines.length && !isClosingFence(lines[i], fence); i++) code.push(lines[i]);
+      for (i++; i < lines.length && !isClosingFence(lines[i], fence); i++) code.push(lines[i].replace(new RegExp(`^ {0,${indent.length}}`), ''));
       i++;
       out.push(['pre', {}, ['code', {}, code.join('\n')]]);
     } else if ((match = HEADING.exec(line))) {
