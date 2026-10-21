@@ -1,0 +1,85 @@
+{
+  "title": "A long skill name in an organization's cluster fits a phone",
+  "head": "12e685f82f2a8ecfc0e0e9ec0a8d1df54129ba36",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 70,
+        "text": "its skills by **name**, each linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*, on one line"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "A 375 px window, the organization example, its skill commits named kotlin-multiplatform-gradle-plugin-release; open the Git cluster: one line each",
+          "start": 0.954
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 71,
+        "text": "a long name, repository or sentence cut with …, so a cluster fits the window, a phone's 375 px too"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "The long name and its repository cut with …, inside the window: no sideways scroll",
+          "start": 5.418
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 2, \"The long name and its repository cut with …, inside the window: no sideways scroll\": expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.theme li a').filter({ hasText: 'kotlin-multiplatform-gradle-plugin-release' })\nExpected: \"ellipsis\"\nReceived: \"clip\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" locator('.theme li a').filter({ hasText: 'kotlin-multiplatform-gradle-plugin-release' }) with timeout 5000ms\n  - waiting for locator('.theme li a').filter({ hasText: 'kotlin-multiplatform-gradle-plugin-release' })\n    14 × locator resolved to <a rel=\"noopener\" target=\"_blank\" href=\"https://github.com/example/fixture/blob/main/.claude/skills/commits/SKILL.md\">kotlin-multiplatform-gradle-plugin-release</a>\n       - unexpected value \"clip\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 9.8 s, 245 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 9.7 s, 243 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 13.6 s, 339 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.993"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.10 s, SSIM ≥ 0.998"
+    }
+  ]
+}
