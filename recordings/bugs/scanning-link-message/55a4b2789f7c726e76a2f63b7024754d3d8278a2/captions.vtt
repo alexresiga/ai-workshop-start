@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.941 --> 00:00:07.147
+Paste the GitHub link https://github.com/example/fixture
+
+2
+00:00:07.147 --> 00:00:12.357
+✗ Press Scan: the list should say "Scanning example/fixture…"

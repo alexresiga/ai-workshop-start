@@ -1,0 +1,22 @@
+{
+  "title": "Scanning a GitHub link says \"Scanning https://github.com/example/fixture…\", not \"Scanning example/fixture…\"",
+  "expected": "`spec/web.md`, the page: \"While a scan runs, in the list: a **spinner** and `Scanning <owner/repo>…`\"; for the link `https://github.com/example/fixture` the list says `Scanning example/fixture…`",
+  "head": "55a4b2789f7c726e76a2f63b7024754d3d8278a2",
+  "failed": {
+    "step": 2,
+    "caption": "Press Scan: the list should say \"Scanning example/fixture…\"",
+    "error": "expect(locator).toContainText(expected) failed\n\nLocator: locator('#skills')\nExpected substring: \"Scanning example/fixture…\"\nReceived string:    \"Scanning https://github.com/example/fixture…\"\nTimeout: 3000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 12.7 s, 318 frames"
+    }
+  ]
+}
