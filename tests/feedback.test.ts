@@ -27,7 +27,8 @@ case "$1 $2" in
   "api -X") echo https://github.com/alexresiga/ai-workshop-start/pull/9#issuecomment-1 ;;
 esac
 `;
-const NPM = '#!/bin/sh\necho "npm $*" >> "$(dirname "$0")/calls"\nexit "${FAKE_NPM_EXIT:-0}"\n';
+// npm runs FAKE_NPM_RUN first, if set: what happens elsewhere while the tests run.
+const NPM = '#!/bin/sh\necho "npm $*" >> "$(dirname "$0")/calls"\n[ -z "$FAKE_NPM_RUN" ] || sh -c "$FAKE_NPM_RUN"\nexit "${FAKE_NPM_EXIT:-0}"\n';
 
 type Main = 'still' | 'moved' | 'conflicts';
 
@@ -72,7 +73,16 @@ function repository(t: TestContext, main: Main, comments: object[] = []) {
     return { ...run, calls: existsSync(path) ? readFileSync(path, 'utf8').trim().split('\n').map((call) => call.trimEnd()) : [] };
   };
   const pushed = () => execFileSync('git', ['rev-parse', BRANCH], { cwd: remote, encoding: 'utf8' }).trim();
-  return { git, work, ready, pushed, before: git('rev-parse', 'HEAD') };
+  /** Another run's clone of the PR branch, with a fix committed and not yet pushed. */
+  const elsewhere = () => {
+    const other = join(root, 'other');
+    execFileSync('git', ['clone', '-q', '-b', BRANCH, remote, other], { env });
+    writeFileSync(join(other, 'fix.txt'), 'the fix\n');
+    execFileSync('git', ['add', 'fix.txt'], { cwd: other, env });
+    execFileSync('git', ['commit', '-qm', 'fix'], { cwd: other, env });
+    return { other, fix: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: other, encoding: 'utf8' }).trim() };
+  };
+  return { git, work, ready, pushed, elsewhere, before: git('rev-parse', 'HEAD') };
 }
 
 const labelled = (calls: string[], how: 'add' | 'remove') => [PR, '7'].every((n) => calls.includes(how === 'add'
@@ -119,6 +129,32 @@ test('not ready: uncommitted changes → commit them first, exit 2, nothing labe
   assert.match(run.stderr, /uncommitted changes: commit them first/);
   assert.ok(!labelled(run.calls, 'add'));
   assert.equal(repo.pushed(), repo.before);
+});
+
+test('not ready: another run pushed to the branch, even once fetched → <branch> is not at origin/<branch>: pull first, exit 2, its push stands', (t) => {
+  const repo = repository(t, 'moved');
+  const { other, fix } = repo.elsewhere();
+  execFileSync('git', ['push', '-q', 'origin', BRANCH], { cwd: other });
+  repo.git('fetch', '-q');
+  const run = repo.ready();
+  assert.equal(run.status, 2, run.stderr);
+  assert.match(run.stderr, new RegExp(`${BRANCH} is not at origin/${BRANCH}: pull first`));
+  assert.ok(!labelled(run.calls, 'add'));
+  assert.deepEqual(npm(run.calls), []);
+  assert.equal(repo.pushed(), fix);
+  assert.equal(repo.git('rev-parse', 'HEAD'), repo.before);
+});
+
+test('not ready: origin/<branch> moves while it rebases → the push refused, the branch back, the label off, exit 1, its push stands', (t) => {
+  const repo = repository(t, 'moved');
+  const { other, fix } = repo.elsewhere();
+  const run = repo.ready({ FAKE_NPM_RUN: `git -C '${other}' push -q origin ${BRANCH}` });
+  assert.equal(run.status, 1, run.stderr);
+  assert.match(run.stderr, new RegExp(`not ready: origin/${BRANCH} moved while rebasing: pull first`));
+  assert.equal(repo.pushed(), fix);
+  assert.equal(repo.git('rev-parse', 'HEAD'), repo.before);
+  assert.ok(labelled(run.calls, 'remove'));
+  assert.ok(!labelled(run.calls, 'add'));
 });
 
 test('not ready: rebasing conflicts → aborted, the branch as it was, the label off, a note on the PR, exit 1, nothing pushed', (t) => {
