@@ -1,5 +1,5 @@
 // spec/web.md, Clusters: `GET /api/clusters` with a fake `claude` that records what it was asked and answers what the test
-// gives it; and the Cluster skills button in a real browser. GitHub answers from tests/helpers.ts.
+// gives it; and, in a real browser, the clusters that start once an organization is scanned. GitHub answers from tests/helpers.ts.
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
@@ -73,11 +73,14 @@ function fakeClaude(t: TestContext, stdout: string, exit = 0, wait?: number) {
 }
 
 /** The web view, GitHub answering for JetBrains' repositories, the model asked through `ask`. */
+/** How many times the organization has been scanned, by every server here. */
+let scans = 0;
+
 async function serve(t: { after(fn: () => void): void }, ask: Ask | undefined, repositories: Record<string, Listed> = ORGANIZATION) {
   const server = createWebServer({
     open: () => Promise.reject(new Error('not scanned')),
     organization: (url, progress) =>
-      scanOrganization(url, { fetch: replay(organizationAnswers('JetBrains', 'Organization', repositories)), token: 'test' }, progress),
+      (scans++, scanOrganization(url, { fetch: replay(organizationAnswers('JetBrains', 'Organization', repositories)), token: 'test' }, progress)),
     ask,
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -263,7 +266,7 @@ test('claude done, its answer in full, but a process it started still holding it
   assert.ok(Date.now() - started < 2000);
 });
 
-test('progress: the organization scanned again, then how many skills the model is asked about, then the answer, one JSON a line', async (t) => {
+test('progress: the organization scanned, its answer, then how many skills the model is asked about, then the clusters, one JSON a line', async (t) => {
   const claude = fakeClaude(t, reply(ANSWER));
   const base = await serve(t, (prompt, signal) => askClaude(prompt, { binary: claude.binary, signal }));
   const response = await fetch(`${base}/api/clusters/progress?name=JetBrains`);
@@ -272,7 +275,13 @@ test('progress: the organization scanned again, then how many skills the model i
   const lines = (await response.text()).trim().split('\n').map((line) => JSON.parse(line));
   assert.deepEqual(lines.slice(0, -1), [
     ...[0, 1, 2, 3, 4, 5].map((scanned) => ({ progress: { scanned, of: 5 } })),
+    { scan: await (await fetch(`${base}/api/organization?name=JetBrains`)).json() },
     { clustering: 7 },
+  ]);
+  assert.deepEqual(lines.at(-3).scan.repositories.map((repository: { id: string }) => repository.id), [
+    'JetBrains/idea',
+    'JetBrains/android',
+    'JetBrains/kotlin',
   ]);
   assert.deepEqual(lines.at(-1).clusters.map((cluster: { theme: string }) => cluster.theme), ['Build', 'Review', 'Releases']);
 });
@@ -309,7 +318,7 @@ test('progress: as the model answers, how many skills it has put in a cluster, o
   const claude = fakeClaude(t, streamed(PARTS));
   const base = await serve(t, (prompt, signal, partial) => askClaude(prompt, { binary: claude.binary, signal, partial }));
   const lines = (await (await fetch(`${base}/api/clusters/progress?name=JetBrains`)).text()).trim().split('\n').map((line) => JSON.parse(line));
-  assert.deepEqual(lines.slice(6, -1), [
+  assert.deepEqual(lines.slice(7, -1), [
     { clustering: 7 },
     // 6 whole once its `]` comes; then 3; then 5, 1, 2 and 7; then 4.
     { clustered: { skills: 2, of: 7 } },
@@ -349,7 +358,11 @@ test('progress: a number shared by copies in many repositories counts each of it
 test('progress: no skills → no clustering line; a failure → { error } last; not an organization → status 400', async (t) => {
   const empty = await serve(t, async () => ANSWER, { website: { 'README.md': '# website\n' } });
   const none = (await (await fetch(`${empty}/api/clusters/progress?name=JetBrains`)).text()).trim().split('\n').map((line) => JSON.parse(line));
-  assert.deepEqual(none.slice(0, -1), [{ progress: { scanned: 0, of: 1 } }, { progress: { scanned: 1, of: 1 } }]);
+  assert.deepEqual(none.slice(0, -1), [
+    { progress: { scanned: 0, of: 1 } },
+    { progress: { scanned: 1, of: 1 } },
+    { scan: { organization: { id: 'JetBrains', url: 'https://github.com/JetBrains' }, repositories: [], scanned: 1, warnings: [] } },
+  ]);
   assert.deepEqual(none.at(-1).clusters, []);
   const failing = await serve(t, (prompt) => askClaude(prompt, { binary: NO_CLAUDE }));
   const failed = (await (await fetch(`${failing}/api/clusters/progress?name=JetBrains`)).text()).trim().split('\n').at(-1)!;
@@ -497,11 +510,14 @@ test('an answer that is not the clusters → the clear message, status 400', asy
   assert.deepEqual(answer, { error: "The model's answer is not the clusters asked for: I cannot group these." });
 });
 
-test('no model on the server → status 400', async (t) => {
+test('no model on the server → status 400; streamed, the scan’s answer, then { error }', async (t) => {
   const base = await serve(t, undefined);
   const response = await fetch(`${base}/api/clusters?name=JetBrains`);
   assert.equal(response.status, 400);
   assert.deepEqual(await response.json(), { error: 'Clustering is not available here' });
+  const lines = (await (await fetch(`${base}/api/clusters/progress?name=JetBrains`)).text()).trim().split('\n').map((line) => JSON.parse(line));
+  assert.ok(lines.at(-2).scan);
+  assert.deepEqual(lines.at(-1), { error: 'Clustering is not available here' });
 });
 
 test('/api/organization does not send the skills', async (t) => {
@@ -525,14 +541,17 @@ async function organizationPage(t: TestContext, ask: Ask, repositories: Record<s
   return page;
 }
 
-browserTest('Cluster skills: clustering, the button disabled; then each cluster, its pill, and its skills', async (t) => {
+browserTest('once the organization is scanned, its skills are clustered at once, from that one scan', async (t) => {
   const { promise: gate, resolve: release } = Promise.withResolvers<void>();
+  const before = scans;
   const page = await organizationPage(t, async () => (await gate, ANSWER));
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
-  await expect(page.getByRole('button', { name: 'Clustering…' })).toBeDisabled();
+  // The repositories meanwhile, the Scan button enabled again; no button to press.
+  await expect(page.locator('#skills .name')).toHaveText(['JetBrains/idea', 'JetBrains/android', 'JetBrains/kotlin']);
   await expect(page.locator('#clusters')).toHaveText('Clustering 7 skills with haiku…');
+  await expect(page.locator('#clusters .spinner')).toBeVisible();
+  await expect(page.locator('#button')).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeHidden();
   release();
-  await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeEnabled();
   await expect(page.locator('#clusters > p')).toHaveText('7 skills in 3 clusters.');
   await expect(page.locator('#clusters .theme h3')).toHaveText(['Build4 skills', 'Review2 skills', 'Releases1 skill']);
   const build = page.locator('#clusters .theme').first().locator('li');
@@ -545,13 +564,15 @@ browserTest('Cluster skills: clustering, the button disabled; then each cluster,
   await page.locator('#clusters .theme h3 button').first().click();
   await expect(build.first().getByRole('link', { name: 'a', exact: true })).toHaveAttribute('href', A.link);
   await expect(page.locator('#warnings')).toBeEmpty();
+  await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeHidden();
+  // The organization scanned once, for its repositories and its clusters.
+  assert.equal(scans - before, 1);
 });
 
 browserTest('clustering: a progress bar of the skills, moving on as the model puts them in clusters; the same spinner', async (t) => {
   const { promise: asked, resolve: ask } = Promise.withResolvers<(text: string) => void>();
   const { promise: gate, resolve: release } = Promise.withResolvers<void>();
   const page = await organizationPage(t, async (_, __, partial) => (ask(partial!), await gate, ANSWER));
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
   const partial = await asked;
   const bar = page.getByRole('progressbar', { name: 'Skills clustered' });
   await expect(page.locator('#clustering .text')).toHaveText('Clustering 7 skills with haiku…');
@@ -571,9 +592,11 @@ browserTest('clustering: a progress bar of the skills, moving on as the model pu
   await expect(page.locator('#clusters progress')).toHaveCount(0);
 });
 
-browserTest('clustering: the repositories’ bar while the organization is scanned again, then the skills’ in its place', async (t) => {
+browserTest('trying again: the repositories’ bar while the organization is scanned again, then the skills’ in its place', async (t) => {
   const { promise: gate, resolve: release } = Promise.withResolvers<void>();
-  const page = await organizationPage(t, async () => (await gate, ANSWER));
+  let asked = 0;
+  const page = await organizationPage(t, async () => (asked++ ? (await gate, ANSWER) : Promise.reject(new Error('busy'))));
+  await expect(page.locator('#clusters .error')).toHaveText('Unexpected error: busy');
   await page.getByRole('button', { name: 'Cluster skills' }).click();
   await expect(page.getByRole('progressbar', { name: 'Skills clustered' })).toHaveJSProperty('max', 7);
   await expect(page.locator('#clustering progress')).toHaveCount(1);
@@ -585,7 +608,6 @@ const headings = (page: Page) => page.locator('#clusters .theme h3 button');
 
 browserTest('each cluster collapsed by default: its theme and pill a button, ▸, its skills hidden', async (t) => {
   const page = await organizationPage(t, async () => ANSWER);
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
   await expect(headings(page)).toHaveText(['Build4 skills', 'Review2 skills', 'Releases1 skill']);
   assert.deepEqual(await headings(page).evaluateAll((buttons) => buttons.map((b) => b.getAttribute('aria-expanded'))), ['false', 'false', 'false']);
   assert.equal(await headings(page).first().evaluate((button) => button.ownerDocument.defaultView!.getComputedStyle(button, '::before').content), '"▸ "');
@@ -594,7 +616,6 @@ browserTest('each cluster collapsed by default: its theme and pill a button, ▸
 
 browserTest('a cluster’s button shows its skills, and hides them again', async (t) => {
   const page = await organizationPage(t, async () => ANSWER);
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
   await headings(page).nth(1).click();
   await expect(headings(page).nth(1)).toHaveAttribute('aria-expanded', 'true');
   assert.equal(await headings(page).nth(1).evaluate((button) => button.ownerDocument.defaultView!.getComputedStyle(button, '::before').content), '"▾ "');
@@ -607,22 +628,19 @@ browserTest('a cluster’s button shows its skills, and hides them again', async
 
 browserTest('each new answer comes collapsed', async (t) => {
   const page = await organizationPage(t, async () => ANSWER);
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
   await headings(page).first().click();
   await expect(headings(page).first()).toHaveAttribute('aria-expanded', 'true');
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
-  await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeEnabled();
+  await page.getByLabel('Repository or organization link').fill('JetBrains');
+  await page.getByRole('button', { name: 'Scan' }).click();
   await expect(headings(page)).toHaveText(['Build4 skills', 'Review2 skills', 'Releases1 skill']);
   await expect(headings(page).first()).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('#clusters .theme li:visible')).toHaveCount(0);
 });
 
-browserTest('the model’s warnings go under the header', async (t) => {
+browserTest('the model’s warnings go under the header, hidden by default, as the scan’s', async (t) => {
   const page = await organizationPage(t, async () => clusters([['Build', [1, 2, 3, 4, 5, 6]]]));
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
   await expect(page.locator('#clusters .theme h3')).toHaveText(['Build6 skills', 'Other1 skill']);
   await expect(page.locator('#warnings li')).toHaveText(['warning: the model left out review; in Other']);
-  // Hidden by default, as the scan's.
   await expect(page.locator('#warnings-toggle')).toHaveText('⚠ 1 warning');
   await expect(page.locator('#warnings')).toBeHidden();
 });
@@ -630,35 +648,21 @@ browserTest('the model’s warnings go under the header', async (t) => {
 browserTest('the clustering’s warnings change the count, not whether they are shown', async (t) => {
   const repositories = { tools: { '.claude/skills/x/SKILL.md': '---\nname: [x\n---\n', '.claude/skills/y/SKILL.md': skill('y') } };
   let asked = 0;
-  const page = await organizationPage(t, async () => (asked++ ? clusters([['Tools', [2]]]) : clusters([['Tools', [1, 2]]])), repositories);
+  const page = await organizationPage(t, async () => (asked++ ? clusters([['Tools', [2]]]) : Promise.reject(new Error('busy'))), repositories);
   const toggle = page.locator('#warnings-toggle');
+  await expect(page.locator('#clusters .error')).toHaveText('Unexpected error: busy');
   await expect(toggle).toHaveText('⚠ 1 warning');
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
-  await expect(page.locator('#clusters .theme h3')).toHaveText(['Tools2 skills']);
-  await expect(page.locator('#warnings')).toBeHidden();
   await toggle.click();
   await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await expect(page.locator('#clusters .theme h3')).toHaveText(['Tools1 skill', 'Other1 skill']);
   await expect(toggle).toHaveText('⚠ 2 warnings');
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#warnings li')).toHaveText([/malformed front matter/, 'warning: the model left out x; in Other']);
   await expect(page.locator('#warnings li').last()).toBeVisible();
 });
 
-browserTest('clustering again: the last answer’s warnings go, the scan’s stay', async (t) => {
-  const repositories = { tools: { '.claude/skills/x/SKILL.md': '---\nname: [x\n---\n', '.claude/skills/y/SKILL.md': skill('y') } };
-  let asked = 0;
-  const page = await organizationPage(t, async () => (asked++ ? clusters([['Tools', [1, 2]]]) : clusters([['Tools', [2]]])), repositories);
-  await expect(page.locator('#warnings li')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
-  await expect(page.locator('#warnings li')).toHaveText([/malformed front matter/, 'warning: the model left out x; in Other']);
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
-  await expect(page.locator('#clusters .theme h3')).toHaveText(['Tools2 skills']);
-  await expect(page.locator('#warnings li')).toHaveText([/malformed front matter/]);
-});
-
-browserTest('a failure → the clear message, under the button, in the error color', async (t) => {
+browserTest('a failure → the clear message, in the error color, and Cluster skills to try again', async (t) => {
   const page = await organizationPage(t, (prompt) => askClaude(prompt, { binary: NO_CLAUDE }));
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
   await expect(page.locator('#clusters .error')).toHaveText(
     `Cannot run ${NO_CLAUDE}: clustering needs Claude Code (claude) on the PATH, or CLAUDE set to it`,
   );
@@ -667,41 +671,69 @@ browserTest('a failure → the clear message, under the button, in the error col
   await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeEnabled();
 });
 
-browserTest('home, while clustering, drops the answer', async (t) => {
+browserTest('trying again: the organization scanned again, its progress under the button, the button disabled; then the clusters, the button hidden', async (t) => {
   const { promise: gate, resolve: release } = Promise.withResolvers<void>();
-  const { promise: asked, resolve: ask } = Promise.withResolvers<void>();
-  const { promise: answered, resolve: answer } = Promise.withResolvers<void>();
-  const page = await organizationPage(t, async () => (ask(), await gate, setTimeout(answer, 300), ANSWER));
+  let asked = 0;
+  const page = await organizationPage(t, async () => (asked++ ? (await gate, ANSWER) : Promise.reject(new Error('busy'))));
+  await expect(page.locator('#clusters .error')).toHaveText('Unexpected error: busy');
+  const before = scans;
   await page.getByRole('button', { name: 'Cluster skills' }).click();
-  await asked;
+  await expect(page.getByRole('button', { name: 'Clustering…' })).toBeDisabled();
+  await expect(page.locator('#clusters')).toHaveText('Clustering 7 skills with haiku…');
+  assert.equal(scans - before, 1);
+  release();
+  await expect(page.locator('#clusters > p')).toHaveText('7 skills in 3 clusters.');
+  await expect(page.getByRole('button', { name: /Cluster skills|Clustering…/ })).toBeHidden();
+  // The list still the first scan's.
+  await expect(page.locator('#skills .name')).toHaveText(['JetBrains/idea', 'JetBrains/android', 'JetBrains/kotlin']);
+});
+
+/** A model that waits for `release`; `asked` once it is asked, `answered` once it answers, `signal` what it was given. */
+function gated() {
+  const { promise: gate, resolve: release } = Promise.withResolvers<void>();
+  const { promise: asked, resolve: ask } = Promise.withResolvers<AbortSignal | undefined>();
+  const { promise: answered, resolve: answer } = Promise.withResolvers<void>();
+  const model: Ask = async (prompt, signal) => (ask(signal), await gate, setTimeout(answer, 300), ANSWER);
+  return { model, release, asked, answered };
+}
+
+browserTest('home, while clustering, drops the answer and stops the model', async (t) => {
+  const { model, release, asked, answered } = gated();
+  const page = await organizationPage(t, model);
+  const signal = await asked;
   await page.locator('#home').click();
+  await until(() => signal!.aborted);
+  assert.equal(signal!.aborted, true);
   release();
   await answered;
   await expect(page.locator('#skills')).toHaveText('Paste a repository or an organization and press Scan.');
   await expect(page.locator('#detail')).toBeEmpty();
 });
 
-browserTest('a new scan, while clustering, drops the answer', async (t) => {
-  const { promise: gate, resolve: release } = Promise.withResolvers<void>();
-  const { promise: asked, resolve: ask } = Promise.withResolvers<void>();
-  const { promise: answered, resolve: answer } = Promise.withResolvers<void>();
-  const page = await organizationPage(t, async () => (ask(), await gate, setTimeout(answer, 300), ANSWER));
-  await page.getByRole('button', { name: 'Cluster skills' }).click();
-  await asked;
-  await page.getByLabel('Repository or organization link').fill('JetBrains');
+browserTest('a new scan, while clustering, drops the answer and stops the model', async (t) => {
+  const { model, release, asked, answered } = gated();
+  const page = await organizationPage(t, model);
+  const signal = await asked;
+  await page.getByLabel('Repository or organization link').fill('JetBrains/kotlin');
   await page.getByRole('button', { name: 'Scan' }).click();
-  await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeEnabled();
+  await expect(page.locator('#skills .message.error')).toHaveText('Unexpected error: not scanned');
+  await until(() => signal!.aborted);
+  assert.equal(signal!.aborted, true);
   release();
   await answered;
-  await expect(page.locator('#clusters')).toBeEmpty();
-  await expect(page.locator('#clusters .theme')).toHaveCount(0);
+  await page.waitForTimeout(250); // the page has had the time to show an answer, and must not
+  await expect(page.locator('#clusters')).toHaveCount(0);
+  await expect(page.locator('#detail')).toBeEmpty();
 });
 
-browserTest('no skills → no Cluster skills button', async (t) => {
-  const base = await serve(t, async () => ANSWER, { website: { 'README.md': '# website\n' } });
+browserTest('no skills → no clusters, no Cluster skills button, the model not asked', async (t) => {
+  let asked = 0;
+  const base = await serve(t, async () => (asked++, ANSWER), { website: { 'README.md': '# website\n' } });
   const page = await browser!.newPage();
   t.after(() => page.close());
   await page.goto(`${base}/?org=JetBrains`);
   await expect(page.locator('#skills')).toHaveText('No SKILL.md in any of JetBrains’s 1 repository.');
   await expect(page.getByRole('button', { name: 'Cluster skills' })).toHaveCount(0);
+  await expect(page.locator('#clusters')).toHaveCount(0);
+  assert.equal(asked, 0);
 });

@@ -253,9 +253,13 @@ export const PAGE = `<!doctype html>
   /** The skills in the list, not the clusters' headings. */
   const rows = () => [...$('skills').querySelectorAll('button:not(.toggle)')];
 
+  /** The organization's clustering: aborted when its scan is dropped, so the server stops the model for no one. */
+  let clustering;
+
   /** Home: the page as it first opens, with no scan; one still running is dropped. */
   function home() {
     latest++;
+    clustering?.abort();
     onPage = '';
     skills = [];
     $('url').value = '';
@@ -290,9 +294,7 @@ export const PAGE = `<!doctype html>
     const address = (organization ? '?org=' : '?repo=') + encodeURIComponent(name);
     if (how === 'push') history.pushState(null, '', address);
     else if (how === 'replace') history.replaceState(null, '', address);
-    return organization
-      ? load('/api/organization/progress?name=' + encodeURIComponent(name), 'Listing ' + name + '’s repositories…', showOrganization)
-      : load('/api/scan?url=' + encodeURIComponent(text), 'Scanning ' + text.replace(LINK, '$1/$2') + '…', show);
+    return organization ? scanOrganization(name) : load('/api/scan?url=' + encodeURIComponent(text), 'Scanning ' + text.replace(LINK, '$1/$2') + '…', show);
   }
 
   /** What the list shows while a scan runs, or the clusters while they come: a spinner and what it does. */
@@ -328,8 +330,8 @@ export const PAGE = `<!doctype html>
   }
 
   /**
-   * The answer of a streamed scan, one JSON a line: each \`{ progress }\` shown while this scan is the latest, the last line
-   * the answer.
+   * The answer of a streamed scan, one JSON a line: each \`{ progress }\`, \`{ scan }\`, \`{ clustering }\` or \`{ clustered }\` shown
+   * while this scan is the latest, the last line the answer.
    */
   async function streamed(response, mine, show = (line) => progressed(line.progress)) {
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
@@ -341,7 +343,7 @@ export const PAGE = `<!doctype html>
       buffered = lines.pop();
       for (const line of lines.filter(Boolean)) {
         const answer = JSON.parse(line);
-        if (!answer.progress && answer.clustering === undefined && !answer.clustered) return answer;
+        if (!answer.progress && !answer.scan && answer.clustering === undefined && !answer.clustered) return answer;
         if (mine !== latest) continue; // a later scan replaced this one
         show(answer);
       }
@@ -349,8 +351,10 @@ export const PAGE = `<!doctype html>
     }
   }
 
-  async function load(api, message, render) {
+  /** A new scan: the one before it dropped, the page emptied, the buttons disabled; its number, to tell if it is the latest. */
+  function begin(message) {
     const mine = ++latest;
+    clustering?.abort();
     onPage = '';
     $('button').disabled = true;
     $('dice').disabled = true;
@@ -363,6 +367,19 @@ export const PAGE = `<!doctype html>
     $('skills').classList.remove('repositories');
     $('skills').setAttribute('aria-label', 'Skills');
     $('skills').replaceChildren(loading(message));
+    return mine;
+  }
+
+  /** The scan answered: the buttons enabled again, if it is still the latest. */
+  function ready(mine) {
+    if (mine !== latest) return;
+    $('button').disabled = false;
+    $('dice').disabled = false;
+    $('button').textContent = 'Scan';
+  }
+
+  async function load(api, message, render) {
+    const mine = begin(message);
     try {
       const response = await fetch(api);
       const answer = response.ok && response.headers.get('content-type')?.startsWith('application/x-ndjson')
@@ -374,11 +391,38 @@ export const PAGE = `<!doctype html>
     } catch (error) {
       if (mine === latest) $('skills').replaceChildren(element('p.message.error', error.message));
     } finally {
-      if (mine === latest) {
-        $('button').disabled = false;
-        $('dice').disabled = false;
-        $('button').textContent = 'Scan';
-      }
+      ready(mine);
+    }
+  }
+
+  /**
+   * An organization, then its skills clustered by a small model, from the same scan: its repositories shown as soon as it
+   * is scanned, the clusters under them once the model answers; a new scan, or home, drops them and stops the model.
+   */
+  async function scanOrganization(name) {
+    const mine = begin('Listing ' + name + '’s repositories…');
+    const stop = (clustering = new AbortController());
+    let scanned = false;
+    const show = (line) => {
+      if (line.progress) progressed(line.progress);
+      else if (line.scan) {
+        scanned = true;
+        showOrganization(line.scan);
+        ready(mine);
+      } else clusteringShown(line);
+    };
+    try {
+      const response = await fetch('/api/clusters/progress?name=' + encodeURIComponent(name), { signal: stop.signal });
+      const answer = response.ok ? await streamed(response, mine, show) : await response.json();
+      if (mine !== latest) return; // a later scan replaced this one
+      if (!response.ok || answer.error) throw new Error(answer.error);
+      showClusters(answer);
+    } catch (error) {
+      if (mine !== latest) return;
+      if (scanned) clusteringFailed(error);
+      else $('skills').replaceChildren(element('p.message.error', error.message));
+    } finally {
+      ready(mine);
     }
   }
 
@@ -420,9 +464,11 @@ export const PAGE = `<!doctype html>
       element('p', plural(total, 'skill') + ' in ' + answer.repositories.length + ' of ' + plural(answer.scanned, 'repository') + '.'),
     ];
     if (answer.repositories.length) {
+      // Clustering starts by itself, from this scan; the button only tries again after a failure.
       const button = element('button.scan', 'Cluster skills');
       button.id = 'cluster';
       button.type = 'button';
+      button.hidden = true;
       button.addEventListener('click', () => cluster(answer.organization.id, answer.warnings));
       const clusters = element('div');
       clusters.id = 'clusters';
@@ -431,7 +477,32 @@ export const PAGE = `<!doctype html>
     $('detail').replaceChildren(element('div.summary', ...parts));
   }
 
-  /** The organization's skills by theme, from a small model; a new scan, or home, drops the answer. */
+  /**
+   * How far the clustering is, under the totals: the organization's scan, when it is scanned again; then the model asked,
+   * a bar of its own moving on as its answer puts the skills in clusters; updated, not rebuilt.
+   */
+  function clusteringShown(line) {
+    if (!$('clusters')) return;
+    if (!$('clustering')) $('clusters').replaceChildren(loading('', 'clustering'));
+    const status = $('clustering');
+    if (line.progress) progressed(line.progress, status);
+    else if (line.clustered) {
+      status.querySelector('.text').textContent =
+        'Clustered ' + line.clustered.skills + ' of ' + plural(line.clustered.of, 'skill') + ' with haiku…';
+      bar(status, 'Skills clustered', line.clustered.skills, line.clustered.of);
+    } else {
+      status.querySelector('.text').textContent = 'Clustering ' + plural(line.clustering, 'skill') + ' with haiku…';
+      bar(status, 'Skills clustered', 0, line.clustering);
+    }
+  }
+
+  /** The clustering failed: the clear message under the button, and the button, to try again. */
+  function clusteringFailed(error) {
+    $('clusters')?.replaceChildren(element('p.message.error', error.message));
+    if ($('cluster')) $('cluster').hidden = false;
+  }
+
+  /** Clustering again, after a failure: nothing is stored, so the organization is scanned again, its progress under the button. */
   async function cluster(organization, warnings) {
     const mine = latest;
     // The scan's warnings, without the last answer's.
@@ -439,28 +510,16 @@ export const PAGE = `<!doctype html>
     $('cluster').disabled = true;
     $('cluster').textContent = 'Clustering…';
     $('clusters').replaceChildren(loading('Listing ' + organization + '’s repositories…', 'clustering'));
-    // The organization scanned again, its progress as the list shows it; then the model asked, a bar of its own
-    // moving on as its answer puts the skills in clusters.
-    const show = (line) => {
-      const status = $('clustering');
-      if (line.progress) progressed(line.progress, status);
-      else if (line.clustered) {
-        status.querySelector('.text').textContent =
-          'Clustered ' + line.clustered.skills + ' of ' + plural(line.clustered.of, 'skill') + ' with haiku…';
-        bar(status, 'Skills clustered', line.clustered.skills, line.clustered.of);
-      } else {
-        status.querySelector('.text').textContent = 'Clustering ' + plural(line.clustering, 'skill') + ' with haiku…';
-        bar(status, 'Skills clustered', 0, line.clustering);
-      }
-    };
+    const stop = (clustering = new AbortController());
     try {
-      const response = await fetch('/api/clusters/progress?name=' + encodeURIComponent(organization));
-      const answer = response.ok ? await streamed(response, mine, show) : await response.json();
+      const response = await fetch('/api/clusters/progress?name=' + encodeURIComponent(organization), { signal: stop.signal });
+      const answer = response.ok ? await streamed(response, mine, (line) => line.scan || clusteringShown(line)) : await response.json();
       if (mine !== latest) return;
       if (!response.ok || answer.error) throw new Error(answer.error);
       showClusters(answer);
+      $('cluster').hidden = true;
     } catch (error) {
-      if (mine === latest) $('clusters').replaceChildren(element('p.message.error', error.message));
+      if (mine === latest) clusteringFailed(error);
     } finally {
       if (mine === latest) {
         $('cluster').disabled = false;
@@ -472,7 +531,7 @@ export const PAGE = `<!doctype html>
   /** Each cluster, collapsed: its theme and an \`N skills\` pill, then its skills, each with its repository and first sentence. */
   function showClusters(answer) {
     warn(answer.warnings);
-    $('clusters').replaceChildren(
+    $('clusters')?.replaceChildren(
       element('p', plural(answer.skills, 'skill') + ' in ' + plural(answer.clusters.length, 'cluster') + '.'),
       ...answer.clusters.map((cluster) => {
         const theme = element('section.theme');
