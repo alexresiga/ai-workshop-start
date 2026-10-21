@@ -1,0 +1,41 @@
+WEBVTT
+
+1
+00:00:00.946 --> 00:00:09.738
+Scan the organization JetBrains: the totals and its repositories, the Scan button enabled again
+
+2
+00:00:09.738 --> 00:00:11.051
+Its clusters start by themselves: “Clustering 7 skills with haiku…” and a bar of the skills from 0, no button to press
+
+3
+00:00:11.051 --> 00:00:15.751
+As haiku answers, “Clustered 2 of 7 skills…”, then 6 and 7: the bar moving on, the same spinner
+
+4
+00:00:15.751 --> 00:00:17.526
+7 skills in 3 clusters, from that one scan: the page asked the server once, the organization not scanned again
+
+5
+00:00:17.527 --> 00:00:28.245
+Scan it again, claude not logged in: the clear message under the totals, and Cluster skills to try again
+
+6
+00:00:28.245 --> 00:00:30.517
+Cluster skills: the organization scanned again, “Listing JetBrains’s repositories…”, the button disabled
+
+7
+00:00:30.517 --> 00:00:33.568
+Its progress, as the organization’s own scan shows it: “Scanned 3 of 5 repositories” and the bar
+
+8
+00:00:33.568 --> 00:00:35.135
+Then haiku: “Clustering 7 skills with haiku…”, the skills’ bar in the repositories’ bar’s place
+
+9
+00:00:35.135 --> 00:00:42.263
+The clusters come: the Cluster skills button hidden again
+
+10
+00:00:42.263 --> 00:00:50.692
+Scan it again, then Skill Atlas while haiku clusters: home, the answer dropped

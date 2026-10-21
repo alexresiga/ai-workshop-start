@@ -1,0 +1,376 @@
+{
+  "title": "Cluster an organization’s skills from its one scan",
+  "head": "aff20bf832dca50949d0519cc006b80046cc9af5",
+  "base": "aff20bf832dca50949d0519cc006b80046cc9af5",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 46,
+        "text": "On the right, the totals, and `Pick a repository to see its skills.`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan the organization JetBrains: the totals and its repositories, the Scan button enabled again",
+          "start": 0.946
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 46,
+        "text": "then, unless there are no skills, its clusters, which start by themselves: [an organization’s clusters](#an-organizations-clusters)"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Its clusters start by themselves: “Clustering 7 skills with haiku…” and a bar of the skills from 0, no button to press",
+          "start": 9.738
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 53,
+        "text": "Once the organization is scanned, its skills are grouped by theme by a small model, **at once**, from that same scan: the organization is not scanned again"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "7 skills in 3 clusters, from that one scan: the page asked the server once, the organization not scanned again",
+          "start": 15.751
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 54,
+        "text": "its repositories shown meanwhile, the Scan button enabled again"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan the organization JetBrains: the totals and its repositories, the Scan button enabled again",
+          "start": 0.946
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 55,
+        "text": "While it runs, under the totals: the spinner and `Clustering N skills with haiku…` and a **progress bar** of the skills, from 0"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Its clusters start by themselves: “Clustering 7 skills with haiku…” and a bar of the skills from 0, no button to press",
+          "start": 9.738
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 56,
+        "text": "as the model's answer streams, `Clustered K of N skills with haiku…`, the bar moving on with each skill it puts in a cluster"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "As haiku answers, “Clustered 2 of 7 skills…”, then 6 and 7: the bar moving on, the same spinner",
+          "start": 11.051
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 57,
+        "text": "the same spinner throughout"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "As haiku answers, “Clustered 2 of 7 skills…”, then 6 and 7: the bar moving on, the same spinner",
+          "start": 11.051
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 57,
+        "text": "a new scan, or home, drops the answer, and stops the model"
+      },
+      "scenes": [
+        {
+          "index": 10,
+          "caption": "Scan it again, then Skill Atlas while haiku clusters: home, the answer dropped",
+          "start": 42.263
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 58,
+        "text": "A failure → the clear message, and a **Cluster skills** button, to try again: nothing is stored, so the organization scanned again"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Scan it again, claude not logged in: the clear message under the totals, and Cluster skills to try again",
+          "start": 17.527
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 59,
+        "text": "while it runs, under the button: the spinner and `Listing <org>’s repositories…`, then `Scanned N of M repositories` and the progress bar, as the organization's own scan shows them"
+      },
+      "scenes": [
+        {
+          "index": 6,
+          "caption": "Cluster skills: the organization scanned again, “Listing JetBrains’s repositories…”, the button disabled",
+          "start": 28.245
+        },
+        {
+          "index": 7,
+          "caption": "Its progress, as the organization’s own scan shows it: “Scanned 3 of 5 repositories” and the bar",
+          "start": 30.517
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 60,
+        "text": "then `Clustering N skills with haiku…` and the skills' bar, in the repositories' bar's place, as above"
+      },
+      "scenes": [
+        {
+          "index": 8,
+          "caption": "Then haiku: “Clustering 7 skills with haiku…”, the skills’ bar in the repositories’ bar’s place",
+          "start": 33.568
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 61,
+        "text": "the button disabled"
+      },
+      "scenes": [
+        {
+          "index": 6,
+          "caption": "Cluster skills: the organization scanned again, “Listing JetBrains’s repositories…”, the button disabled",
+          "start": 28.245
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 61,
+        "text": "the clusters come → the button hidden again"
+      },
+      "scenes": [
+        {
+          "index": 9,
+          "caption": "The clusters come: the Cluster skills button hidden again",
+          "start": 35.135
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 62,
+        "text": "Under the totals, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "7 skills in 3 clusters, from that one scan: the page asked the server once, the organization not scanned again",
+          "start": 15.751
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 62,
+        "text": "its skills by **name**, each linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "7 skills in 3 clusters, from that one scan: the page asked the server once, the organization not scanned again",
+          "start": 15.751
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 80,
+        "text": "No `claude`, an error from it (not logged in, …), or an answer that is not the clusters → the clear message, under the totals"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Scan it again, claude not logged in: the clear message under the totals, and Cluster skills to try again",
+          "start": 17.527
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 91,
+        "text": "the last line, the answer of `/api/organization`, or `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/web.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 92,
+        "text": "not an organization → status 400, `{ error }`, no line"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/web.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 95,
+        "text": "`GET /api/clusters/progress?name=<org | org/ | GitHub URL>` → the same, as NDJSON, one JSON a line, as it goes: `{ progress: { scanned, of } }` as the organization is scanned"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen, only what the page makes of it; tests/organization-clusters.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 96,
+        "text": "`{ scan }`, the answer of `/api/organization`, once it is scanned"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 96,
+        "text": "`{ clustering }`, how many skills the model is asked about, unless there are none"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 97,
+        "text": "`{ clustered: { skills, of } }` each time the model's answer has put more of them in a cluster"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 98,
+        "text": "the last line, the answer of `/api/clusters`, or `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 98,
+        "text": "no model on the server → `{ error }` after `{ scan }`"
+      },
+      "scenes": [],
+      "notShown": "every scene here has an ask; tests/organization-clusters.test.ts and tests/progress.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 99,
+        "text": "not an organization → status 400, `{ error }`, as above"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 99,
+        "text": "what the page reads for an organization"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen, only what the page makes of it"
+    }
+  ],
+  "before": {
+    "failed": "scene 2, \"Its clusters start by themselves: “Clustering 7 skills with haiku…” and a bar of the skills from 0, no button to press\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#clusters #clustering')\nExpected: \"Clustering 7 skills with haiku…\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" locator('#clusters #clustering') with timeout 5000ms\n  - waiting for locator('#clusters #clustering')\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "10 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 52.5 s, 1313 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 52.3 s, 1308 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 13.0 s, 325 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.993"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.991"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.07 s, SSIM ≥ 0.997"
+    }
+  ]
+}
