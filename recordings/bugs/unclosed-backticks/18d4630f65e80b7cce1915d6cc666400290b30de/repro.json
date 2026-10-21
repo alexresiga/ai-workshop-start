@@ -1,0 +1,22 @@
+{
+  "title": "Three backticks in a sentence (\"Wrap code in ``` fences; use `x` inline.\") turn \" fences; use \" into code",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … code …\", \"as on GitHub\". On GitHub (CommonMark's code spans) a run of backticks with no closing run of the same length is text: \"```\" stays as typed, and only `x` is code",
+  "head": "18d4630f65e80b7cce1915d6cc666400290b30de",
+  "failed": {
+    "step": 2,
+    "caption": "Only `x` should be code: the \"```\" is text, and so is \" fences; use \"",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator: locator('#detail .markdown p code')\nTimeout: 5000ms\n- Expected  - 1\n+ Received  + 1\n\n  Array [\n-   \"x\",\n+   \"fences; use\",\n  ]"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.0 s, 276 frames"
+    }
+  ]
+}
