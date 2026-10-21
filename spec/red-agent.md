@@ -5,6 +5,7 @@ Breaks the web view and files one issue per bug, with its steps and a video, lab
 `node .agents/skills/red-agent/repro.ts <steps.ts>`: a bug, recorded against the web view of this checkout.
 - A steps file exports `title`, the issue's title; `expected`, what `spec/` promises; and `steps`: each has a `caption` and
   `run(page, act)`; the last ends on an `expect` of what the spec promises, which fails while the bug is there
+- And `ask`, for steps that cluster: what the model answers, as in a scenes file; the recorder never runs `claude`
 - One of them missing or empty → `<file> exports no <name>`, exit 1, no video; no steps file → a clear message, exit 2
 - The page, the cursor, the captions and the actions as in [the feature recording](record-feature.md): `example/fixture` from
   `fixture/`, 1280×720, light, a fixed clock, no network

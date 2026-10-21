@@ -5,14 +5,14 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { encode, ffmpeg, probe, record, type Check, type Run, type Scene } from '../record-feature/record.ts';
+import { encode, ffmpeg, probe, record, type Ask, type Check, type Run, type Scene } from '../record-feature/record.ts';
 import { webvtt } from '../record-feature/scenes.ts';
 
 /** One step of a bug: its caption, and what it does. The last one ends on an `expect` that fails: the bug. */
 export type Step = Pick<Scene, 'caption' | 'run'>;
 
-/** A steps file. */
-export type Steps = { title: string; expected: string; steps: Step[] };
+/** A steps file; `ask`, what the model answers, for steps that cluster, as in a scenes file. */
+export type Steps = { title: string; expected: string; steps: Step[]; ask?: Ask };
 
 const RUNS = 2;
 
@@ -86,7 +86,7 @@ export async function main(argv: string[]): Promise<number> {
     for (let i = 0; i < RUNS; i++) {
       mkdirSync(out, { recursive: true });
       try {
-        runs.push(await record(repository, scenes, 'light', join(work, `run-${i + 1}`), join(out, i ? `trace-${i + 1}.zip` : 'trace.zip')));
+        runs.push(await record(repository, scenes, 'light', join(work, `run-${i + 1}`), join(out, i ? `trace-${i + 1}.zip` : 'trace.zip'), steps.ask));
       } catch (error) {
         // Before the first step: the fixture never showed. That is a bug too, the worst, but not one these steps can show.
         console.error(`✗ the page never loaded example/fixture, before the first step: file it by hand, with no video\n${actual(error instanceof Error ? error.message : String(error))}`);
