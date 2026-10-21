@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.940 --> 00:00:02.992
+code-style's SKILL.md: "Read [the [beta] guide](https://kotlinlang.org/docs)."
+
+2
+00:00:02.992 --> 00:00:09.213
+✗ It should read "Read the [beta] guide.", "the [beta] guide" a link

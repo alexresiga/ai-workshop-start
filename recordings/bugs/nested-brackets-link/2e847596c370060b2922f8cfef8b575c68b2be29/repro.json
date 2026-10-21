@@ -1,0 +1,22 @@
+{
+  "title": "A link whose text has brackets (`[the [beta] guide](https://…)`) shows as raw Markdown, not a link",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … links\". As on GitHub, a link's text may hold balanced brackets: \"Read [the [beta] guide](https://kotlinlang.org/docs).\" is \"Read the [beta] guide.\", \"the [beta] guide\" a link to `https://kotlinlang.org/docs`; `markdown.js` stops a link's text at its first `]`, so no link is found and the Markdown shows as it is.",
+  "head": "2e847596c370060b2922f8cfef8b575c68b2be29",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Read the [beta] guide.\", \"the [beta] guide\" a link",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Read the [beta] guide.\"\nReceived: \"Read [the [beta] guide](https://kotlinlang.org/docs).\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 260 frames"
+    }
+  ]
+}
