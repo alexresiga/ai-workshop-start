@@ -1,0 +1,22 @@
+{
+  "title": "Text in single tildes (`Use ~old~ new names.`) is not struck out, as it is on GitHub",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … struck-out text\", \"as on GitHub\". GitHub (GFM's strikethrough) strikes out text in one or two tildes: \"old\" struck out, no tilde left",
+  "head": "18d4630f65e80b7cce1915d6cc666400290b30de",
+  "failed": {
+    "step": 2,
+    "caption": "\"old\" should be struck out, its tildes gone",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator: locator('#detail .markdown p del')\nExpected: \"old\"\nTimeout: 5000ms\nError: element(s) not found"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.9 s, 273 frames"
+    }
+  ]
+}
