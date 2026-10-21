@@ -1,0 +1,22 @@
+{
+  "title": "A badge (`[![build](https://ci.example.com/badge.svg)](https://ci.example.com)`) is a link inside a link, to the image, not the CI",
+  "expected": "`spec/web.md`, the SKILL.md: \"a link holds no other link\", as on GitHub, where the badge is one link, to https://ci.example.com. Here its image becomes a link inside that one: a click on \"build\" opens badge.svg",
+  "head": "18d4630f65e80b7cce1915d6cc666400290b30de",
+  "failed": {
+    "step": 2,
+    "caption": "It should be one link, with no link inside it",
+    "error": "expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('#detail .markdown a')\nExpected: 1\nReceived: 2\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.0 s, 275 frames"
+    }
+  ]
+}

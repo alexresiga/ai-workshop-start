@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.942 --> 00:00:02.964
+code-style's SKILL.md has a badge: [![build](https://ci.example.com/badge.svg)](https://ci.example.com)
+
+2
+00:00:02.964 --> 00:00:09.790
+✗ It should be one link, with no link inside it
