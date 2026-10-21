@@ -10,12 +10,30 @@ export function source(path) {
   return skills === 0 ? '' : (folders[0] ?? '');
 }
 
-/** The pieces of `text` that a word of the filter matches, in any case, as `[start, end)` in order, overlaps joined. */
+/**
+ * The pieces of `text` that a word of the filter matches, in any case, as `[start, end)` in order, overlaps joined.
+ * The words are found in `text.toLowerCase()`, as `matches` finds them, where a character may grow ("İ" → "i̇"): each
+ * piece is mapped back to the whole characters of `text` it covers.
+ */
 export function marks(text, filter) {
   const lower = text.toLowerCase();
+  // For each code unit of `lower`, where its character starts and ends in `text`.
+  const starts = [];
+  const ends = [];
+  let from = 0;
+  for (const char of text) {
+    const to = from + char.length;
+    for (let i = 0; i < char.toLowerCase().length; i++) {
+      starts.push(from);
+      ends.push(to);
+    }
+    from = to;
+  }
   const found = [];
   for (const word of words(filter)) {
-    for (let at = lower.indexOf(word); at >= 0; at = lower.indexOf(word, at + 1)) found.push([at, at + word.length]);
+    for (let at = lower.indexOf(word); at >= 0; at = lower.indexOf(word, at + 1)) {
+      found.push([starts[at], ends[at + word.length - 1]]);
+    }
   }
   found.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const joined = [];
