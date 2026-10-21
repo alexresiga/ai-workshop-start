@@ -46,6 +46,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - A bare `http://`, `https://` or `www.` URL in the body is a link, as on GitHub (GFM's autolinks): at the start of the text or after a space,
   `*`, `_`, `~` or `(`, without its trailing punctuation, an unmatched `)` or an `&amp;`: "See https://kotlinlang.org/docs." links
   `https://kotlinlang.org/docs`; `www.` links to `http://www.`; not in code, nor in a link's text
+- An email autolink is a mailto link, as on GitHub (CommonMark's autolinks): "Ask <kotlin-team@example.com>." is
+  "Ask kotlin-team@example.com.", the address a link to `mailto:kotlin-team@example.com`; one that is not an address, `<a b@c.d>`, is text
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once

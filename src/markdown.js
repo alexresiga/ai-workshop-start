@@ -152,10 +152,14 @@ const LABEL = Array.from({ length: 4 }).reduce((inner) => String.raw`(?:\\.|[^[\
 const DESTINATION = String.raw`\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`;
 const LINK = new RegExp(String.raw`\[(${LABEL})\]${DESTINATION}`);
 
-// A code span binds tighter than the rest, as on GitHub; only an escape, an autolink, or a link's `](destination "title")`
+// An email autolink's address, as CommonMark has it: `<kotlin-team@example.com>`.
+const LABEL_PART = '[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?';
+const EMAIL = String.raw`[A-Za-z0-9.!#$%&'*+/=?^_\`{|}~-]+@${LABEL_PART}(?:\.${LABEL_PART})*`;
+
+// A code span binds tighter than the rest, as on GitHub; only an escape, an autolink, an email one, or a link's `](destination "title")`
 // after a `[`, is read before it.
 const SPANS = new RegExp(
-  String.raw`\\[!-/:-@[-\`{-~]|<https?:\/\/[^\s<>]+>|(?<=\[${LABEL})\]${DESTINATION.replace('<?(', '<?(?:')}|(\`+)([^\`]|[^\`][\s\S]*?[^\`])\1(?!\`)`,
+  String.raw`\\[!-/:-@[-\`{-~]|<https?:\/\/[^\s<>]+>|<${EMAIL}>|(?<=\[${LABEL})\]${DESTINATION.replace('<?(', '<?(?:')}|(\`+)([^\`]|[^\`][\s\S]*?[^\`])\1(?!\`)`,
   'g',
 );
 
@@ -167,13 +171,14 @@ const INLINE = new RegExp(
     /\uE001\uE000*/, // a code span, masked
     `!?${LINK.source}`, // 1, 2: a link; an image as its link
     /<(https?:\/\/[^\s<>]+)>/, // 3: an autolink
-    /\*\*(?=\S)([\s\S]*?\S)\*\*|__(?=\S)([\s\S]*?\S)__(?!\w)/, // 4, 5: strong
-    // 6, 7: emphasis; a strong inside it is one piece, so its closing ** does not end the emphasis, and stars with a space
+    `<(${EMAIL})>`, // 4: an email autolink
+    /\*\*(?=\S)([\s\S]*?\S)\*\*|__(?=\S)([\s\S]*?\S)__(?!\w)/, // 5, 6: strong
+    // 7, 8: emphasis; a strong inside it is one piece, so its closing ** does not end the emphasis, and stars with a space
     // on each side are text. Each character starts at most one piece, so text with no closing * fails fast.
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
-    /~~(?=\S)([\s\S]*?\S)~~/, // 8: struck out
-    /\\([!-/:-@[-`{-~])/, // 9: an escaped character
-    // 10: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
+    /~~(?=\S)([\s\S]*?\S)~~/, // 9: struck out
+    /\\([!-/:-@[-`{-~])/, // 10: an escaped character
+    // 11: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
     /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
   ]
     .map((part) => (typeof part === 'string' ? part : part.source))
@@ -216,10 +221,11 @@ export function inline(text, inLink = false) {
     push(text.slice(last, match.index));
     last = match.index + match[0].length;
     // Each part as the text has it, code spans and all.
-    const [, label, href, autolink, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
+    const [, label, href, autolink, email, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
     if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
     else if (label !== undefined) push(['a', { href }, ...inline(label, true)]);
     else if (autolink !== undefined) push(['a', { href: autolink }, autolink]);
+    else if (email !== undefined) push(['a', { href: `mailto:${email}` }, email]);
     else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2, inLink)]);
     else if (em1 !== undefined || em2 !== undefined) push(['em', {}, ...inline(em1 ?? em2, inLink)]);
     else if (del !== undefined) push(['del', {}, ...inline(del, inLink)]);

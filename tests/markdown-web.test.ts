@@ -14,6 +14,9 @@ const answers = replay({
   ...searchAnswers('example/autolink', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nSee https://kotlinlang.org/docs.\n',
   }),
+  ...searchAnswers('example/email', {
+    '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nAsk <kotlin-team@example.com>.\n',
+  }),
 });
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: answers, token: 'test' }),
@@ -46,4 +49,14 @@ browserTest('a bare URL is a link, without its trailing period: "See https://kot
   await expect(paragraph).toHaveText('See https://kotlinlang.org/docs.');
   await expect(paragraph.locator('a')).toHaveAttribute('href', 'https://kotlinlang.org/docs');
   await expect(paragraph.locator('a')).toHaveText('https://kotlinlang.org/docs');
+});
+
+browserTest('an email autolink is a mailto link, without its brackets: "Ask <kotlin-team@example.com>."', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/email`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('Ask kotlin-team@example.com.');
+  await expect(paragraph.locator('a')).toHaveAttribute('href', 'mailto:kotlin-team@example.com');
+  await expect(paragraph.locator('a')).toHaveText('kotlin-team@example.com');
 });
