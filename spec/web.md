@@ -16,6 +16,11 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   the first; none for a SKILL.md at the root or in a top `skills` folder; its path when hovered
 - Beside it too, for a skill with copies, a `+N copies` pill; their paths when hovered
 - A skill with no description → `No description`, in muted italics, so each row has two lines
+- The skills in **clusters**, by the words their *names* share, split at `-`, `_`, `.` and spaces, in any case: the word the most skills
+  share makes the first cluster, with every skill that has it; then the same among the skills left, while a word is shared by two of them;
+  a tie → the word first in the alphabet; the skills left → **Other**, last
+- Each cluster under a heading, `<word> · N`, largest first, its skills by name; ↑ and ↓ move across them; the filter hides a cluster with no skill shown;
+  no word shared → the plain list, no heading
 - After a scan, above the skills, a **filter**: it keeps the skills whose name or description has *every word* typed, in any case,
   anywhere in a word; the pill shows `N of M skills` while it hides some; none left → `No skill matches <text>.`, and nothing on the right;
   the selected skill stays if it is shown, else the first shown is selected; ↑ and ↓ move through the shown ones; Esc clears it; a new scan empties it
