@@ -1,0 +1,17 @@
+WEBVTT
+
+1
+00:00:00.991 --> 00:00:03.025
+code-style's SKILL.md has a badge: it is one link, "build", to the CI, not to badge.svg
+
+2
+00:00:03.025 --> 00:00:05.044
+An image alone, "See ![logo](https://example.com/logo.png).", is a link to it, its text "logo"
+
+3
+00:00:05.044 --> 00:00:07.058
+A link in a link's text, "[a [b](b.md) c](c.md)": only "b" is a link
+
+4
+00:00:07.058 --> 00:00:09.098
+Balanced brackets stay in a link's text: "Read [the [beta] guide](…)." is "Read the [beta] guide."

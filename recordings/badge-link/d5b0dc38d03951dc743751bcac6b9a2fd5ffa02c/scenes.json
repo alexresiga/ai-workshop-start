@@ -1,0 +1,113 @@
+{
+  "title": "A badge is one link: [![build](https://ci.example.com/badge.svg)](https://ci.example.com)",
+  "head": "d5b0dc38d03951dc743751bcac6b9a2fd5ffa02c",
+  "base": "803bdd7c188a463c8d70e64d3ac368864022093f",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "a link's text may hold balanced brackets, as on GitHub: \"Read [the [beta] guide](https://kotlinlang.org/docs).\" is \"Read the [beta] guide.\", \"the [beta] guide\" a link"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Balanced brackets stay in a link's text: \"Read [the [beta] guide](…).\" is \"Read the [beta] guide.\"",
+          "start": 7.058
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 43,
+        "text": "an unbalanced `[` is text, and a link holds no other link: in `[a [b](u) c](v)` only `b` is one"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "A link in a link's text, \"[a [b](b.md) c](c.md)\": only \"b\" is a link",
+          "start": 5.044
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 44,
+        "text": "an image is a link to it, its text the link's"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "An image alone, \"See ![logo](https://example.com/logo.png).\", is a link to it, its text \"logo\"",
+          "start": 3.025
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 44,
+        "text": "in a link's text it is that text alone, so a badge is one link, as on GitHub: `[![build](https://ci.example.com/badge.svg)](https://ci.example.com)` is \"build\", a link to `https://ci.example.com`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's SKILL.md has a badge: it is one link, \"build\", to the CI, not to badge.svg",
+          "start": 0.991
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"code-style's SKILL.md has a badge: it is one link, \"build\", to the CI, not to badge.svg\": expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('#detail .markdown a')\nExpected: 1\nReceived: 2\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" locator('#detail .markdown a') with timeout 5000ms\n  - waiting for locator('#detail .markdown a')\n    14 × locator resolved to 2 elements\n       - unexpected value \"2\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "4 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 9.4 s, 234 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 9.2 s, 230 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 211 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.14 s, SSIM ≥ 0.996"
+    }
+  ]
+}
