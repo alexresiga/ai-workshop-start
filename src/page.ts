@@ -223,21 +223,31 @@ export const PAGE = `<!doctype html>
       : load('/api/scan?url=' + encodeURIComponent(text), 'Scanning ' + text + '…', show);
   }
 
-  /** What the list shows while a scan runs: a spinner and what it does; for an organization, how far it is, as a bar. */
-  function loading(text, progress) {
+  /** What the list shows while a scan runs: a spinner and what it does. */
+  function loading(text) {
     const spinner = element('span.spinner');
     spinner.setAttribute('aria-hidden', 'true');
-    const status = element('div.message.loading', element('span.what', spinner, element('span', text)));
+    const status = element('div.message.loading', element('span.what', spinner, element('span.text', text)));
     status.id = 'loading';
     status.setAttribute('role', 'status');
-    if (progress) {
-      const bar = element('progress');
-      bar.max = progress.of;
-      bar.value = progress.scanned;
+    return status;
+  }
+
+  /**
+   * How far an organization's scan is, as text and a bar, in the list's \`#loading\`: updated, not rebuilt, so the spinner
+   * keeps turning, the bar eases, and a screen reader hears only the text that changed.
+   */
+  function progressed({ scanned, of }) {
+    const status = $('loading');
+    status.querySelector('.text').textContent = 'Scanned ' + scanned + ' of ' + plural(of, 'repository');
+    let bar = status.querySelector('progress');
+    if (!bar) {
+      bar = element('progress');
       bar.setAttribute('aria-label', 'Repositories scanned');
       status.append(bar);
     }
-    return status;
+    bar.max = of;
+    bar.value = scanned;
   }
 
   /**
@@ -256,8 +266,7 @@ export const PAGE = `<!doctype html>
         const answer = JSON.parse(line);
         if (!answer.progress) return answer;
         if (mine !== latest) continue; // a later scan replaced this one
-        const { scanned, of } = answer.progress;
-        $('skills').replaceChildren(loading('Scanned ' + scanned + ' of ' + plural(of, 'repository'), answer.progress));
+        progressed(answer.progress);
       }
       if (done) throw new Error('The scan stopped before its answer; try again.');
     }
