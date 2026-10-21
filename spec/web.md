@@ -39,6 +39,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   then the body, **rendered Markdown**: headings, paragraphs, lists, code, fenced or indented, as it is, quotes, tables, links, emphasis;
   a line with no `>` right after a quoted line goes on with the quote's paragraph, as on GitHub: `> Never push to main` then
   `on a Friday.` is one quote, `Never push to main on a Friday.`; a blank line or a new block ends the quote, as does a line after a quote that ends in code;
+  a quote nested deep renders at once;
   a table may follow a line of text with no blank line, as on GitHub
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element

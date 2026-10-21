@@ -64,6 +64,21 @@ test('a quote ends at a blank line, at a block, or when it does not end in a par
   assert.deepEqual(markdown('> a\n- b\n'), [['blockquote', {}, ['p', {}, 'a']], ['ul', {}, ['li', {}, 'b']]]);
   assert.deepEqual(markdown('> # a\nb\n'), [['blockquote', {}, ['h1', {}, 'a']], ['p', {}, 'b']]);
   assert.deepEqual(markdown('> ```\n> a\n> ```\nb\n'), [['blockquote', {}, ['pre', {}, ['code', {}, 'a']]], ['p', {}, 'b']]);
+  assert.deepEqual(markdown('> > ```\n> b\n'), [['blockquote', {}, ['blockquote', {}, ['pre', {}, ['code', {}, '']]], ['p', {}, 'b']]]);
+  assert.deepEqual(markdown('> > a\n> >\nb\n'), [['blockquote', {}, ['blockquote', {}, ['p', {}, 'a']]], ['p', {}, 'b']]);
+  assert.deepEqual(markdown('> - ```\n>   a\nb\n'), [['blockquote', {}, ['ul', {}, ['li', {}, ['pre', {}, ['code', {}, 'a']]]]], ['p', {}, 'b']]);
+});
+
+test('a quote nested deep, with lines with no ">", renders at once', () => {
+  const deep = ['>'.repeat(10) + ' a\n' + 'b\n'.repeat(500), ('>'.repeat(10) + ' a\nb\nb\n').repeat(200), Array.from({ length: 50 }, (_, k) => '>'.repeat(k + 1) + ' a\nb\n').join('')];
+  for (const text of deep) {
+    const started = performance.now();
+    markdown(text);
+    assert.ok(performance.now() - started < 200, `${text.length} characters`);
+  }
+  let quote = markdown('>'.repeat(10) + ' a\n' + 'b\n'.repeat(500))[0];
+  for (let depth = 1; depth < 10; depth++) quote = quote[2] as typeof quote;
+  assert.deepEqual(quote, ['blockquote', {}, ['p', {}, ['a', ...Array(500).fill('b')].join(' ')]]);
 });
 
 test('indented code as it is, line by line; an indented line inside a paragraph is still the paragraph', () => {

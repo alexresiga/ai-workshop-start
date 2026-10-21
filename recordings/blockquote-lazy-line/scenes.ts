@@ -17,6 +17,9 @@ async function withBody(page: Page, body: string) {
 }
 
 export const title = "A quote's second line without \">\" stays in the quote";
+export const notShown = {
+  'a quote nested deep renders at once': 'how long rendering takes has nothing to see on screen; tests/markdown.test.ts times it',
+};
 export const scenes: Scene[] = [
   {
     caption: 'A quote whose second line has no ">": both lines are the quote, "Never push to main on a Friday."',
