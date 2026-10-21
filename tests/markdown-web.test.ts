@@ -17,6 +17,10 @@ const answers = replay({
   ...searchAnswers('example/autolink', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nSee https://kotlinlang.org/docs.\n',
   }),
+  ...searchAnswers('example/badge', {
+    '.github/skills/code-style/SKILL.md':
+      '---\nname: code-style\ndescription: Kotlin style.\n---\n[![build](https://ci.example.com/badge.svg)](https://ci.example.com)\n',
+  }),
   ...searchAnswers('example/email', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nAsk <kotlin-team@example.com>.\n',
   }),
@@ -58,6 +62,16 @@ browserTest('a bare URL is a link, without its trailing period: "See https://kot
   await expect(paragraph).toHaveText('See https://kotlinlang.org/docs.');
   await expect(paragraph.locator('a')).toHaveAttribute('href', 'https://kotlinlang.org/docs');
   await expect(paragraph.locator('a')).toHaveText('https://kotlinlang.org/docs');
+});
+
+browserTest('a badge is one link, to where it goes: "[![build](https://ci.example.com/badge.svg)](https://ci.example.com)"', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/badge`);
+  const links = page.locator('#detail .markdown a');
+  await expect(links).toHaveCount(1);
+  await expect(links).toHaveText('build');
+  await expect(links).toHaveAttribute('href', 'https://ci.example.com/');
 });
 
 browserTest('an email autolink is a mailto link, without its brackets: "Ask <kotlin-team@example.com>."', async (t) => {

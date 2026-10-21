@@ -40,7 +40,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a table may follow a line of text with no blank line, as on GitHub; a code span binds tighter than emphasis, struck-out text
   and a link's text, as on GitHub: ``**Pass `**kwargs` through**`` is "Pass **kwargs through" in bold, its `**kwargs` as code;
   a link's text may hold balanced brackets, as on GitHub: "Read [the [beta] guide](https://kotlinlang.org/docs)." is "Read the [beta] guide.",
-  "the [beta] guide" a link; an unbalanced `[` is text, and a link holds no other link: in `[a [b](u) c](v)` only `b` is one
+  "the [beta] guide" a link; an unbalanced `[` is text, and a link holds no other link: in `[a [b](u) c](v)` only `b` is one;
+  an image is a link to it, its text the link's; in a link's text it is that text alone, so a badge is one link, as on GitHub:
+  `[![build](https://ci.example.com/badge.svg)](https://ci.example.com)` is "build", a link to `https://ci.example.com`
 - Emphasis may hold strong, as on GitHub: `*Always **run** the tests*` is the words in italics, `run` in bold too, no star left;
   a star with a space on each side is text in it: `*5 * 60 seconds*`
 - A list item that starts with `[ ]` or `[x]` (or `[X]`), then a space and text, is a task list item, as on GitHub (GFM's task list items):
