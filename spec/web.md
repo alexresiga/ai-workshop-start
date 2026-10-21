@@ -42,11 +42,26 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - The header: the organization, an `N skills` pill and an `M of N repositories` pill
 - On the left, the repositories with skills, *most first*: the name and an `N skills` pill; ↑ and ↓ move; no filter.
   None → `No SKILL.md in any of <org>’s N repositories.`
-- On the right, the totals, and `Pick a repository to see its skills.`
+- On the right, the totals, and `Pick a repository to see its skills.`; then a **Cluster skills** button, unless there are no skills
 - Clicking a repository scans it, `?repo=` in the address; **Back** returns to the organization, Forward to the repository
 - Only the latest scan's answer is shown, whichever comes back last
 - Unreachable repository or not a GitHub URL → the clear message, in the list
 - Light and dark, as the system is
+## An organization’s clusters
+- **Cluster skills**: the organization scanned again, nothing is stored, and its skills grouped by theme by a small model;
+  `Clustering N skills with haiku…` while it runs, the button disabled; a new scan, or home, drops the answer
+- Under the button, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill; its skills by **name**, each
+  linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*
+- The clusters with most skills *first*, then by theme
+- **Every skill in exactly one cluster**: one the model leaves out → `Other`, last; one it names twice → the first cluster;
+  a number not in the list → ignored; each kind a *warning*, naming ten and how many more, under the header after the scan's,
+  until the next answer
+- The model: **haiku**, through Claude Code on the server: `claude -p --model haiku --output-format json`, no tools, no session kept;
+  `CLAUDE`, optional: another `claude` binary
+- The question, on stdin: each skill numbered, sorted by name, with its name and its description's first sentence, cut at 160 characters;
+  skills with the same line, a skill copied into many repositories, share a number; the answer asked for as JSON,
+  `{"clusters": [{"theme", "skills": [<numbers>]}]}`, read even inside a code fence
+- No `claude`, an error from it (not logged in, …), or an answer that is not the clusters → the clear message, under the button
 ## Details
 - The same core as the CLI: the same skills, copies, warnings and links
 - **GitHub repositories only**: the page never reads the server's own directories; `./dir` is not `owner/repo`
@@ -59,4 +74,6 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - `GET /api/organization/progress?name=<org | org/ | GitHub URL>` → the same scan, as NDJSON, one JSON a line, as it goes:
   `{ progress: { scanned, of } }`, from `0` once the repositories are listed; the last line, the answer of `/api/organization`,
   or `{ error }`; not an organization → status 400, `{ error }`; what the page reads
+- `GET /api/clusters?name=<org | org/ | GitHub URL>` → JSON `{ organization: { id, url }, skills, clusters: [{ theme, skills: [{ name,
+  description, repository, path, link }] }], warnings }`, `skills` the count; not an organization, or a failure → status 400, `{ error }`
 - Nothing is stored

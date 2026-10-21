@@ -5,6 +5,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { serve } from '../.agents/skills/record-feature/record.ts';
+import type { ClustersAnswer, OrganizationAnswer } from '../src/web.ts';
 import { changedLines, clauses, coverage, ffmetadata, webvtt } from '../.agents/skills/record-feature/scenes.ts';
 
 const RECORD = fileURLToPath(new URL('../.agents/skills/record-feature/record.ts', import.meta.url));
@@ -113,6 +115,25 @@ test('captions and chapters: one for each scene, at its start and end', () => {
     ';FFMETADATA1\ntitle=Filter\n\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=500\nEND=4250\ntitle=Type a word\n\n' +
       '[CHAPTER]\nTIMEBASE=1/1000\nSTART=4250\nEND=61004\ntitle=Esc clears it\n',
   );
+});
+
+test('the web view recorded: example an organization with only example/fixture; the model, the scenes file’s ask', async (t) => {
+  const prompts: string[] = [];
+  const server = await serve(REPOSITORY, async (prompt) => (prompts.push(prompt), '{"clusters": [{"theme": "All", "skills": [1, 2, 3]}]}'));
+  t.after(() => server.close());
+  const organization = (await (await fetch(`${server.url}/api/organization?name=example`)).json()) as OrganizationAnswer;
+  assert.deepEqual(organization.repositories, [{ id: 'example/fixture', url: 'https://github.com/example/fixture', skills: 3 }]);
+  const answer = (await (await fetch(`${server.url}/api/clusters?name=example`)).json()) as ClustersAnswer;
+  assert.deepEqual(answer.clusters.map((cluster) => [cluster.theme, cluster.skills.length]), [['All', 3]]);
+  assert.match(prompts[0], /^1\. code-style — /m);
+});
+
+test('the web view recorded: no ask → the question fails', async (t) => {
+  const server = await serve(REPOSITORY, undefined);
+  t.after(() => server.close());
+  const response = await fetch(`${server.url}/api/clusters?name=example`);
+  assert.equal(response.status, 500);
+  assert.match(((await response.json()) as { error: string }).error, /the scenes file has no ask: what the model answers/);
 });
 
 // The recording: the filter, from 8ca5a10, against its parent, with Chromium and ffmpeg.

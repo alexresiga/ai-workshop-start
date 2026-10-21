@@ -82,6 +82,20 @@ export const PAGE = `<!doctype html>
   nav.repositories .pill { flex: none; }
   .summary h2 { margin: 0 0 .5rem; font: 1.45rem var(--mono); }
   .summary p { margin: 0 0 .5rem; color: var(--muted); }
+  .summary button.scan { margin-top: .5rem; }
+  #clusters { margin-top: 1.6rem; }
+  #clusters > p { margin: 0 0 1rem; color: var(--muted); }
+  #clusters .message { padding: 0; }
+  #clusters .message.error { color: var(--error); }
+  #clusters .theme { margin-bottom: 1.6rem; }
+  .theme h3 { display: flex; align-items: center; gap: .6rem; margin: 0 0 .5rem; font-size: 1.15rem; }
+  .theme h3 .pill { font-weight: 400; }
+  .theme ul { margin: 0; padding: 0; list-style: none; }
+  .theme li { display: flex; align-items: baseline; gap: .75rem; padding: .2rem 0; white-space: nowrap; }
+  .theme li a { font-family: var(--mono); color: var(--accent); text-decoration: none; }
+  .theme li a:hover { text-decoration: underline; }
+  .theme li .in { font-family: var(--mono); font-size: .85rem; color: var(--muted); }
+  .theme li .description { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
   .message { padding: 1rem; color: var(--muted); }
   .message.error { color: var(--error); }
   .loading { display: flex; flex-direction: column; gap: .6rem; }
@@ -338,14 +352,72 @@ export const PAGE = `<!doctype html>
         return item;
       }),
     );
-    $('detail').replaceChildren(
-      element('div.summary',
-        element('h2', answer.organization.id),
-        element('p', plural(total, 'skill') + ' in ' + answer.repositories.length + ' of ' + plural(answer.scanned, 'repository') + '.'),
-        ...(answer.repositories.length ? [element('p', 'Pick a repository to see its skills.')] : []),
+    const parts = [
+      element('h2', answer.organization.id),
+      element('p', plural(total, 'skill') + ' in ' + answer.repositories.length + ' of ' + plural(answer.scanned, 'repository') + '.'),
+    ];
+    if (answer.repositories.length) {
+      const button = element('button.scan', 'Cluster skills');
+      button.id = 'cluster';
+      button.type = 'button';
+      button.addEventListener('click', () => cluster(answer.organization.id, total, answer.warnings));
+      const clusters = element('div');
+      clusters.id = 'clusters';
+      parts.push(element('p', 'Pick a repository to see its skills.'), button, clusters);
+    }
+    $('detail').replaceChildren(element('div.summary', ...parts));
+  }
+
+  /** The organization's skills by theme, from a small model; a new scan, or home, drops the answer. */
+  async function cluster(organization, total, warnings) {
+    const mine = latest;
+    // The scan's warnings, without the last answer's.
+    $('warnings').replaceChildren(...warnings.map((warning) => element('li', 'warning: ' + warning)));
+    $('cluster').disabled = true;
+    $('cluster').textContent = 'Clustering…';
+    $('clusters').replaceChildren(element('p.message', 'Clustering ' + plural(total, 'skill') + ' with haiku…'));
+    try {
+      const response = await fetch('/api/clusters?name=' + encodeURIComponent(organization));
+      const answer = await response.json();
+      if (mine !== latest) return;
+      if (!response.ok) throw new Error(answer.error);
+      showClusters(answer);
+    } catch (error) {
+      if (mine === latest) $('clusters').replaceChildren(element('p.message.error', error.message));
+    } finally {
+      if (mine === latest) {
+        $('cluster').disabled = false;
+        $('cluster').textContent = 'Cluster skills';
+      }
+    }
+  }
+
+  /** Each cluster: its theme and an \`N skills\` pill, then its skills, each with its repository and first sentence. */
+  function showClusters(answer) {
+    $('warnings').replaceChildren(...answer.warnings.map((warning) => element('li', 'warning: ' + warning)));
+    $('clusters').replaceChildren(
+      element('p', plural(answer.skills, 'skill') + ' in ' + plural(answer.clusters.length, 'cluster') + '.'),
+      ...answer.clusters.map((cluster) =>
+        element('section.theme',
+          element('h3', element('span', cluster.theme), element('span.pill', plural(cluster.skills.length, 'skill'))),
+          element('ul', ...cluster.skills.map((skill) => {
+            const link = element('a', skill.name);
+            link.href = skill.link;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            const description = element('span.description', firstSentence(skill.description));
+            description.title = skill.description;
+            return element('li', link, element('span.in', skill.repository), description);
+          })),
+        ),
       ),
     );
   }
+
+  const firstSentence = (text) => {
+    const line = text.replace(/\\s+/g, ' ').trim();
+    return /^.*?[.!?](?=\\s|$)/.exec(line)?.[0] ?? line;
+  };
 
   function show(answer) {
     // By the words their names share, each cluster under its heading; the list is in their order.

@@ -4,9 +4,10 @@
 import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { clusterSkills, type Ask } from './core/themes.ts';
 import { AtlasError } from './core/errors.ts';
 import { parseGitHubUrl } from './core/github.ts';
-import { skillLink } from './core/model.ts';
+import { skillLink, type Repository, type Skill } from './core/model.ts';
 import { parseOrganizationUrl, type OrganizationResult, type Progress } from './core/organization.ts';
 import { parseSkill } from './core/parse.ts';
 import { scan, type Source } from './core/scan.ts';
@@ -34,10 +35,24 @@ export type WebOptions = {
   open(url: string): Promise<Source>;
   /** Scans a GitHub organization URL; `progress` hears how far it is. */
   organization(url: string, progress?: Progress): Promise<OrganizationResult>;
+  /** Asks the small model the skills are clustered with; without it, no clusters. */
+  ask?: Ask;
 };
 
 /** What `GET /api/organization?name=<organization | GitHub URL>` answers: the result, or `{ error }` with status 400. */
-export type OrganizationAnswer = OrganizationResult;
+export type OrganizationAnswer = Omit<OrganizationResult, 'skills'>;
+
+/** What `GET /api/clusters?name=<organization | GitHub URL>` answers: the result, or `{ error }` with status 400. */
+export type ClustersAnswer = {
+  organization: { id: string; url: string };
+  /** How many skills were clustered. */
+  skills: number;
+  clusters: {
+    theme: string;
+    skills: { name: string; description: string; repository: string; path: string; link: string }[];
+  }[];
+  warnings: string[];
+};
 
 /**
  * What `GET /api/organization/progress?name=…` streams, one JSON a line: `{ progress }` as the scan goes,
@@ -87,23 +102,33 @@ export function createWebServer(options: WebOptions): Server {
       } else if (url.pathname === '/api/organization') {
         const input = organizationUrl(url.searchParams.get('name') ?? '');
         if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
-        json(200, (await options.organization(input)) satisfies OrganizationAnswer);
+        json(200, withoutSkills(await options.organization(input)) satisfies OrganizationAnswer);
       } else if (url.pathname === '/api/organization/progress') {
         const input = organizationUrl(url.searchParams.get('name') ?? '');
         if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
         response.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
         const line = (body: OrganizationProgressLine) => response.write(JSON.stringify(body) + '\n');
         try {
-          line(await options.organization(input, (scanned, of) => line({ progress: { scanned, of } })));
+          line(withoutSkills(await options.organization(input, (scanned, of) => line({ progress: { scanned, of } }))));
         } catch (error) {
           line({ error: failure(error) });
         }
         response.end();
+      } else if (url.pathname === '/api/clusters') {
+        const input = organizationUrl(url.searchParams.get('name') ?? '');
+        if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
+        if (!options.ask) throw new AtlasError('Clustering is not available here');
+        json(200, await clustersAnswer(await options.organization(input), options.ask));
       } else json(404, { error: `Not found: ${url.pathname}` });
     } catch (error) {
       json(error instanceof AtlasError ? 400 : 500, { error: failure(error) });
     }
   });
+}
+
+/** The organization's answer: the counts, not every skill. */
+function withoutSkills({ skills, ...answer }: OrganizationResult): OrganizationAnswer {
+  return answer;
 }
 
 /** An AtlasError's message; anything else, as unexpected. */
@@ -142,6 +167,32 @@ function repositoryUrl(input: string): string {
 function organizationUrl(input: string): string {
   const text = input.trim();
   return /^[a-z\d][a-z\d-]*\/?$/i.test(text) ? `https://github.com/${text}` : text;
+}
+
+/** The organization's skills by theme, each linked to its SKILL.md; the scan's warnings, then the model's. */
+async function clustersAnswer(result: OrganizationResult, ask: Ask): Promise<ClustersAnswer> {
+  const { clusters, warnings } = await clusterSkills(result.skills, ask);
+  // Each skill's link is at the commit its repository was scanned at, its default branch.
+  const link = (skill: Skill) => {
+    const [organization, name] = skill.repository.split('/');
+    const repository: Repository = { id: skill.repository, organization, name, url: `https://github.com/${skill.repository}`, commit: skill.commit };
+    return skillLink(repository, skill);
+  };
+  return {
+    organization: result.organization,
+    skills: result.skills.length,
+    clusters: clusters.map((cluster) => ({
+      theme: cluster.theme,
+      skills: cluster.skills.map((skill) => ({
+        name: skill.name,
+        description: skill.description,
+        repository: skill.repository,
+        path: skill.path,
+        link: link(skill),
+      })),
+    })),
+    warnings: [...result.warnings, ...warnings],
+  };
 }
 
 async function scanAnswer(source: Source): Promise<ScanAnswer> {

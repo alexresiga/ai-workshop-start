@@ -20,12 +20,16 @@ export type Act = {
 /** One scene: its caption, the pieces of clause text it covers, and what it does, ending on an `expect`. */
 export type Scene = { caption: string; covers: string[]; run(page: Page, act: Act): Promise<void> };
 
+/** What the model answers a question with, for the scenes that ask it: the web view never runs `claude` while recording. */
+export type Ask = (prompt: string) => Promise<string>;
+
 /** A scenes file. */
-export type Scenes = { title?: string; scenes: Scene[]; notShown?: Record<string, string> };
+export type Scenes = { title?: string; scenes: Scene[]; notShown?: Record<string, string>; ask?: Ask };
 
 const SIZE = { width: 1280, height: 720 };
-/** The repository the page scans: fixture/, answered as GitHub would. */
+/** The repository the page scans: fixture/, answered as GitHub would; its owner, an organization with only it. */
 const REPO = 'example/fixture';
+const ORGANIZATION = 'example';
 /** How long each scene's end stays on screen, and when in it the screenshot is taken. */
 const HOLD = 1200;
 const SHOT = 500;
@@ -69,27 +73,35 @@ function act(page: Page): Act {
   };
 }
 
-/** The web view of `root` (a checkout of this repository) on a free port, GitHub answering from fixture/. */
-async function serve(root: string) {
+/** The web view of `root` (a checkout of this repository) on a free port, GitHub answering from fixture/, the model from `ask`. */
+export async function serve(root: string, ask: Ask | undefined) {
   const here = (path: string) => pathToFileURL(join(root, path)).href;
   const { createWebServer } = await import(here('src/web.ts'));
   const { openGitHub } = await import(here('src/core/github.ts'));
   const { replay } = await import(here('src/core/replay.ts'));
-  const { searchAnswers } = await import(pathToFileURL(resolve(import.meta.dirname, '../../../tests/helpers.ts')).href);
+  // A commit from before organizations has no organization scan.
+  const { scanOrganization } = await import(here('src/core/organization.ts')).catch(() => ({ scanOrganization: undefined }));
+  const helpers = pathToFileURL(resolve(import.meta.dirname, '../../../tests/helpers.ts')).href;
+  const { organizationAnswers, searchAnswers } = await import(helpers);
   const fixture = resolve(import.meta.dirname, '../../../fixture');
   const files: Record<string, string> = {};
   for (const path of readdirSync(fixture, { recursive: true, encoding: 'utf8' })) {
     if (basename(path) === 'SKILL.md') files[path] = readFileSync(join(fixture, path), 'utf8');
   }
-  const server = createWebServer({ open: (url: string) => openGitHub(url, { fetch: replay(searchAnswers(REPO, files)), token: 'fixture' }) });
+  const organization = replay(organizationAnswers(ORGANIZATION, 'Organization', { [REPO.split('/')[1]]: files }));
+  const server = createWebServer({
+    open: (url: string) => openGitHub(url, { fetch: replay(searchAnswers(REPO, files)), token: 'fixture' }),
+    organization: (url: string) => scanOrganization(url, { fetch: organization, token: 'fixture' }),
+    ask: ask ?? (() => Promise.reject(new Error('the scenes file has no ask: what the model answers'))),
+  });
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
   return { url: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, close: () => server.close() };
 }
 
 /** Records the scenes against `root` into `dir`, up to the first that fails: the video, each scene's timing and end screenshot, and the trace. */
-async function record(root: string, scenes: Scene[], scheme: 'light' | 'dark', dir: string, trace: string): Promise<Run> {
+async function record(root: string, scenes: Scene[], scheme: 'light' | 'dark', dir: string, trace: string, ask?: Ask): Promise<Run> {
   mkdirSync(dir, { recursive: true });
-  const server = await serve(root);
+  const server = await serve(root, ask);
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: SIZE, colorScheme: scheme, recordVideo: { dir, size: SIZE } });
   await context.addInitScript({ path: join(import.meta.dirname, 'overlay.js') });
@@ -274,7 +286,7 @@ export async function main(argv: string[]): Promise<number> {
     mkdirSync(out, { recursive: true });
     const runs: Record<string, Run> = {};
     for (const [name, scheme] of [['after-light', 'light'], ['after-dark', 'dark'], ['rerun-light', 'light']] as const) {
-      runs[name] = await record(after.root, module.scenes, scheme, join(work, name), join(out, `trace-${name}.zip`));
+      runs[name] = await record(after.root, module.scenes, scheme, join(work, name), join(out, `trace-${name}.zip`), module.ask);
       if (runs[name].failed) {
         console.error(`✗ at ${head.slice(0, 7)}, ${scheme}: ${runs[name].failed}`);
         rmSync(out, { recursive: true, force: true });
@@ -282,7 +294,7 @@ export async function main(argv: string[]): Promise<number> {
       }
     }
     rmSync(join(out, 'trace-rerun-light.zip'));
-    runs['before-light'] = await record(before.root, module.scenes, 'light', join(work, 'before-light'), join(out, 'trace-before-light.zip'));
+    runs['before-light'] = await record(before.root, module.scenes, 'light', join(work, 'before-light'), join(out, 'trace-before-light.zip'), module.ask);
 
     const checks: Check[] = [{ name: "every scene's expect, light and dark", ok: true, detail: `${module.scenes.length} scenes` }];
     for (const name of ['after-light', 'after-dark', 'before-light']) {

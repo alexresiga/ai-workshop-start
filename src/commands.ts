@@ -1,7 +1,7 @@
 // The skill-atlas commands. The same code serves the Node CLI and the browser
 // terminal: everything that differs between them comes in through the context.
 import { AtlasError } from './core/errors.ts';
-import { skillLink, type Repository, type Skill } from './core/model.ts';
+import { firstSentence, skillLink, type Repository, type Skill } from './core/model.ts';
 import { parseOrganizationUrl, type OrganizationResult } from './core/organization.ts';
 import { scan, type Source } from './core/scan.ts';
 
@@ -83,9 +83,4 @@ function printOrganization({ organization, repositories, scanned }: Organization
 
 function count(n: number, noun: string): string {
   return `${n} ${n === 1 ? noun : noun === 'repository' ? 'repositories' : `${noun}s`}`;
-}
-
-function firstSentence(text: string): string {
-  const line = text.replace(/\s+/g, ' ').trim();
-  return /^.*?[.!?](?=\s|$)/.exec(line)?.[0] ?? line;
 }
