@@ -1,0 +1,22 @@
+{
+  "title": "An escaped star closes emphasis: `Use *\\*.kt* files` shows \"\\\" in italics, then \".kt* files\"",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … emphasis\", as on GitHub. An escaped `\\*` is a plain star and never ends emphasis: \"Use *\\*.kt* files\" is \"Use *.kt files\", \"*.kt\" in italics; `markdown.js` ends the emphasis at the `*` of the escape, leaving a backslash in italics and a stray star.",
+  "head": "2e847596c370060b2922f8cfef8b575c68b2be29",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Use *.kt files\", \"*.kt\" in italics",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Use *.kt files\"\nReceived: \"Use \\\\.kt* files\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.3 s, 258 frames"
+    }
+  ]
+}

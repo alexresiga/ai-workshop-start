@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.942 --> 00:00:02.952
+code-style's SKILL.md: "Use *\*.kt* files"
+
+2
+00:00:02.952 --> 00:00:09.170
+✗ It should read "Use *.kt files", "*.kt" in italics
