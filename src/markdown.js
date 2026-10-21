@@ -147,20 +147,39 @@ function table(lines, start, out) {
   return i;
 }
 
+// A code span binds tighter than the rest, as on GitHub; only an escape or an autolink is read before it.
+const SPANS = /\\[!-/:-@[-`{-~]|<https?:\/\/[^\s<>]+>|(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g;
+
 const INLINE = new RegExp(
   [
-    /(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/, // 1, 2: code
-    /!?\[((?:\\.|[^\]\\])*)\]\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/, // 3, 4: a link; an image as its link
-    /<(https?:\/\/[^\s<>]+)>/, // 5: an autolink
-    /\*\*(?=\S)([\s\S]*?\S)\*\*|__(?=\S)([\s\S]*?\S)__(?!\w)/, // 6, 7: strong
-    /\*(?=[^\s*])([\s\S]*?[^\s*])\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/, // 8, 9: emphasis
-    /~~(?=\S)([\s\S]*?\S)~~/, // 10: struck out
-    /\\([!-/:-@[-`{-~])/, // 11: an escaped character
+    /\uE001\uE000*/, // a code span, masked
+    /!?\[((?:\\.|[^\]\\])*)\]\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/, // 1, 2: a link; an image as its link
+    /<(https?:\/\/[^\s<>]+)>/, // 3: an autolink
+    /\*\*(?=\S)([\s\S]*?\S)\*\*|__(?=\S)([\s\S]*?\S)__(?!\w)/, // 4, 5: strong
+    /\*(?=[^\s*])([\s\S]*?[^\s*])\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/, // 6, 7: emphasis
+    /~~(?=\S)([\s\S]*?\S)~~/, // 8: struck out
+    /\\([!-/:-@[-`{-~])/, // 9: an escaped character
   ]
     .map((part) => part.source)
     .join('|'),
-  'g',
+  'gd',
 );
+
+/**
+ * The text with each code span masked, as long as it was: a U+E001, then U+E000s, so the `*`, `_`,
+ * `~` and `]` in it end nothing; those two characters in the text itself become U+E002. The code
+ * spans' content, by where they start.
+ */
+function mask(text) {
+  const codes = new Map();
+  const masked = text.replace(/[\uE000\uE001]/g, '\uE002').replace(SPANS, (span, ticks, _code, index) => {
+    if (ticks === undefined) return span;
+    const code = text.slice(index + ticks.length, index + span.length - ticks.length);
+    codes.set(index, code.length > 2 && code.startsWith(' ') && code.endsWith(' ') ? code.slice(1, -1) : code);
+    return '\uE001' + '\uE000'.repeat(span.length - 1);
+  });
+  return { masked, codes };
+}
 
 /** The inline content of a block: text, code, links, strong, emphasis. */
 export function inline(text) {
@@ -170,11 +189,13 @@ export function inline(text) {
     if (typeof node === 'string' && typeof out.at(-1) === 'string') out[out.length - 1] += node;
     else if (node !== '') out.push(node);
   };
-  for (const match of text.matchAll(INLINE)) {
+  const { masked, codes } = mask(text);
+  for (const match of masked.matchAll(INLINE)) {
     push(text.slice(last, match.index));
     last = match.index + match[0].length;
-    const [, , code, label, href, autolink, strong1, strong2, em1, em2, del, escaped] = match;
-    if (code !== undefined) push(['code', {}, code.length > 2 && code.startsWith(' ') && code.endsWith(' ') ? code.slice(1, -1) : code]);
+    // Each part as the text has it, code spans and all.
+    const [, label, href, autolink, strong1, strong2, em1, em2, del, escaped] = match.indices.map((at) => at && text.slice(...at));
+    if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
     else if (label !== undefined) push(['a', { href }, ...inline(label)]);
     else if (autolink !== undefined) push(['a', { href: autolink }, autolink]);
     else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2)]);
