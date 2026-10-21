@@ -60,6 +60,12 @@ export type ClustersAnswer = {
  */
 export type OrganizationProgressLine = { progress: { scanned: number; of: number } } | OrganizationAnswer | { error: string };
 
+/**
+ * What `GET /api/clusters/progress?name=…` streams, one JSON a line: `{ progress }` as the organization is scanned again,
+ * `{ clustering }`, how many skills the model is asked about, then the result, or `{ error }`, last.
+ */
+export type ClustersProgressLine = { progress: { scanned: number; of: number } } | { clustering: number } | ClustersAnswer | { error: string };
+
 /** What `GET /api/scan?url=<GitHub URL>` answers: the result, or `{ error }` with status 400. */
 export type ScanAnswer = {
   repository: { id: string; url: string; commit: string };
@@ -122,6 +128,22 @@ export function createWebServer(options: WebOptions): Server {
         const waiting = new AbortController();
         response.on('close', () => response.writableFinished || waiting.abort());
         json(200, await clustersAnswer(await options.organization(input), options.ask, waiting.signal));
+      } else if (url.pathname === '/api/clusters/progress') {
+        const input = organizationUrl(url.searchParams.get('name') ?? '');
+        if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
+        if (!options.ask) throw new AtlasError('Clustering is not available here');
+        const waiting = new AbortController();
+        response.on('close', () => response.writableFinished || waiting.abort());
+        response.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
+        const line = (body: ClustersProgressLine) => response.write(JSON.stringify(body) + '\n');
+        try {
+          const result = await options.organization(input, (scanned, of) => line({ progress: { scanned, of } }));
+          if (result.skills.length) line({ clustering: result.skills.length });
+          line(await clustersAnswer(result, options.ask, waiting.signal));
+        } catch (error) {
+          line({ error: failure(error) });
+        }
+        response.end();
       } else json(404, { error: `Not found: ${url.pathname}` });
     } catch (error) {
       json(error instanceof AtlasError ? 400 : 500, { error: failure(error) });

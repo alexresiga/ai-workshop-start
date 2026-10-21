@@ -91,6 +91,14 @@ export function askClaude(prompt: string, options: AskOptions = {}): Promise<str
         ),
       );
     });
+    // Done when it exits: what it wrote has a moment to drain, then the pipes are let go, in case
+    // a process it started holds them, and close comes with the answer as received.
+    child.on('exit', () => {
+      setTimeout(() => {
+        child.stdout.destroy();
+        child.stderr.destroy();
+      }, Math.min(grace, 1000)).unref();
+    });
     child.on('close', (code) => {
       if (stopped) return;
       done();

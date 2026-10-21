@@ -82,16 +82,20 @@ export async function serve(root: string, ask: Ask | undefined) {
   // A commit from before organizations has no organization scan.
   const { scanOrganization } = await import(here('src/core/organization.ts')).catch(() => ({ scanOrganization: undefined }));
   const helpers = pathToFileURL(resolve(import.meta.dirname, '../../../tests/helpers.ts')).href;
-  const { organizationAnswers, searchAnswers } = await import(helpers);
+  const { organizationAnswers, searchAnswers, ORGANIZATION: JETBRAINS } = await import(helpers);
   const fixture = resolve(import.meta.dirname, '../../../fixture');
   const files: Record<string, string> = {};
   for (const path of readdirSync(fixture, { recursive: true, encoding: 'utf8' })) {
     if (basename(path) === 'SKILL.md') files[path] = readFileSync(join(fixture, path), 'utf8');
   }
-  const organization = replay(organizationAnswers(ORGANIZATION, 'Organization', { [REPO.split('/')[1]]: files }));
+  // And JetBrains, as the tests answer it: 7 skills in 3 of 5 repositories.
+  const organization = replay({
+    ...organizationAnswers(ORGANIZATION, 'Organization', { [REPO.split('/')[1]]: files }),
+    ...organizationAnswers('JetBrains', 'Organization', JETBRAINS),
+  });
   const server = createWebServer({
     open: (url: string) => openGitHub(url, { fetch: replay(searchAnswers(REPO, files)), token: 'fixture' }),
-    organization: (url: string) => scanOrganization(url, { fetch: organization, token: 'fixture' }),
+    organization: (url: string, progress?: unknown) => scanOrganization(url, { fetch: organization, token: 'fixture' }, progress),
     ask: ask ?? (() => Promise.reject(new Error('the scenes file has no ask: what the model answers'))),
   });
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));

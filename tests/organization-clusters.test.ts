@@ -60,7 +60,8 @@ function fakeClaude(t: TestContext, stdout: string, exit = 0, wait?: number) {
 async function serve(t: { after(fn: () => void): void }, ask: Ask | undefined, repositories: Record<string, Listed> = ORGANIZATION) {
   const server = createWebServer({
     open: () => Promise.reject(new Error('not scanned')),
-    organization: (url) => scanOrganization(url, { fetch: replay(organizationAnswers('JetBrains', 'Organization', repositories)), token: 'test' }),
+    organization: (url, progress) =>
+      scanOrganization(url, { fetch: replay(organizationAnswers('JetBrains', 'Organization', repositories)), token: 'test' }, progress),
     ask,
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -228,12 +229,50 @@ test('a claude gone, but a process it started still holding its stdout → the c
   assert.equal(claude.pids().length, 2);
 });
 
+test('claude done, its answer in full, but a process it started still holding its stdout → the answer', async (t) => {
+  const grandchild = `require('node:child_process').spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'inherit' })`;
+  const answer = JSON.stringify(reply(ANSWER));
+  const claude = stubClaude(t, `process.stdout.write(${answer}); const child = ${grandchild}; pids([child.pid]); process.exit(0);`);
+  const started = Date.now();
+  assert.equal(await askClaude('question', { binary: claude.binary, timeout: 4000, grace: 300 }), ANSWER);
+  assert.ok(Date.now() - started < 2000);
+});
+
+test('progress: the organization scanned again, then how many skills the model is asked about, then the answer, one JSON a line', async (t) => {
+  const claude = fakeClaude(t, reply(ANSWER));
+  const base = await serve(t, (prompt, signal) => askClaude(prompt, { binary: claude.binary, signal }));
+  const response = await fetch(`${base}/api/clusters/progress?name=JetBrains`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /application\/x-ndjson/);
+  const lines = (await response.text()).trim().split('\n').map((line) => JSON.parse(line));
+  assert.deepEqual(lines.slice(0, -1), [
+    ...[0, 1, 2, 3, 4, 5].map((scanned) => ({ progress: { scanned, of: 5 } })),
+    { clustering: 7 },
+  ]);
+  assert.deepEqual(lines.at(-1).clusters.map((cluster: { theme: string }) => cluster.theme), ['Build', 'Review', 'Releases']);
+});
+
+test('progress: no skills → no clustering line; a failure → { error } last; not an organization → status 400', async (t) => {
+  const empty = await serve(t, async () => ANSWER, { website: { 'README.md': '# website\n' } });
+  const none = (await (await fetch(`${empty}/api/clusters/progress?name=JetBrains`)).text()).trim().split('\n').map((line) => JSON.parse(line));
+  assert.deepEqual(none.slice(0, -1), [{ progress: { scanned: 0, of: 1 } }, { progress: { scanned: 1, of: 1 } }]);
+  assert.deepEqual(none.at(-1).clusters, []);
+  const failing = await serve(t, (prompt) => askClaude(prompt, { binary: NO_CLAUDE }));
+  const failed = (await (await fetch(`${failing}/api/clusters/progress?name=JetBrains`)).text()).trim().split('\n').at(-1)!;
+  assert.deepEqual(JSON.parse(failed), { error: `Cannot run ${NO_CLAUDE}: clustering needs Claude Code (claude) on the PATH, or CLAUDE set to it` });
+  const response = await fetch(`${failing}/api/clusters/progress?name=JetBrains/kotlin`);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'Not a GitHub organization: JetBrains/kotlin' });
+});
+
 test('the page closed while it runs → claude stopped', async (t) => {
   const claude = fakeClaude(t, reply(ANSWER), 0, 60_000);
   const { promise: stopped, resolve: stop } = Promise.withResolvers<unknown>();
   const base = await serve(t, (prompt, signal) => askClaude(prompt, { binary: claude.binary, signal }).catch((error) => (stop(error), '')));
   const page = new AbortController();
-  const request = fetch(`${base}/api/clusters?name=JetBrains`, { signal: page.signal }).catch(() => undefined);
+  const request = fetch(`${base}/api/clusters/progress?name=JetBrains`, { signal: page.signal })
+    .then((response) => response.text())
+    .catch(() => undefined);
   while (!claude.asked()) await new Promise((done) => setTimeout(done, 20));
   page.abort();
   await request;
@@ -446,11 +485,11 @@ browserTest('a failure → the clear message, under the button, in the error col
 browserTest('home, while clustering, drops the answer', async (t) => {
   const { promise: gate, resolve: release } = Promise.withResolvers<void>();
   const { promise: asked, resolve: ask } = Promise.withResolvers<void>();
-  const page = await organizationPage(t, async () => (ask(), await gate, ANSWER));
+  const { promise: answered, resolve: answer } = Promise.withResolvers<void>();
+  const page = await organizationPage(t, async () => (ask(), await gate, setTimeout(answer, 300), ANSWER));
   await page.getByRole('button', { name: 'Cluster skills' }).click();
   await asked;
   await page.locator('#home').click();
-  const answered = page.waitForResponse((response) => response.url().includes('/api/clusters'));
   release();
   await answered;
   await expect(page.locator('#skills')).toHaveText('Paste a repository or an organization and press Scan.');
@@ -460,13 +499,13 @@ browserTest('home, while clustering, drops the answer', async (t) => {
 browserTest('a new scan, while clustering, drops the answer', async (t) => {
   const { promise: gate, resolve: release } = Promise.withResolvers<void>();
   const { promise: asked, resolve: ask } = Promise.withResolvers<void>();
-  const page = await organizationPage(t, async () => (ask(), await gate, ANSWER));
+  const { promise: answered, resolve: answer } = Promise.withResolvers<void>();
+  const page = await organizationPage(t, async () => (ask(), await gate, setTimeout(answer, 300), ANSWER));
   await page.getByRole('button', { name: 'Cluster skills' }).click();
   await asked;
   await page.getByLabel('Repository or organization link').fill('JetBrains');
   await page.getByRole('button', { name: 'Scan' }).click();
   await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeEnabled();
-  const answered = page.waitForResponse((response) => response.url().includes('/api/clusters'));
   release();
   await answered;
   await expect(page.locator('#clusters')).toBeEmpty();
