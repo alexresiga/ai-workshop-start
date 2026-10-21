@@ -1,0 +1,71 @@
+{
+  "title": "Underscores inside a word are not emphasis",
+  "head": "737d416fbfffd6cb001bf89a378d06897364824c",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 40,
+        "text": "underscores inside a word, `snake_case` or `my__init__`, are not emphasis, as on GitHub"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's SKILL.md: \"Call my__init__ first, keep snake_case_names.\" reads as it is, nothing bold",
+          "start": 0.94
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"code-style's SKILL.md: \"Call my__init__ first, keep snake_case_names.\" reads as it is, nothing bold\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p').first()\nExpected: \"Call my__init__ first, keep snake_case_names.\"\nReceived: \"Call myinit first, keep snake_case_names.\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown p').first() with timeout 5000ms\n  - waiting for locator('#detail .markdown p').first()\n    14 × locator resolved to <p>…</p>\n       - unexpected value \"Call myinit first, keep snake_case_names.\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "1 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 3.2 s, 81 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 3.2 s, 79 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 209 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.985"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.980"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.03 s, SSIM ≥ 0.993"
+    }
+  ]
+}
