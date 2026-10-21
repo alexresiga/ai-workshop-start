@@ -14,7 +14,7 @@ export const PAGE = `<!doctype html>
     color-scheme: light dark;
     --page: #f8f8f6; --panel: #ffffff; --line: #e3e3df; --text: #1d1f21; --muted: #6e7073;
     --accent: #4451c8; --accent-text: #ffffff; --selected: #e9eafa; --pill: #eeeeeb; --tag: #e8eafb; --tag-text: #3a45a8;
-    --code: #f2f2ef; --error: #c0392b; --warning: #8a5a00; --warning-bg: #fff6e0;
+    --code: #f2f2ef; --error: #c0392b; --warning: #8a5a00; --warning-bg: #fff6e0; --mark: #ffe58a; --mark-text: #1d1f21;
     --sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
@@ -22,7 +22,7 @@ export const PAGE = `<!doctype html>
     :root {
       --page: #1b1c1e; --panel: #232427; --line: #36383c; --text: #e6e6e3; --muted: #9a9ca0;
       --accent: #6873e0; --selected: #2f3150; --pill: #34363a; --tag: #2f3150; --tag-text: #b9bff5;
-      --code: #2b2c30; --error: #ff7b6b; --warning: #f0c060; --warning-bg: #3a3220;
+      --code: #2b2c30; --error: #ff7b6b; --warning: #f0c060; --warning-bg: #3a3220; --mark: #6b5310; --mark-text: #fff3cc;
     }
   }
   * { box-sizing: border-box; }
@@ -66,6 +66,14 @@ export const PAGE = `<!doctype html>
   nav .name, nav .description { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   nav .name { font: 1.05rem var(--mono); }
   nav .description { color: var(--muted); }
+  nav .description.none { font-style: italic; opacity: .75; }
+  nav .head { display: flex; align-items: center; gap: .5rem; }
+  nav .head .name { flex: 1; min-width: 0; }
+  nav .source, nav .more { flex: none; padding: 0 .55rem; font: .75rem/1.6 var(--mono); border-radius: 1rem; }
+  nav .source { color: var(--tag-text); background: var(--tag); }
+  nav .more { color: var(--muted); background: var(--pill); }
+  nav button[aria-current="true"] .source { background: var(--panel); }
+  nav mark { color: var(--mark-text); background: var(--mark); border-radius: .2rem; }
   nav.repositories button { display: flex; align-items: center; gap: 1rem; }
   nav.repositories .name { flex: 1; min-width: 0; }
   nav.repositories .pill { flex: none; }
@@ -140,6 +148,7 @@ export const PAGE = `<!doctype html>
   import { markdown } from '/markdown.js';
   import { matches } from '/filter.js';
   import { DICE_REPOSITORY, pick } from '/random.js';
+  import { marks, source } from '/list.js';
 
   const $ = (id) => document.getElementById(id);
   /** An element with text, children and, for classes, \`.name\` in the tag: \`element('p.message.error', 'text')\`. */
@@ -231,7 +240,7 @@ export const PAGE = `<!doctype html>
     }
   }
 
-  const plural = (n, noun) => n + ' ' + (n === 1 ? noun : noun === 'repository' ? 'repositories' : noun + 's');
+  const plural = (n, noun) => n + ' ' + (n === 1 ? noun : noun.endsWith('y') ? noun.slice(0, -1) + 'ies' : noun + 's');
 
   /** The organization's repositories with skills, most first; picking one scans it, and Back returns here. */
   function showOrganization(answer) {
@@ -291,7 +300,19 @@ export const PAGE = `<!doctype html>
       ...(skills.length ? [] : [element('p.message', 'No SKILL.md in this repository.')]),
       unmatched,
       ...skills.map((skill, index) => {
-        const item = element('button', element('span.name', skill.name), element('span.description', skill.description));
+        const head = element('span.head', element('span.name', skill.name));
+        const folder = source(skill.path);
+        if (folder) {
+          const tag = element('span.source', folder);
+          tag.title = skill.path;
+          head.append(tag);
+        }
+        if (skill.copies.length) {
+          const more = element('span.more', '+' + plural(skill.copies.length, 'copy'));
+          more.title = 'also in ' + skill.copies.join(', ');
+          head.append(more);
+        }
+        const item = element('button', head, skill.description ? element('span.description', skill.description) : element('span.description.none', 'No description'));
         item.type = 'button';
         item.title = skill.name;
         item.addEventListener('click', () => select(index));
@@ -307,7 +328,11 @@ export const PAGE = `<!doctype html>
     if ($('filter').hidden) return; // before a scan, or while one runs
     const text = $('filter').value;
     const items = [...$('skills').querySelectorAll('button')];
-    items.forEach((item, i) => (item.hidden = !matches(skills[i], text)));
+    items.forEach((item, i) => {
+      item.hidden = !matches(skills[i], text);
+      item.querySelector('.name').replaceChildren(...marked(skills[i].name, text));
+      if (skills[i].description) item.querySelector('.description').replaceChildren(...marked(skills[i].description, text));
+    });
     const shown = items.filter((item) => !item.hidden).length;
     const count = shown === skills.length ? String(skills.length) : shown + ' of ' + skills.length;
     $('count').textContent = count + (skills.length === 1 ? ' skill' : ' skills');
@@ -321,6 +346,19 @@ export const PAGE = `<!doctype html>
       items.forEach((item) => item.setAttribute('aria-current', 'false'));
       $('detail').replaceChildren();
     }
+  }
+
+  /** The text, with what the filter matched in \`<mark>\`. */
+  function marked(text, typed) {
+    const parts = [];
+    let at = 0;
+    for (const [start, end] of marks(text, typed)) {
+      if (start > at) parts.push(text.slice(at, start));
+      parts.push(element('mark', text.slice(start, end)));
+      at = end;
+    }
+    if (at < text.length) parts.push(text.slice(at));
+    return parts;
   }
 
   $('filter').addEventListener('input', filter);

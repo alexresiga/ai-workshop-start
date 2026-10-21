@@ -12,9 +12,14 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a click with Ctrl, ⌘, Shift or Alt is the browser's, as on any link: home in a new tab or window, and this one keeps its scan
 - The warnings, under the header
 - On the left, the skills sorted by **name**: the name, and the description on one line; the first is selected; ↑ and ↓ move
+- Beside each name, a **tag** with the folder it lives in: the one that holds its `skills` folder (`.claude`, `.agents`, `agent`), else
+  the first; none for a SKILL.md at the root or in a top `skills` folder; its path when hovered
+- Beside it too, for a skill with copies, a `+N copies` pill; their paths when hovered
+- A skill with no description → `No description`, in muted italics, so each row has two lines
 - After a scan, above the skills, a **filter**: it keeps the skills whose name or description has *every word* typed, in any case,
   anywhere in a word; the pill shows `N of M skills` while it hides some; none left → `No skill matches <text>.`, and nothing on the right;
   the selected skill stays if it is shown, else the first shown is selected; ↑ and ↓ move through the shown ones; Esc clears it; a new scan empties it
+- While the filter has text, what each of its words matches is **highlighted** in the names and descriptions shown, every place it is
 - On the right, the selected skill's **SKILL.md**: its path, *Open on GitHub* at the scanned commit, `also in <paths>` for copies;
   a card with the front matter, **name** and **description**, every other key as a tag (`key`, for a flag that is true; else `key: value`);
   then the body, **rendered Markdown**: headings, paragraphs, lists, code, fenced or indented, as it is, quotes, tables, links, emphasis;
