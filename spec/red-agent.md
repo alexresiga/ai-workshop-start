@@ -27,7 +27,13 @@ Breaks the web view and files one issue per bug, with its steps and a video, lab
 its body `issue.md` with `{{media}}` filled in and the footer under a rule, labelled `delegated to AI`.
 - No recording, or a check that failed → listed, exit 1, nothing filed
 - An open issue with the same title → `already open: <url>`, exit 1, nothing filed
-- `--dry-run`: prints what it would push and file, and changes nothing
+- `--dry-run`: prints what it would push, file and post, and changes nothing
+## Posting in Slack
+`bash .agents/skills/red-agent/announce.sh <issue url> <title>`, run by `file.sh` once the issue is filed: the issue, posted
+in the channel, as `SLACK_BOT_TOKEN` and `SLACK_CHANNEL_ID` set for [asking](ask.md); `SLACK_API` too.
+- The message: `🐞 The red agent filed a bug: <url|title>`, the title escaped (`&`, `<`, `>`); `posted in Slack: <url>` on stdout
+- No `SLACK_BOT_TOKEN` or `SLACK_CHANNEL_ID` → a warning, exit 0, nothing posted
+- Slack refuses or is out of reach → its error as a warning, exit 0: the issue stands
 ## The skill
 - A bug: the page disagrees with `spec/`; or a crash, a console error, a stuck page, a broken layout, repository text as HTML
 - At most 5 issues a run, most severe first; none for a bug already open

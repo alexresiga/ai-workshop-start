@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # spec/red-agent.md: files a recorded bug. Puts its out/ on the media branch, under recordings/bugs/<slug>/<head commit>/,
-# then opens one issue, labelled "delegated to AI", with issue.md as the body, its {{media}} filled in.
+# then opens one issue, labelled "delegated to AI", with issue.md as the body, its {{media}} filled in; then posts it in Slack.
 #
 #   file.sh [--dry-run] <bug dir> [footer]
 set -euo pipefail
@@ -46,6 +46,7 @@ if $dry; then
   (cd "$out" && ls -1)
   echo "would open an issue labelled \"$label\": $title"
   echo "$body"
+  echo "would post it in Slack: ${SLACK_CHANNEL_ID:-no SLACK_CHANNEL_ID}"
   exit 0
 fi
 
@@ -61,4 +62,6 @@ cp "$out"/* "$work/media/$dest/"
 git -C "$work/media" add "$dest"
 git -C "$work/media" commit --quiet -m "Bug: $dest"
 git -C "$work/media" push --quiet origin HEAD:refs/heads/media
-gh issue create --repo "$repo" --title "$title" --label "$label" --body "$body"
+url=$(gh issue create --repo "$repo" --title "$title" --label "$label" --body "$body")
+echo "$url"
+bash "$(dirname "$0")/announce.sh" "$url" "$title"
