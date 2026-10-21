@@ -14,6 +14,9 @@ const answers = replay({
   ...searchAnswers('example/autolink', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nSee https://kotlinlang.org/docs.\n',
   }),
+  ...searchAnswers('example/escapes', {
+    '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Follow the code style.\n---\nUse *\\*.kt* files\n\nKeep _a \\_ b_\n',
+  }),
 });
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: answers, token: 'test' }),
@@ -46,4 +49,15 @@ browserTest('a bare URL is a link, without its trailing period: "See https://kot
   await expect(paragraph).toHaveText('See https://kotlinlang.org/docs.');
   await expect(paragraph.locator('a')).toHaveAttribute('href', 'https://kotlinlang.org/docs');
   await expect(paragraph.locator('a')).toHaveText('https://kotlinlang.org/docs');
+});
+
+browserTest('an escaped star or underscore is plain: "Use *\\*.kt* files" is "Use *.kt files", "*.kt" in italics', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/escapes`);
+  const paragraphs = page.locator('#detail .markdown p');
+  await expect(paragraphs.first()).toHaveText('Use *.kt files');
+  await expect(paragraphs.first().locator('> em')).toHaveText('*.kt');
+  await expect(paragraphs.nth(1)).toHaveText('Keep a _ b');
+  await expect(paragraphs.nth(1).locator('> em')).toHaveText('a _ b');
 });
