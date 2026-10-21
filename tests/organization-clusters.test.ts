@@ -457,6 +457,26 @@ browserTest('the model’s warnings go under the header', async (t) => {
   await page.getByRole('button', { name: 'Cluster skills' }).click();
   await expect(page.locator('#clusters .theme h3')).toHaveText(['Build6 skills', 'Other1 skill']);
   await expect(page.locator('#warnings li')).toHaveText(['warning: the model left out review; in Other']);
+  // Hidden by default, as the scan's.
+  await expect(page.locator('#warnings-toggle')).toHaveText('⚠ 1 warning');
+  await expect(page.locator('#warnings')).toBeHidden();
+});
+
+browserTest('the clustering’s warnings change the count, not whether they are shown', async (t) => {
+  const repositories = { tools: { '.claude/skills/x/SKILL.md': '---\nname: [x\n---\n', '.claude/skills/y/SKILL.md': skill('y') } };
+  let asked = 0;
+  const page = await organizationPage(t, async () => (asked++ ? clusters([['Tools', [2]]]) : clusters([['Tools', [1, 2]]])), repositories);
+  const toggle = page.locator('#warnings-toggle');
+  await expect(toggle).toHaveText('⚠ 1 warning');
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await expect(page.locator('#clusters .theme h3')).toHaveText(['Tools2 skills']);
+  await expect(page.locator('#warnings')).toBeHidden();
+  await toggle.click();
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await expect(toggle).toHaveText('⚠ 2 warnings');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#warnings li')).toHaveText([/malformed front matter/, 'warning: the model left out x; in Other']);
+  await expect(page.locator('#warnings li').last()).toBeVisible();
 });
 
 browserTest('clustering again: the last answer’s warnings go, the scan’s stay', async (t) => {
