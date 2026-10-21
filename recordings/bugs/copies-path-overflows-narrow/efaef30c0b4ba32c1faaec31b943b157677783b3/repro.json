@@ -1,0 +1,22 @@
+{
+  "title": "A long path in \"also in …\" runs past the right edge on a phone and scrolls the SKILL.md sideways",
+  "expected": "`spec/web.md`, the page: \"Fits the window, at any width, a phone's 375 px too: no sideways scroll; … a long name, description or path cut with …, a long word wrapped\". The copy's path in `.copies code` neither wraps nor is cut, so `#detail` gets wider than the window.",
+  "head": "efaef30c0b4ba32c1faaec31b943b157677783b3",
+  "failed": {
+    "step": 2,
+    "caption": "The SKILL.md should fit the window: no sideways scroll",
+    "error": "expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 0\nReceived:    416\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.3 s, 258 frames"
+    }
+  ]
+}
