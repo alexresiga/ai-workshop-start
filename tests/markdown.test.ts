@@ -124,6 +124,15 @@ test("a link's destination in <…> may hold spaces and parentheses, as on GitHu
   assert.deepEqual(inline('[a](<b c>) `x`'), [['a', { href: 'b c' }, 'a'], ' ', ['code', {}, 'x']]);
   assert.deepEqual(inline('[a](<b c)'), ['[a](<b c)']);
   assert.deepEqual(inline('[a](<b>c>)'), ['[a](<b>c>)']);
+  // A line break in <…> ends it, as on GitHub; a paragraph's other line breaks are spaces, in a link's text and code too.
+  assert.deepEqual(inline('Read [the guide](<docs/my\nguide.md>).'), ['Read [the guide](<docs/my guide.md>).']);
+  assert.deepEqual(inline('Read [the\nguide](<docs/my guide.md>)\nand `npm\nci`.'), [
+    'Read ',
+    ['a', { href: 'docs/my guide.md' }, 'the guide'],
+    ' and ',
+    ['code', {}, 'npm ci'],
+    '.',
+  ]);
 });
 
 test('a bare http, https or www. URL is a link, without its trailing punctuation, as on GitHub', () => {
