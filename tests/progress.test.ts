@@ -27,10 +27,10 @@ function gates() {
 const repository = gates();
 const organization = gates();
 const server = createWebServer({
-  // JetBrains/slow waits at its gate, then answers as JetBrains/example.
+  // JetBrains/slow, as owner/repo or a GitHub link, waits at its gate, then answers as JetBrains/example.
   open: async (url) => {
-    if (url.endsWith('/JetBrains/slow')) await repository.wait();
-    return openGitHub(url.replace(/slow$/, 'example'), { fetch: github, token: 'test', wait: noWait });
+    if (/\/JetBrains\/slow(?:\.git)?\/?$/.test(url)) await repository.wait();
+    return openGitHub(url.replace(/\/slow(?=(?:\.git)?\/?$)/, '/example'), { fetch: github, token: 'test', wait: noWait });
   },
   // Slow: listed after a step, 2 of 5 after another, then the rest and the answer after a third; Broken: fails once listed.
   organization: async (url, progress = () => {}) => {
@@ -77,6 +77,17 @@ browserTest('a repository: a spinner and Scanning <owner/repo>… while it runs;
   repository.step();
   await expect(page.locator('#skills .name')).toHaveText(['commits']);
   await expect(page.locator('#loading')).toHaveCount(0);
+});
+
+browserTest('a repository by its GitHub link: Scanning <owner/repo>…, not the link', async (t) => {
+  const page = await open(t);
+  for (const link of ['https://github.com/JetBrains/slow', 'github.com/JetBrains/slow/', 'https://www.github.com/JetBrains/slow.git']) {
+    await page.getByLabel('Repository or organization link').fill(link);
+    await page.getByRole('button', { name: 'Scan' }).click();
+    await expect(page.locator('#skills #loading')).toHaveText('Scanning JetBrains/slow…');
+    repository.step();
+    await expect(page.locator('#skills .name')).toHaveText(['commits']);
+  }
 });
 
 browserTest('an organization: Listing <org>’s repositories…, then Scanned N of M repositories and a bar, then the repositories', async (t) => {
