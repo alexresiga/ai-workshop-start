@@ -118,8 +118,10 @@ case "${1:-}" in
     fi
     [[ $(git branch --show-current) == "$head" ]] || { echo "check out $head first" >&2; exit 2; }
     [[ -z $(git status --porcelain --untracked-files=no) ]] || { echo "uncommitted changes: commit them first" >&2; exit 2; }
-    git fetch -q origin main
+    # Another run may have pushed to the branch: rebase only what is on the PR, and push only over that.
+    git fetch -q origin main "$head"
     before=$(git rev-parse HEAD)
+    [[ $before == $(git rev-parse "origin/$head") ]] || { echo "$head is not at origin/$head: pull first" >&2; exit 2; }
     if ! git rebase -q origin/main >/dev/null 2>&1; then
       conflicts=$(git diff --name-only --diff-filter=U | paste -sd ' ')
       git rebase --abort
@@ -138,7 +140,12 @@ case "${1:-}" in
         exit 1
       fi
     fi
-    git push -q --force-with-lease origin "HEAD:$head"
+    if ! git push -q --force-with-lease="$head:$before" origin "HEAD:$head"; then
+      git reset -q --hard "$before"
+      labels remove "$pr" "${issues[@]}"
+      echo "not ready: origin/$head moved while rebasing: pull first" >&2
+      exit 1
+    fi
     labels add "$pr" "${issues[@]}"
     printf 'ready to merge: #%s' "$pr"
     ((${#issues[@]} == 0)) || printf ' #%s' "${issues[@]}"
