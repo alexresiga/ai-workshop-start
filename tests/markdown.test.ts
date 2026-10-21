@@ -207,7 +207,7 @@ test('an entity reference is its character, as on GitHub: named, decimal or hex;
   // Not in code; not after a backslash.
   assert.deepEqual(inline('`&amp;` \\&amp;'), [['code', {}, '&amp;'], ' &amp;']);
   assert.deepEqual(markdown('```\n&lt;x&gt;\n```\n\n    &amp;\n'), [['pre', {}, ['code', {}, '&lt;x&gt;']], ['pre', {}, ['code', {}, '&amp;']]]);
-  // In a heading, a list, a table, strong, emphasis, struck out, a link's text and its destination; a bare URL too.
+  // In a heading, a list, a table, strong, emphasis, struck out, a link's text and its destination; an autolink and a bare URL too.
   assert.deepEqual(markdown('# a &amp; b\n\n- &lt;x&gt;\n\n| &amp; |\n|---|\n| &gt; |\n'), [
     ['h1', {}, 'a & b'],
     ['ul', {}, ['li', {}, '<x>']],
@@ -223,6 +223,7 @@ test('an entity reference is its character, as on GitHub: named, decimal or hex;
     ['a', { href: 'a?b=1&c=2' }, '<v>'],
   ]);
   assert.deepEqual(inline('https://a.com/?b=1&amp;c=2'), [['a', { href: 'https://a.com/?b=1&c=2' }, 'https://a.com/?b=1&c=2']]);
+  assert.deepEqual(inline('<https://a.com/?b=1&amp;c=2>'), [['a', { href: 'https://a.com/?b=1&c=2' }, 'https://a.com/?b=1&c=2']]);
 });
 
 test('HTML in a SKILL.md is text, never an element', () => {

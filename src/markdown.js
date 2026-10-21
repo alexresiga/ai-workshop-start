@@ -244,7 +244,7 @@ export function inline(text, inLink = false) {
     const [, label, href, autolink, email, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
     if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
     else if (label !== undefined) push(['a', { href: decode(href) }, ...inline(label, true)]);
-    else if (autolink !== undefined) push(['a', { href: autolink }, autolink]);
+    else if (autolink !== undefined) push(['a', { href: decode(autolink) }, decode(autolink)]);
     else if (email !== undefined) push(['a', { href: `mailto:${email}` }, email]);
     else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2, inLink)]);
     else if (em1 !== undefined || em2 !== undefined) push(['em', {}, ...inline(em1 ?? em2, inLink)]);

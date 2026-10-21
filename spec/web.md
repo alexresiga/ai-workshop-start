@@ -55,7 +55,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - An entity reference in the body is its character, as on GitHub (CommonMark's entity and numeric character references):
   `Replace &lt;version&gt; &amp; tag it.` reads "Replace <version> & tag it."; any HTML5 name, `&#35;` or `&#x23;`, then `;`;
   code point 0, past U+10FFFF or a surrogate → U+FFFD; an unknown name, or no `;`, as typed; in text, a link's text and
-  its destination, and a bare URL; not in code, nor after a backslash; the character is text, never Markdown nor HTML
+  its destination, an autolink `<…>` and a bare URL; not in code, nor after a backslash; the character is text, never Markdown nor HTML
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once
