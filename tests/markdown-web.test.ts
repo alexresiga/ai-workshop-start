@@ -11,6 +11,9 @@ const answers = replay({
   ...searchAnswers('example/emphasis', {
     '.claude/skills/testing/SKILL.md': '---\nname: testing\ndescription: Run the tests.\n---\n*Always **run** the tests*\n',
   }),
+  ...searchAnswers('example/entities', {
+    '.claude/skills/release/SKILL.md': '---\nname: release\ndescription: Cut a release.\n---\nReplace &lt;version&gt; &amp; tag it.\n',
+  }),
   ...searchAnswers('example/autolink', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nSee https://kotlinlang.org/docs.\n',
   }),
@@ -77,4 +80,14 @@ browserTest('a task list: "- [ ] Tag the release" and "- [x] Write the notes" ar
   await expect(boxes.nth(0)).toBeDisabled();
   // No bullet beside the box, as on GitHub.
   await expect(items.nth(0)).toHaveCSS('list-style-type', 'none');
+});
+
+browserTest('an entity reference is its character: "Replace &lt;version&gt; &amp; tag it." reads "Replace <version> & tag it."', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/entities`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('Replace <version> & tag it.');
+  // Still text, never HTML.
+  await expect(paragraph.locator('*')).toHaveCount(0);
 });

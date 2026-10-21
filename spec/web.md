@@ -52,6 +52,10 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   `https://kotlinlang.org/docs`; `www.` links to `http://www.`; not in code, nor in a link's text
 - An email autolink is a mailto link, as on GitHub (CommonMark's autolinks): "Ask <kotlin-team@example.com>." is
   "Ask kotlin-team@example.com.", the address a link to `mailto:kotlin-team@example.com`; one that is not an address, `<a b@c.d>`, is text
+- An entity reference in the body is its character, as on GitHub (CommonMark's entity and numeric character references):
+  "Replace &lt;version&gt; &amp; tag it." reads "Replace <version> & tag it."; any HTML5 name, `&#35;` or `&#x23;`, then `;`;
+  code point 0, past U+10FFFF or a surrogate → U+FFFD; an unknown name, or no `;`, as typed; in text, a link's text and
+  its destination, and a bare URL; not in code, nor after a backslash; the character is text, never Markdown nor HTML
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once
@@ -107,6 +111,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - **GitHub repositories only**: the page never reads the server's own directories; `./dir` is not `owner/repo`
 - On `127.0.0.1` only, and only for a loopback `Host` (`127.0.0.1`, `localhost`, `[::1]`); any other → status 403:
   a page that rebinds its own name to 127.0.0.1 cannot read the scans, nor what `GITHUB_TOKEN` can see
+- `GET /markdown.js` and `GET /entities.js`, the parser the page runs and the HTML5 entity names it reads, as JavaScript;
+  `src/entities.js` generated from the WHATWG's `entities.json` by `node scripts/entities.ts`
 - `GET /api/scan?url=<owner/repo | GitHub URL>` → JSON `{ repository, skills, warnings }`; a skill also has its `text`, the
   other front matter keys as `properties`, and the `body`; a failure → status 400, `{ error }`
 - `GET /api/organization?name=<org | org/ | GitHub URL>` → JSON `{ organization: { id, url }, repositories: [{ id, url, skills }], scanned, warnings }`;
