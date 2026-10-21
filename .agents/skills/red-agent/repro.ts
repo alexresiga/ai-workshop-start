@@ -85,7 +85,14 @@ export async function main(argv: string[]): Promise<number> {
     const runs: Run[] = [];
     for (let i = 0; i < RUNS; i++) {
       mkdirSync(out, { recursive: true });
-      runs.push(await record(repository, scenes, 'light', join(work, `run-${i + 1}`), join(out, i ? `trace-${i + 1}.zip` : 'trace.zip')));
+      try {
+        runs.push(await record(repository, scenes, 'light', join(work, `run-${i + 1}`), join(out, i ? `trace-${i + 1}.zip` : 'trace.zip')));
+      } catch (error) {
+        // Before the first step: the fixture never showed. That is a bug too, the worst, but not one these steps can show.
+        console.error(`✗ the page never loaded example/fixture, before the first step: file it by hand, with no video\n${actual(error instanceof Error ? error.message : String(error))}`);
+        rmSync(out, { recursive: true, force: true });
+        return 1;
+      }
     }
     rmSync(join(out, `trace-${RUNS}.zip`), { force: true });
     const last = steps.steps.length;

@@ -35,7 +35,8 @@ ends on a Playwright `expect` of what `spec/` promises, and that `expect` fails,
    them as short as the bug allows. The **last** step ends on an `expect` of the right behaviour, so it fails while the bug is there.
 4. **Record**: `node .agents/skills/red-agent/repro.ts recordings/bugs/<slug>/steps.ts`. Exit 0 means it failed at the
    last step in 2 of 2 runs. Exit 1 says why there is no video: every step passes (no bug, or the wrong `expect`), an
-   earlier step fails (fix the steps), or the steps are flaky (wait for what they need). Then look at `out/preview.gif`
+   earlier step fails (fix the steps), the steps are flaky (wait for what they need), or the page never loaded the
+   fixture (the worst bug of all: file it by hand, as below). Then look at `out/preview.gif`
    or a frame (`ffmpeg -ss <s> -i out/repro.mp4 -frames:v 1 f.png`): it must show the bug.
 5. **File it**: `bash .agents/skills/red-agent/file.sh --dry-run recordings/bugs/<slug>`, then without `--dry-run`.
    The second argument is a footer: put your signature there if an automation runs you. `file.sh` exits 1 with the URL

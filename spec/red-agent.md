@@ -14,6 +14,7 @@ Breaks the web view and files one issue per bug, with its steps and a video, lab
 - Every step passes → `every step passes: no bug to report`, exit 1, no video
 - An earlier step fails → `step <n> fails, not the last`, and its error, exit 1, no video
 - Only one run fails → `it fails in only 1 of 2 runs`, exit 1, no video
+- The page never loads the fixture, before the first step → `the page never loaded example/fixture`, and its error, exit 1, no video
 ## The output, in `out/` beside the steps file
 - `repro.mp4`: H.264, a chapter for each step, the captions as a subtitle track, the failing step's caption marked `✗`;
   `preview.gif`; `captions.vtt`; `trace.zip`; `steps.ts`, a copy
