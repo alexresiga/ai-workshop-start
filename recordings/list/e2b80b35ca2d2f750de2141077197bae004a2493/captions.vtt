@@ -1,0 +1,17 @@
+WEBVTT
+
+1
+00:00:00.939 --> 00:00:03.039
+Beside each name, the folder the skill lives in: .github, .claude, .agents
+
+2
+00:00:03.039 --> 00:00:05.333
+release-checklist has no description: "No description", in muted italics, and its row has two lines
+
+3
+00:00:05.333 --> 00:00:08.391
+Type "commit": it is highlighted every place it matches, in the names and the descriptions
+
+4
+00:00:08.391 --> 00:00:10.373
+Esc clears the filter, and the highlights with it

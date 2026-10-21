@@ -1,0 +1,140 @@
+{
+  "title": "A nicer skill list",
+  "head": "e2b80b35ca2d2f750de2141077197bae004a2493",
+  "base": "1fdb4ff33fca8cb7e33f80b7a18af237b46b285e",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 15,
+        "text": "Beside each name, a **tag** with the folder it lives in: the one that holds its `skills` folder (`.claude`, `.agents`, `agent`), else the first"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Beside each name, the folder the skill lives in: .github, .claude, .agents",
+          "start": 0.939
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 16,
+        "text": "none for a SKILL.md at the root or in a top `skills` folder"
+      },
+      "scenes": [],
+      "notShown": "the fixture has no SKILL.md at the root or in a top skills folder; tests/list.test.ts covers it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 16,
+        "text": "its path when hovered"
+      },
+      "scenes": [],
+      "notShown": "a hover title is a native tooltip, which the recording does not draw; tests/list.test.ts covers it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 17,
+        "text": "Beside it too, for a skill with copies, a `+N copies` pill"
+      },
+      "scenes": [],
+      "notShown": "the fixture has no copies; tests/list.test.ts covers it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 17,
+        "text": "their paths when hovered"
+      },
+      "scenes": [],
+      "notShown": "a hover title is a native tooltip, which the recording does not draw; tests/list.test.ts covers it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 18,
+        "text": "A skill with no description → `No description`, in muted italics, so each row has two lines"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "release-checklist has no description: \"No description\", in muted italics, and its row has two lines",
+          "start": 3.039
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 22,
+        "text": "While the filter has text, what each of its words matches is **highlighted** in the names and descriptions shown, every place it is"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Type \"commit\": it is highlighted every place it matches, in the names and the descriptions",
+          "start": 5.333
+        },
+        {
+          "index": 4,
+          "caption": "Esc clears the filter, and the highlights with it",
+          "start": 8.391
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"Beside each name, the folder the skill lives in: .github, .claude, .agents\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#skills .source')\nTimeout: 5000ms\n- Expected  - 5\n+ Received  + 1\n\n- Array [\n-   \".github\",\n-   \".claude\",\n-   \".agents\",\n- ]\n+ Array []\n\nCall log:\n  - Expect \"toHaveText\" locator('#skills .source') with timeout 5000ms\n  - waiting for locator('#skills .source')\n    14 × locator resolved to 0 elements\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "4 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.9 s, 298 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.8 s, 296 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 9.1 s, 227 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.982"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.978"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.06 s, SSIM ≥ 0.993"
+    }
+  ]
+}
