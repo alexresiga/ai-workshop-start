@@ -1,0 +1,85 @@
+{
+  "title": "A run of backticks with no closing run is text",
+  "head": "dc2baccebae67fd611d2768c6be6fda6c80319d6",
+  "base": "e47857d1ba3a836eab05bbe5eb7e4212cf2a25e0",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "a run of backticks with no closing run as long is text, as on GitHub (CommonMark's code spans): \"Wrap code in ``` fences; use `x` inline.\" is \"```\" as typed and \" fences"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "\"Wrap code in ``` fences; use `x` inline.\": the ``` as typed, only x is code",
+          "start": 0.961
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 43,
+        "text": "use \" as text, only `x` code"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "\"Wrap code in ``` fences; use `x` inline.\": the ``` as typed, only x is code",
+          "start": 0.961
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"\"Wrap code in ``` fences; use `x` inline.\": the ``` as typed, only x is code\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown').locator('p')\nExpected: \"Wrap code in ``` fences; use x inline.\"\nReceived: \"Wrap code in ``fences; usex` inline.\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown').locator('p') with timeout 5000ms\n  - waiting for locator('#detail .markdown').locator('p')\n    14 × locator resolved to <p>…</p>\n       - unexpected value \"Wrap code in ``fences; usex` inline.\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "1 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 4.2 s, 104 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 4.0 s, 101 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.5 s, 212 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.02 s, SSIM ≥ 0.996"
+    }
+  ]
+}
