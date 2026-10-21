@@ -1,0 +1,22 @@
+{
+  "title": "An email autolink (`<kotlin-team@example.com>`) shows its angle brackets, not a mailto link",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, **rendered Markdown**: … links … only http, https and mailto links\", as on GitHub, where `<kotlin-team@example.com>` is an email autolink (CommonMark, \"Autolinks\"): \"Ask kotlin-team@example.com.\", the address a link to `mailto:kotlin-team@example.com`; `markdown.js` reads `<https://…>` autolinks only, and leaves this one as text.",
+  "head": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Ask kotlin-team@example.com.\", the address a mailto link",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Ask kotlin-team@example.com.\"\nReceived: \"Ask <kotlin-team@example.com>.\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 260 frames"
+    }
+  ]
+}
