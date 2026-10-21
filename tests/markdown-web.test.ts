@@ -23,6 +23,9 @@ const answers = replay({
   ...searchAnswers('example/tasks', {
     '.claude/skills/release/SKILL.md': '---\nname: release\ndescription: Release steps.\n---\n- [ ] Tag the release\n- [x] Write the notes\n',
   }),
+  ...searchAnswers('example/line-break', {
+    '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nTag the release.\\\nPush the tag.\n',
+  }),
 });
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: answers, token: 'test' }),
@@ -90,4 +93,15 @@ browserTest('an entity reference is its character: "Replace &lt;version&gt; &amp
   await expect(paragraph).toHaveText('Replace <version> & tag it.');
   // Still text, never HTML.
   await expect(paragraph.locator('*')).toHaveCount(0);
+});
+
+browserTest('a line ending in a backslash is a line break, as on GitHub: "Tag the release.\\", then "Push the tag." are two lines, no backslash', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/line-break`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('Tag the release.Push the tag.');
+  await expect(paragraph).not.toContainText('\\');
+  await expect(paragraph.locator('> br')).toHaveCount(1);
+  expect(await paragraph.evaluate((p) => p.innerText)).toBe('Tag the release.\nPush the tag.');
 });

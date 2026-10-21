@@ -47,6 +47,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a checkbox, unticked or ticked, that a click does not change, then the text alone, no bullet: "- [ ] Tag the release" is an
   unticked box and "Tag the release"; in a loose list, the box is in the item's first paragraph; `[ ]` with no text after it,
   `[y]`, `[x]text` or an escaped `\[ ]` is text
+- A paragraph's lines are joined with a space, but a `\` or two spaces at the end of a line is a **line break**, as on GitHub
+  (CommonMark's hard line breaks): "Tag the release.\", then "Push the tag." are two lines, no backslash; at the end of
+  a paragraph or a heading, escaped (`\\`), or in code, the `\` is text
 - A bare `http://`, `https://` or `www.` URL in the body is a link, as on GitHub (GFM's autolinks): at the start of the text or after a space,
   `*`, `_`, `~` or `(`, without its trailing punctuation, an unmatched `)` or an `&amp;`: "See https://kotlinlang.org/docs." links
   `https://kotlinlang.org/docs`; `www.` links to `http://www.`; not in code, nor in a link's text

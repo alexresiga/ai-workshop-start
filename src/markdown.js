@@ -4,7 +4,7 @@
 //
 // A node is `[tag, attributes, ...children]`, a child a node or a string. The tags are only these:
 // h1–h6, p, pre, code, blockquote, ul, ol, li, hr, table, thead, tbody, tr, th, td, strong, em,
-// del, a and input; the only attributes are a link's `href`, as the file has it, and a task list item's
+// del, a, input and br; the only attributes are a link's `href`, as the file has it, and a task list item's
 // checkbox's `checked`. An entity reference, `&amp;`, `&#38;` or `&#x26;`, is its character, as on GitHub;
 // still text, never HTML.
 
@@ -59,10 +59,11 @@ function blocks(lines) {
     } else if (isTable(lines, i)) {
       i = table(lines, i, out);
     } else {
-      // A paragraph, up to a blank line or a block that interrupts it; a table does, as on GitHub.
-      const paragraph = [lines[i++].trim()];
-      for (; i < lines.length && lines[i].trim() && !startsBlock(lines[i]) && !isTable(lines, i); i++) paragraph.push(lines[i].trim());
-      out.push(['p', {}, ...inline(paragraph.join(' '))]);
+      // A paragraph, up to a blank line or a block that interrupts it; a table does, as on GitHub. Its lines keep
+      // their ends, for the hard line breaks.
+      const paragraph = [lines[i++].trimStart()];
+      for (; i < lines.length && lines[i].trim() && !startsBlock(lines[i]) && !isTable(lines, i); i++) paragraph.push(lines[i].trimStart());
+      out.push(['p', {}, ...inline(paragraph.join('\n').trimEnd())]);
     }
   }
   return out;
@@ -165,8 +166,8 @@ function table(lines, start, out) {
   return i;
 }
 
-// A link's text: its brackets balanced, as on GitHub, nested up to 4 deep; an escaped one is text.
-const LABEL = Array.from({ length: 4 }).reduce((inner) => String.raw`(?:\\.|[^[\]\\]|\[${inner}\])*`, String.raw`(?:\\.|[^[\]\\])*`);
+// A link's text: its brackets balanced, as on GitHub, nested up to 4 deep; an escaped one is text. It may hold a line break.
+const LABEL = Array.from({ length: 4 }).reduce((inner) => String.raw`(?:\\[\s\S]|[^[\]\\]|\[${inner}\])*`, String.raw`(?:\\[\s\S]|[^[\]\\])*`);
 const DESTINATION = String.raw`\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`;
 const LINK = new RegExp(String.raw`\[(${LABEL})\]${DESTINATION}`);
 
@@ -196,6 +197,7 @@ const INLINE = new RegExp(
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
     /~~(?=\S)([\s\S]*?\S)~~/, // 9: struck out
     /\\([!-/:-@[-`{-~])/, // 10: an escaped character
+    /(?: {2,}|\\)\n/, // a hard line break, as on GitHub: a \ or two spaces at the end of a line
     // 11: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
     /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
   ]
@@ -213,20 +215,24 @@ function mask(text) {
   const codes = new Map();
   const masked = text.replace(/[\uE000\uE001]/g, '\uE002').replace(SPANS, (span, ticks, _code, index) => {
     if (ticks === undefined) return span;
-    const code = text.slice(index + ticks.length, index + span.length - ticks.length);
+    const code = text.slice(index + ticks.length, index + span.length - ticks.length).replace(/\n/g, ' ');
     codes.set(index, code.length > 2 && code.startsWith(' ') && code.endsWith(' ') ? code.slice(1, -1) : code);
     return '\uE001' + '\uE000'.repeat(span.length - 1);
   });
   return { masked, codes };
 }
 
-/** The inline content of a block: text, code, links, strong, emphasis; in a link's text, no link. */
+/**
+ * The inline content of a block: text, code, links, strong, emphasis, line breaks; in a link's text, no link. Any other
+ * end of a line is a space.
+ */
 export function inline(text, inLink = false) {
   const out = [];
   let last = 0;
   // Text as the file has it, its entities decoded; an escaped character or code is pushed as it is.
   const pushText = (from, to) => push(decode(text.slice(from, to)));
   const push = (node) => {
+    if (typeof node === 'string') node = node.replace(/[ \t]*\n/g, ' ');
     if (typeof node === 'string' && typeof out.at(-1) === 'string') out[out.length - 1] += node;
     else if (node !== '') out.push(node);
   };
@@ -250,6 +256,7 @@ export function inline(text, inLink = false) {
     else if (em1 !== undefined || em2 !== undefined) push(['em', {}, ...inline(em1 ?? em2, inLink)]);
     else if (del !== undefined) push(['del', {}, ...inline(del, inLink)]);
     else if (escaped !== undefined) push(escaped);
+    else if (bare === undefined) push(['br', {}]);
     else {
       // In a link's text, a URL is text, as on GitHub: no link in a link.
       const url = trimURL(bare);
