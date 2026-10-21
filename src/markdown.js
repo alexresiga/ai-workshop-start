@@ -147,15 +147,25 @@ function table(lines, start, out) {
   return i;
 }
 
+// A link's text: its brackets balanced, as on GitHub, nested up to 4 deep; an escaped one is text.
+const LABEL = Array.from({ length: 4 }).reduce((inner) => String.raw`(?:\\.|[^[\]\\]|\[${inner}\])*`, String.raw`(?:\\.|[^[\]\\])*`);
+const DESTINATION = String.raw`\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`;
+const LINK = new RegExp(String.raw`\[(${LABEL})\]${DESTINATION}`);
+
 // A code span binds tighter than the rest, as on GitHub; only an escape, an autolink, or a link's `](destination "title")`
 // after a `[`, is read before it.
-const SPANS =
-  /\\[!-/:-@[-`{-~]|<https?:\/\/[^\s<>]+>|(?<=\[(?:\\.|[^\]\\])*)\]\(\s*<?[^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)|(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g;
+const SPANS = new RegExp(
+  String.raw`\\[!-/:-@[-\`{-~]|<https?:\/\/[^\s<>]+>|(?<=\[${LABEL})\]${DESTINATION.replace('<?(', '<?(?:')}|(\`+)([^\`]|[^\`][\s\S]*?[^\`])\1(?!\`)`,
+  'g',
+);
+
+// A link, not an image, nor an escaped `[`.
+const INNER_LINK = new RegExp(`(?<![!\\\\])${LINK.source}`);
 
 const INLINE = new RegExp(
   [
     /\uE001\uE000*/, // a code span, masked
-    /!?\[((?:\\.|[^\]\\])*)\]\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/, // 1, 2: a link; an image as its link
+    `!?${LINK.source}`, // 1, 2: a link; an image as its link
     /<(https?:\/\/[^\s<>]+)>/, // 3: an autolink
     /\*\*(?=\S)([\s\S]*?\S)\*\*|__(?=\S)([\s\S]*?\S)__(?!\w)/, // 4, 5: strong
     // 6, 7: emphasis; a strong inside it is one piece, so its closing ** does not end the emphasis, and stars with a space
@@ -164,7 +174,7 @@ const INLINE = new RegExp(
     /~~(?=\S)([\s\S]*?\S)~~/, // 8: struck out
     /\\([!-/:-@[-`{-~])/, // 9: an escaped character
   ]
-    .map((part) => part.source)
+    .map((part) => (typeof part === 'string' ? part : part.source))
     .join('|'),
   'gd',
 );
@@ -194,7 +204,13 @@ export function inline(text) {
     else if (node !== '') out.push(node);
   };
   const { masked, codes } = mask(text);
-  for (const match of masked.matchAll(INLINE)) {
+  const parts = new RegExp(INLINE);
+  for (let match; (match = parts.exec(masked)); ) {
+    // A link holds no other link, as on GitHub: its `[` is text, and the inner one is read after it.
+    if (match[1] !== undefined && masked[match.index] === '[' && INNER_LINK.test(masked.slice(...match.indices[1]))) {
+      parts.lastIndex = match.index + 1;
+      continue;
+    }
     push(text.slice(last, match.index));
     last = match.index + match[0].length;
     // Each part as the text has it, code spans and all.
