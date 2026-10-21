@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.967 --> 00:00:02.986
+code-style's SKILL.md: "- Run the tests:", a fence indented 4 spaces with "npm test"; then the same fence, not in a list
+
+2
+00:00:02.986 --> 00:00:09.813
+✗ The item's code should be "npm test", as in the fence below it, with no spaces before it

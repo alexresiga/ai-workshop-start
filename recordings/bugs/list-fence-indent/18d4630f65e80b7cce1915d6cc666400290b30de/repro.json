@@ -1,0 +1,22 @@
+{
+  "title": "A fenced code block indented under a list item keeps its indentation: \"  npm test\", not \"npm test\"",
+  "expected": "`spec/web.md`, the SKILL.md: \"lists, code, fenced or indented, as it is\", \"as on GitHub\". On GitHub (CommonMark's fenced code blocks) a fence indented in its item takes that indentation off its lines: the code is `npm test`",
+  "head": "18d4630f65e80b7cce1915d6cc666400290b30de",
+  "failed": {
+    "step": 2,
+    "caption": "The item's code should be \"npm test\", as in the fence below it, with no spaces before it",
+    "error": "expect(locator).toHaveJSProperty(expected) failed\n\nLocator:  locator('#detail .markdown li pre code')\nExpected: \"npm test\"\nReceived: \"  npm test\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.0 s, 275 frames"
+    }
+  ]
+}
