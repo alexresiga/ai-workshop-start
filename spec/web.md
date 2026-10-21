@@ -46,6 +46,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - A bare `http://`, `https://` or `www.` URL in the body is a link, as on GitHub (GFM's autolinks): at the start of the text or after a space,
   `*`, `_`, `~` or `(`, without its trailing punctuation, an unmatched `)` or an `&amp;`: "See https://kotlinlang.org/docs." links
   `https://kotlinlang.org/docs`; `www.` links to `http://www.`; not in code, nor in a link's text
+- An escaped `\*`, `\_` or `\~` is a plain character, and never opens or ends emphasis, strong or struck-out text, as on GitHub:
+  `Use *\*.kt* files` is "Use *.kt files", "*.kt" in italics; `_a \_ b_` is "a _ b" in italics
 - Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once

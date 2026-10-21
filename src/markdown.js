@@ -172,9 +172,9 @@ const INLINE = new RegExp(
     // on each side are text. Each character starts at most one piece, so text with no closing * fails fast.
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
     /~~(?=\S)([\s\S]*?\S)~~/, // 8: struck out
-    /\\([!-/:-@[-`{-~])/, // 9: an escaped character
-    // 10: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
-    /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
+    /\\([\uE003\uE004])/, // 9: an escaped character, masked
+    // 10: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (, escaped too; no _ in the last two parts of its domain.
+    /(?<![^\s*_~(\uE004])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
   ]
     .map((part) => (typeof part === 'string' ? part : part.source))
     .join('|'),
@@ -183,12 +183,14 @@ const INLINE = new RegExp(
 
 /**
  * The text with each code span masked, as long as it was: a U+E001, then U+E000s, so the `*`, `_`,
- * `~` and `]` in it end nothing; those two characters in the text itself become U+E002. The code
- * spans' content, by where they start.
+ * `~` and `]` in it end nothing; and each escaped character a U+E003, or a U+E004 for `*`, `_`, `~` and `(`, after
+ * which a bare URL may start, so an escaped `\*` neither opens nor ends emphasis, as on GitHub. Those characters in
+ * the text itself become U+E002. The code spans' content, by where they start.
  */
 function mask(text) {
   const codes = new Map();
-  const masked = text.replace(/[\uE000\uE001]/g, '\uE002').replace(SPANS, (span, ticks, _code, index) => {
+  const masked = text.replace(/[\uE000-\uE004]/g, '\uE002').replace(SPANS, (span, ticks, _code, index) => {
+    if (span[0] === '\\') return '*_~('.includes(span[1]) ? '\\\uE004' : '\\\uE003';
     if (ticks === undefined) return span;
     const code = text.slice(index + ticks.length, index + span.length - ticks.length);
     codes.set(index, code.length > 2 && code.startsWith(' ') && code.endsWith(' ') ? code.slice(1, -1) : code);

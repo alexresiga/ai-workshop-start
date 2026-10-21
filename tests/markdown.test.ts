@@ -145,6 +145,23 @@ test('a bare http, https or www. URL is a link, without its trailing punctuation
   assert.deepEqual(markdown('- www.a.com\n'), [['ul', {}, ['li', {}, link('http://www.a.com', 'www.a.com')]]]);
 });
 
+test('an escaped delimiter is a plain character: it neither opens nor ends emphasis, strong or struck out, as on GitHub', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('Use *\\*.kt* files'), ['Use ', ['em', {}, '*.kt'], ' files']);
+  assert.deepEqual(inline('**\\*a**'), [['strong', {}, '*a']]);
+  assert.deepEqual(inline('**a\\*\\*b**'), [['strong', {}, 'a**b']]);
+  assert.deepEqual(inline('_a \\_ b_'), [['em', {}, 'a _ b']]);
+  assert.deepEqual(inline('~~\\~a~~'), [['del', {}, '~a']]);
+  assert.deepEqual(inline('\\*a*'), ['*a*']);
+  // An escaped backslash escapes nothing after it.
+  assert.deepEqual(inline('\\\\*a*'), ['\\', ['em', {}, 'a']]);
+  // An escape in a link's text stays the link's.
+  assert.deepEqual(inline('[a \\] *b*](u) *c*'), [['a', { href: 'u' }, 'a ] ', ['em', {}, 'b']], ' ', ['em', {}, 'c']]);
+  // A bare URL may still start after an escaped *, _, ~ or (, as after a plain one; not after another escape.
+  assert.deepEqual(inline('\\*https://a.com'), ['*', ['a', { href: 'https://a.com' }, 'https://a.com']]);
+  assert.deepEqual(inline('\\.https://a.com'), ['.https://a.com']);
+});
+
 test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
   assert.deepEqual(markdown('- one\n- two\n  - nested\n\n1. a\n\n2. b\n'), [
     ['ul', {}, ['li', {}, 'one'], ['li', {}, 'two', ['ul', {}, ['li', {}, 'nested']]]],
