@@ -102,14 +102,17 @@ export const scenes: Scene[] = [
   },
   {
     caption: 'Then Scanned N of 3 repositories and a bar, moving on as each is done; then the repositories',
-    covers: ['then `Scanned N of M repositories` and a **progress bar**'],
+    covers: ['then `Scanned N of M repositories` and a **progress bar**', 'the same spinner and bar each step'],
     async run(page) {
       const bar = loading(page).getByRole('progressbar', { name: 'Repositories scanned' });
       await expect(loading(page)).toHaveText('Scanned 1 of 3 repositories');
       await expect(bar).toHaveJSProperty('value', 1);
+      // Marked, to see the next step updates the spinner and the bar rather than building new ones.
+      await loading(page).evaluate((status) => status.querySelectorAll('.spinner, progress').forEach((node) => node.setAttribute('data-kept', '')));
       await expect(loading(page)).toHaveText('Scanned 2 of 3 repositories');
       await expect(bar).toHaveJSProperty('value', 2);
       await expect(bar).toHaveJSProperty('max', 3);
+      await expect(loading(page).locator('[data-kept]')).toHaveCount(2);
       await expect(page.locator('#repositories')).toHaveText('1 of 3 repositories');
       await expect(page.locator('#skills .name')).toHaveText(['example/fixture']);
       await page.unroute('**/api/organization/progress?*');

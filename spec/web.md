@@ -37,7 +37,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 ## An organization
 - `<org>`, `<org>/` or `github.com/<org>` in the input scans the organization: `?org=<org>` in the address, and it scans at once
 - While it scans, in the list: the spinner and `Listing <org>’s repositories…`, until they are listed; then
-  `Scanned N of M repositories` and a **progress bar**, moving on as each repository is done, a skipped one too
+  `Scanned N of M repositories` and a **progress bar**, moving on as each repository is done, a skipped one too;
+  the same spinner and bar each step, not built again: the spinner keeps turning, however fast the steps come
 - The header: the organization, an `N skills` pill and an `M of N repositories` pill
 - On the left, the repositories with skills, *most first*: the name and an `N skills` pill; ↑ and ↓ move; no filter.
   None → `No SKILL.md in any of <org>’s N repositories.`

@@ -90,10 +90,13 @@ browserTest('an organization: Listing <org>’s repositories…, then Scanned N 
   const bar = loading.getByRole('progressbar', { name: 'Repositories scanned' });
   await expect(bar).toHaveJSProperty('max', 5);
   await expect(bar).toHaveJSProperty('value', 0);
+  // Marked, to see the next line updates them rather than building new ones: the spinner keeps turning, the bar eases.
+  await loading.evaluate((status) => status.querySelectorAll('.spinner, progress').forEach((node) => node.setAttribute('data-kept', '')));
   organization.step();
   await expect(loading).toHaveText('Scanned 2 of 5 repositories');
   await expect(bar).toHaveJSProperty('value', 2);
   await expect(loading.locator('.spinner')).toBeVisible();
+  await expect(loading.locator('[data-kept]')).toHaveCount(2);
   organization.step();
   await expect(page.locator('#skills .name')).toHaveText(['JetBrains/idea', 'JetBrains/android', 'JetBrains/kotlin']);
   await expect(page.locator('#loading')).toHaveCount(0);
