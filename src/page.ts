@@ -32,7 +32,7 @@ export const PAGE = `<!doctype html>
   header { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; padding: .85rem 2rem; background: var(--panel); border-bottom: 1px solid var(--line); }
   header h1 { margin: 0; font-size: 1.45rem; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
   header h1 a { color: inherit; text-decoration: none; }
-  form { display: flex; gap: .5rem; flex: 1; max-width: 42rem; }
+  form { display: flex; gap: .5rem; flex: 1 1 18rem; min-width: 0; max-width: 42rem; }
   input { flex: 1; min-width: 0; padding: .55rem .9rem; font: 1rem var(--mono); color: var(--text); background: var(--panel);
     border: 1px solid var(--line); border-radius: .5rem; }
   input::placeholder { color: var(--muted); }
