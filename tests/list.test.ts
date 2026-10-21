@@ -20,6 +20,7 @@ const FILES = {
   'tools/kit/.claude/skills/deep/SKILL.md': skill('deep'),
   'skills/top/SKILL.md': skill('top'),
   'docs/guide/SKILL.md': '---\nname: guide\n---\n# Guide\n',
+  'team/skills/izmir/SKILL.md': "---\nname: izmir\ndescription: İzmir team's review rules\n---\n# İzmir\n",
 };
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: replay(searchAnswers('example/places', FILES)), token: 'test' }),
@@ -37,7 +38,7 @@ async function open(t: { after(fn: () => Promise<void>): void }): Promise<Page> 
   const page = await browser!.newPage();
   t.after(() => page.close());
   await page.goto(base + '/?repo=example/places');
-  await expect(page.locator('#count')).toHaveText('5 skills');
+  await expect(page.locator('#count')).toHaveText('6 skills');
   return page;
 }
 
@@ -62,6 +63,16 @@ test('marks: every place each word matches, in any case, overlaps joined; none f
   assert.deepEqual(marks('aaa', 'aa'), [[0, 3]]);
 });
 
+test('marks: after a character that grows in lower case, still on the letters matched; part of one → all of it', () => {
+  const text = "İzmir team's review rules";
+  assert.deepEqual(marks(text, 'review'), [[13, 19]]);
+  assert.equal(text.slice(13, 19), 'review');
+  assert.deepEqual(marks(text, 'İzmir RULES'), [[0, 5], [20, 25]]);
+  assert.deepEqual(marks(text, 'i'), [[0, 1], [3, 4], [16, 17]]);
+  assert.deepEqual(marks('ΟΔΟΣ ΣΟΦΟΣ', 'οδος'), [[0, 4]]);
+  assert.deepEqual(marks('😀 ok', 'ok'), [[3, 5]]);
+});
+
 browserTest('list: beside each name, the folder it lives in as a tag, its path when hovered; none in a top skills folder', async (t) => {
   const page = await open(t);
   const tags = page.locator('#skills button').evaluateAll((items) =>
@@ -70,6 +81,7 @@ browserTest('list: beside each name, the folder it lives in as a tag, its path w
   assert.deepEqual(await tags, [
     ['deep', '.claude'],
     ['guide', 'docs'],
+    ['izmir', 'team'],
     ['lint', 'agent'],
     ['mps-tests', '.agents'],
     ['top', ''],
@@ -112,5 +124,15 @@ browserTest('list: while the filter has text, what each word matches is highligh
   await expect(page.locator('#unmatched')).toHaveText('No skill matches description.');
   await filter.press('Escape');
   await expect(page.locator('#skills mark')).toHaveCount(0);
-  await expect(page.locator('#skills button:visible')).toHaveCount(5);
+  await expect(page.locator('#skills button:visible')).toHaveCount(6);
+});
+
+browserTest('list: after an "İ", which grows in lower case, the highlight is still on the letters matched', async (t) => {
+  const page = await open(t);
+  const filter = page.getByLabel('Filter skills');
+  await filter.fill('review');
+  await expect(row(page, 'izmir').locator('.description mark')).toHaveText(['review']);
+  await filter.fill('İzmir RULES');
+  await expect(row(page, 'izmir').locator('.description mark')).toHaveText(['İzmir', 'rules']);
+  await expect(row(page, 'izmir').locator('.description')).toHaveText("İzmir team's review rules");
 });
