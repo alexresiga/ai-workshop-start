@@ -159,8 +159,8 @@ const SPANS = new RegExp(
   'g',
 );
 
-// A link, not an image, nor an escaped `[`.
-const INNER_LINK = new RegExp(`(?<![!\\\\])${LINK.source}`);
+// A link, not an image, nor an escaped `[`: a `!` or `\` right before it, after an even run of backslashes.
+const INNER_LINK = new RegExp(String.raw`(?<!(?<!\\)(?:\\\\)*[!\\])${LINK.source}`);
 
 const INLINE = new RegExp(
   [
