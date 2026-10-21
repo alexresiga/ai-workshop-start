@@ -63,6 +63,9 @@ export function askClaude(prompt: string, options: AskOptions = {}): Promise<str
       signal?.removeEventListener('abort', aborted);
       rmSync(cwd, { recursive: true, force: true });
     };
+    // Decoded as streams, not chunk by chunk: a character split between two chunks stays whole.
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
     child.stdout.on('data', (chunk) => (stdout += chunk));
     child.stderr.on('data', (chunk) => (stderr += chunk));
     // A child that exits before reading the prompt closes stdin: its exit says what went wrong.

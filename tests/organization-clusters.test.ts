@@ -150,6 +150,29 @@ const alive = (pid: number) => {
   }
 };
 
+test('a character split between two chunks of the answer stays whole, in the theme and in an error', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skill-atlas-claude-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  // Writes its answer's bytes in two parts, with a pause, the split inside the two bytes of è; then the same on stderr.
+  const split = (stream: string, text: string) => `
+    const bytes = Buffer.from(${JSON.stringify(text)});
+    const at = bytes.indexOf(Buffer.from('è')) + 1;
+    process.${stream}.write(bytes.subarray(0, at));
+    setTimeout(() => process.${stream}.write(bytes.subarray(at)), 50);`;
+  const binary = join(dir, 'claude.cjs');
+  const write = (body: string) => {
+    writeFileSync(binary, `#!/usr/bin/env node\nprocess.stdin.resume().on('end', () => {${body}});\n`);
+    chmodSync(binary, 0o755);
+  };
+  write(split('stdout', reply(clusters([['Thème', [1, 2, 3, 4, 5, 6, 7]]]))));
+  const base = await serve(t, (prompt) => askClaude(prompt, { binary }));
+  const answer = (await (await fetch(`${base}/api/clusters?name=JetBrains`)).json()) as ClustersAnswer;
+  assert.deepEqual(answer.clusters.map((cluster) => cluster.theme), ['Thème']);
+  write(`${split('stderr', 'Erreur: accès refusé')}\n    setTimeout(() => (process.exitCode = 1), 100);`);
+  const failed = (await (await fetch(`${base}/api/clusters?name=JetBrains`)).json()) as { error: string };
+  assert.match(failed.error, /could not cluster the skills: Erreur: accès refusé$/);
+});
+
 test('more than the time allowed → claude stopped, the clear message, status 400', async (t) => {
   const claude = fakeClaude(t, reply(ANSWER), 0, 60_000);
   const base = await serve(t, (prompt) => askClaude(prompt, { binary: claude.binary, timeout: 300 }));
