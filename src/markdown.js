@@ -197,7 +197,8 @@ const INLINE = new RegExp(
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
     /~~(?=\S)([\s\S]*?\S)~~/, // 9: struck out
     /\\([!-/:-@[-`{-~])/, // 10: an escaped character
-    /(?: {2,}|\\)\n/, // a hard line break, as on GitHub: a \ or two spaces at the end of a line
+    // a hard line break, as on GitHub: a \ or two spaces at the end of a line; a run of spaces tried once, from its first
+    /(?<! ) {2,}\n|\\\n/,
     // 11: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
     /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
   ]
@@ -232,7 +233,7 @@ export function inline(text, inLink = false) {
   // Text as the file has it, its entities decoded; an escaped character or code is pushed as it is.
   const pushText = (from, to) => push(decode(text.slice(from, to)));
   const push = (node) => {
-    if (typeof node === 'string') node = node.replace(/[ \t]*\n/g, ' ');
+    if (typeof node === 'string') node = node.replace(/(?<![ \t])[ \t]*\n/g, ' ');
     if (typeof node === 'string' && typeof out.at(-1) === 'string') out[out.length - 1] += node;
     else if (node !== '') out.push(node);
   };

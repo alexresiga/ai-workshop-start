@@ -27,7 +27,7 @@ export const scenes: Scene[] = [
       const paragraph = page.locator('#detail .markdown p');
       await expect(paragraph).not.toContainText('\\');
       await expect(paragraph.locator('> br')).toHaveCount(1);
-      expect(await paragraph.evaluate((p) => (p as HTMLElement).innerText)).toBe('Tag the release.\nPush the tag.');
+      expect(await paragraph.evaluate((p) => p.innerText)).toBe('Tag the release.\nPush the tag.');
       await act.pause();
     },
   },
@@ -37,7 +37,7 @@ export const scenes: Scene[] = [
     async run(page, act) {
       await withBody(page, 'Tag the release.  \nPush the tag.\n\nBuild it\nand ship it.\n');
       const [first, second] = [page.locator('#detail .markdown p').first(), page.locator('#detail .markdown p').nth(1)];
-      expect(await first.evaluate((p) => (p as HTMLElement).innerText)).toBe('Tag the release.\nPush the tag.');
+      expect(await first.evaluate((p) => p.innerText)).toBe('Tag the release.\nPush the tag.');
       await expect(second).toHaveText('Build it and ship it.');
       await expect(second.locator('br')).toHaveCount(0);
       await act.pause();

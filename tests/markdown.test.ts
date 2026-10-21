@@ -69,7 +69,7 @@ test('a code span inside an emphasis keeps its stars, a strong next to it too', 
   assert.deepEqual(markdown('*Glob `**/*.ts` **all** files*'), [['p', {}, ['em', {}, 'Glob ', ['code', {}, '**/*.ts'], ' ', ['strong', {}, 'all'], ' files']]]);
 });
 
-test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs and code spans after a lone *; bare URLs too', () => {
+test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs and code spans after a lone *; bare URLs and runs of spaces too', () => {
   for (const text of [
     `*Note: paths look like C:${'\\dir'.repeat(30)} on Windows`,
     `*${'\\'.repeat(44)}`,
@@ -81,6 +81,9 @@ test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs
     `https://a.com/${')'.repeat(40000)}`,
     `https://a.com/${'.)'.repeat(40000)}`,
     `https://a.com/${'&a;'.repeat(40000)}`,
+    `a${' '.repeat(50000)}b`,
+    `a${' \t'.repeat(25000)}b`,
+    `a${' '.repeat(50000)}\nb`,
   ]) {
     const start = performance.now();
     markdown(text);
