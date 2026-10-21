@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.943 --> 00:00:02.824
+Paste a GitHub link to a SKILL.md deep in a repository
+
+2
+00:00:02.824 --> 00:00:05.700
+Scan: the list says it is not a repository link
+
+3
+00:00:05.700 --> 00:00:11.828
+✗ The message should wrap in the list: no sideways scroll

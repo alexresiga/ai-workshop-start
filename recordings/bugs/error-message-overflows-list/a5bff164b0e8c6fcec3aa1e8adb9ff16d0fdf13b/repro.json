@@ -1,0 +1,22 @@
+{
+  "title": "A long link that cannot be scanned: its error message runs out of the list, which scrolls sideways",
+  "expected": "`spec/web.md`, the page: \"Fits the window, at any width …: no sideways scroll; … a long word wrapped\". The error, \"Not a GitHub repository URL: <link>\", should wrap inside the list; `.message` has no `overflow-wrap`, so the link stays on one line and `#skills` scrolls sideways.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 3,
+    "caption": "The message should wrap in the list: no sideways scroll",
+    "error": "expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 0\nReceived:    539\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 3 of 3, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 13.2 s, 331 frames"
+    }
+  ]
+}
