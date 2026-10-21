@@ -35,8 +35,14 @@ export function skillLink(repository: Repository, skill: Skill): string {
   return skill.commit ? `${repository.url}/blob/${skill.commit}/${path}` : `${repository.url}/${path}`;
 }
 
-/** By name, then by path: the same order everywhere, whatever the locale. */
+/** By name, then by repository and path: the same order everywhere, whatever the locale. */
 export function sortSkills(skills: Skill[]): Skill[] {
   const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-  return [...skills].sort((a, b) => compare(a.name, b.name) || compare(a.path, b.path));
+  return [...skills].sort((a, b) => compare(a.name, b.name) || compare(a.repository, b.repository) || compare(a.path, b.path));
+}
+
+/** The text's first sentence, on one line. */
+export function firstSentence(text: string): string {
+  const line = text.replace(/\s+/g, ' ').trim();
+  return /^.*?[.!?](?=\s|$)/.exec(line)?.[0] ?? line;
 }

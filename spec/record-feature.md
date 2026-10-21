@@ -14,7 +14,8 @@ A commit that is not there, as in a shallow clone → a clear message, exit 1.
 - A clause neither covered nor in `notShown`; a piece that is in no clause, or in more than one → each listed, exit 1, no video
 ## The recording
 - The web view of the recorded commit on a free port, GitHub answering from this checkout's `fixture/` as `example/fixture`,
-  the same for the before and the after: no network, no token
+  and for `example` as an organization with only that repository; the same for the before and the after: no network, no token
+- The model, for a scene that asks it: the scenes file's `ask(prompt)`, never `claude`; none → the question fails
 - 1280×720, a fixed clock, a visible cursor, typing at a reading pace, each key pressed shown, the caption at the bottom
 - At `<head>`: light, dark, and light again; at `<base>`: light, the **before**
 - A scene that fails at `<head>` → its caption and the error, exit 1, no video

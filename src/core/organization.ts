@@ -15,6 +15,7 @@ import {
   type Fetch,
   type GitHubOptions,
 } from './github.ts';
+import { sortSkills, type Skill } from './model.ts';
 import { scan } from './scan.ts';
 
 /** At most this many requests to GitHub at a time. */
@@ -32,6 +33,8 @@ export type OrganizationResult = {
   repositories: { id: string; url: string; skills: number }[];
   /** How many repositories were scanned: the account's own, forks left out. */
   scanned: number;
+  /** Every skill of those repositories, sorted by name. */
+  skills: Skill[];
   warnings: string[];
 };
 
@@ -62,6 +65,7 @@ export async function scanOrganization(input: string, options: GitHubOptions, pr
   if (trees > 0) await budget(trees);
 
   const counts = new Map<string, number>();
+  const skills: Skill[] = [];
   const warnings: string[] = [];
   let scanned = 0;
   progress(scanned, repositories.length);
@@ -86,6 +90,7 @@ export async function scanOrganization(input: string, options: GitHubOptions, pr
       }
       const result = await scan(repositorySource(github, id, repository.default_branch, files, listing));
       if (result.skills.length) counts.set(id, result.skills.length);
+      skills.push(...result.skills);
       warnings.push(...result.warnings.map((warning) => `${id}: ${warning}`));
     } catch (error) {
       if (error instanceof EmptyRepositoryError) return; // nothing to scan, nothing to say
@@ -99,6 +104,7 @@ export async function scanOrganization(input: string, options: GitHubOptions, pr
     organization: { id: account.login, url: `https://github.com/${account.login}` },
     repositories: sorted.map(([id, skills]) => ({ id, url: `https://github.com/${id}`, skills })),
     scanned: repositories.length,
+    skills: sortSkills(skills),
     warnings: warnings.sort(),
   };
 }
