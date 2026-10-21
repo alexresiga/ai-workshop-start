@@ -708,7 +708,9 @@ export const PAGE = `<!doctype html>
 
     const body = element('div.markdown');
     try {
-      body.append(...markdown(skill.body).map((node) => build(node, skill.link)));
+      // A link starting with one \`/\` is from the repository's root at the scanned commit, as on GitHub; others, from the SKILL.md.
+      const root = new URL('../'.repeat(skill.path.split('/').length - 1) || './', skill.link).href;
+      body.append(...markdown(skill.body).map((node) => build(node, { file: skill.link, root })));
     } catch {
       body.append(element('pre.raw', skill.body)); // whatever the parser cannot read, as it is
     }
@@ -732,7 +734,8 @@ export const PAGE = `<!doctype html>
     const result = document.createElement(tag);
     if (tag === 'a') {
       try {
-        const url = new URL(attributes.href, base);
+        const href = attributes.href;
+        const url = /^\\/(?!\\/)/.test(href) ? new URL('.' + href, base.root) : new URL(href, base.file);
         if (SAFE.has(url.protocol)) {
           result.href = url.href;
           result.target = '_blank';

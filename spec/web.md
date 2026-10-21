@@ -41,7 +41,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   and a link's text, as on GitHub: ``**Pass `**kwargs` through**`` is "Pass **kwargs through" in bold, its `**kwargs` as code
 - Emphasis may hold strong, as on GitHub: `*Always **run** the tests*` is the words in italics, `run` in bold too, no star left;
   a star with a space on each side is text in it: `*5 * 60 seconds*`
-- Links in the body resolve next to the SKILL.md on GitHub; only http, https and mailto links
+- Links in the body resolve next to the SKILL.md on GitHub; one starting with a single `/`, from the repository's root
+  at the scanned commit, as on GitHub: `/docs/guide.md` is `https://github.com/<owner>/<repo>/blob/<commit>/docs/guide.md`;
+  only http, https and mailto links
 - Repository text is *text*, never HTML: the Markdown is parsed into a tree, and the page builds each element
 - `?repo=<owner/repo>` in the address scans at once
 - **Fits the window**, at any width, a phone's 375 px too: no sideways scroll; the list beside the SKILL.md, or above it below 50rem;
