@@ -47,7 +47,7 @@ function blocks(lines) {
       i++;
     } else if (QUOTE.test(line)) {
       const quoted = [];
-      for (; i < lines.length && QUOTE.test(lines[i]); i++) quoted.push(lines[i].replace(QUOTE, ''));
+      for (; i < lines.length && (QUOTE.test(lines[i]) || isLazy(lines, i, quoted)); i++) quoted.push(lines[i].replace(QUOTE, ''));
       out.push(['blockquote', {}, ...blocks(quoted)]);
     } else if (ITEM.test(line)) {
       i = list(lines, i, out);
@@ -82,6 +82,23 @@ function cells(line) {
     .replace(/(?<!\\)\|$/, '')
     .split(/(?<!\\)\|/)
     .map((cell) => cell.trim().replace(/\\\|/g, '|'));
+}
+
+/** A line with no `>` that goes on with the paragraph the quote ends in, as on GitHub: a lazy continuation. */
+function isLazy(lines, i, quoted) {
+  return !!lines[i].trim() && !!quoted.at(-1)?.trim() && !startsBlock(lines[i]) && !isTable(lines, i) && endsInParagraph(blocks(quoted));
+}
+
+const BLOCK_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'hr', 'table']);
+
+/** Whether the last of these blocks is a paragraph, or ends in one: a quote's, a list item's. */
+function endsInParagraph(nodes) {
+  const last = nodes.at(-1);
+  if (last === undefined) return false;
+  if (typeof last === 'string' || last[0] === 'p') return true;
+  if (BLOCK_TAGS.has(last[0])) return false;
+  if (['blockquote', 'ul', 'ol', 'li'].includes(last[0])) return endsInParagraph(last.slice(2));
+  return true; // the text of a tight list item
 }
 
 function startsBlock(line) {

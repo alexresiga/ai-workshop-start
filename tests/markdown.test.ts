@@ -49,6 +49,23 @@ test('fenced code as it is, a quote, a table', () => {
   ]);
 });
 
+test('a line with no ">" right after a quoted line goes on with the quote\'s paragraph, as on GitHub', () => {
+  assert.deepEqual(markdown('> Never push to main\non a Friday.\n'), [['blockquote', {}, ['p', {}, 'Never push to main on a Friday.']]]);
+  assert.deepEqual(markdown('> a\n> b\nc\n> d\n'), [['blockquote', {}, ['p', {}, 'a b c d']]]);
+  assert.deepEqual(markdown('> a\n    b\n'), [['blockquote', {}, ['p', {}, 'a b']]]);
+  assert.deepEqual(markdown('> > a\nb\n'), [['blockquote', {}, ['blockquote', {}, ['p', {}, 'a b']]]]);
+  assert.deepEqual(markdown('> - item\nmore\n'), [['blockquote', {}, ['ul', {}, ['li', {}, 'item more']]]]);
+});
+
+test('a quote ends at a blank line, at a block, or when it does not end in a paragraph', () => {
+  assert.deepEqual(markdown('> a\n\nb\n'), [['blockquote', {}, ['p', {}, 'a']], ['p', {}, 'b']]);
+  assert.deepEqual(markdown('> a\n>\nb\n'), [['blockquote', {}, ['p', {}, 'a']], ['p', {}, 'b']]);
+  assert.deepEqual(markdown('> a\n# b\n'), [['blockquote', {}, ['p', {}, 'a']], ['h1', {}, 'b']]);
+  assert.deepEqual(markdown('> a\n- b\n'), [['blockquote', {}, ['p', {}, 'a']], ['ul', {}, ['li', {}, 'b']]]);
+  assert.deepEqual(markdown('> # a\nb\n'), [['blockquote', {}, ['h1', {}, 'a']], ['p', {}, 'b']]);
+  assert.deepEqual(markdown('> ```\n> a\n> ```\nb\n'), [['blockquote', {}, ['pre', {}, ['code', {}, 'a']]], ['p', {}, 'b']]);
+});
+
 test('indented code as it is, line by line; an indented line inside a paragraph is still the paragraph', () => {
   assert.deepEqual(markdown('Run this:\n\n    git checkout -b fix\n    git commit -m "x"\n\n    git push\n\nAfter.\n'), [
     ['p', {}, 'Run this:'],
