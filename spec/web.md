@@ -39,6 +39,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   then the body, **rendered Markdown**: headings, paragraphs, lists, code, fenced or indented, as it is, quotes, tables, links, emphasis;
   a table may follow a line of text with no blank line, as on GitHub; a code span binds tighter than emphasis, struck-out text
   and a link's text, as on GitHub: ``**Pass `**kwargs` through**`` is "Pass **kwargs through" in bold, its `**kwargs` as code;
+  a run of backticks with no closing run as long is text, as on GitHub (CommonMark's code spans): "Wrap code in ``` fences; use `x` inline."
+  is "```" as typed and " fences; use " as text, only `x` code;
   a link's text may hold balanced brackets, as on GitHub: "Read [the [beta] guide](https://kotlinlang.org/docs)." is "Read the [beta] guide.",
   "the [beta] guide" a link; an unbalanced `[` is text, and a link holds no other link: in `[a [b](u) c](v)` only `b` is one
 - Emphasis may hold strong, as on GitHub: `*Always **run** the tests*` is the words in italics, `run` in bold too, no star left;

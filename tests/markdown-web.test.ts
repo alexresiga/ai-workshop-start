@@ -20,6 +20,9 @@ const answers = replay({
   ...searchAnswers('example/email', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nAsk <kotlin-team@example.com>.\n',
   }),
+  ...searchAnswers('example/backticks', {
+    '.github/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nWrap code in ``` fences; use `x` inline.\n',
+  }),
   ...searchAnswers('example/tasks', {
     '.claude/skills/release/SKILL.md': '---\nname: release\ndescription: Release steps.\n---\n- [ ] Tag the release\n- [x] Write the notes\n',
   }),
@@ -104,4 +107,13 @@ browserTest('a line ending in a backslash is a line break, as on GitHub: "Tag th
   await expect(paragraph).not.toContainText('\\');
   await expect(paragraph.locator('> br')).toHaveCount(1);
   expect(await paragraph.evaluate((p) => p.innerText)).toBe('Tag the release.\nPush the tag.');
+});
+
+browserTest('a run of backticks with no closing run is text: "Wrap code in ``` fences; use `x` inline." has only "x" as code', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/backticks`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('Wrap code in ``` fences; use x inline.');
+  await expect(paragraph.locator('code')).toHaveText(['x']);
 });
