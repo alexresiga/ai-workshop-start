@@ -1,0 +1,85 @@
+{
+  "title": "Strong inside emphasis: *Always **run** the tests*",
+  "head": "cb17eb60ab46cc993b27988bb16856cd62b8d1e2",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 41,
+        "text": "Emphasis may hold strong, as on GitHub: `*Always **run** the tests*` is the words in italics, `run` in bold too, no star left"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's SKILL.md says \"*Always **run** the tests*\": the words in italics, \"run\" in bold too, no star left",
+          "start": 0.954
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 41,
+        "text": "a star with a space on each side is text in it: `*5 * 60 seconds*`"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Now \"*5 * 60 seconds*\": the star with a space on each side is text, the whole line still in italics",
+          "start": 3.032
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"code-style's SKILL.md says \"*Always **run** the tests*\": the words in italics, \"run\" in bold too, no star left\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Always run the tests\"\nReceived: \"Always **run* the tests*\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown p') with timeout 5000ms\n  - waiting for locator('#detail .markdown p')\n    14 × locator resolved to <p>…</p>\n       - unexpected value \"Always **run* the tests*\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.3 s, 132 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.2 s, 129 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 211 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000, written: 2"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000, written: 2"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.14 s, SSIM ≥ 0.996"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.954 --> 00:00:03.032
+code-style's SKILL.md says "*Always **run** the tests*": the words in italics, "run" in bold too, no star left
+
+2
+00:00:03.032 --> 00:00:05.019
+Now "*5 * 60 seconds*": the star with a space on each side is text, the whole line still in italics
