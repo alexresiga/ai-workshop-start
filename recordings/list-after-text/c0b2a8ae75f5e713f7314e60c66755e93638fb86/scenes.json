@@ -1,0 +1,85 @@
+{
+  "title": "A list after a line of text, as on GitHub",
+  "head": "c0b2a8ae75f5e713f7314e60c66755e93638fb86",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 40,
+        "text": "a table may follow a line of text with no blank line, as on GitHub"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "A line of text, then a list from 1 and a table, with no blank line: each is still a list and a table",
+          "start": 3.014
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 40,
+        "text": "a list too, but only one with text in its first item and, if numbered, starting at 1: `The format changed in` then `2024. Use the new one.` is one paragraph"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "A line starting \"2024.\" inside a paragraph: one paragraph, \"2024.\" in it, no list",
+          "start": 0.945
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"A line starting \"2024.\" inside a paragraph: one paragraph, \"2024.\" in it, no list\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#detail .markdown').locator('p')\nTimeout: 5000ms\n- Expected  - 1\n+ Received  + 1\n\n  Array [\n-   \"The format changed in 2024. Use the new one.\",\n+   \"The format changed in\",\n  ]\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown').locator('p') with timeout 5000ms\n  - waiting for locator('#detail .markdown').locator('p')\n    14 × locator resolved to 1 element\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.2 s, 131 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.2 s, 130 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 210 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.987"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.13 s, SSIM ≥ 0.996"
+    }
+  ]
+}

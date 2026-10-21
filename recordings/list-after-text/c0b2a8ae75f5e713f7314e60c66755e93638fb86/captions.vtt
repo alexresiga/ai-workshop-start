@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.945 --> 00:00:03.014
+A line starting "2024." inside a paragraph: one paragraph, "2024." in it, no list
+
+2
+00:00:03.014 --> 00:00:04.998
+A line of text, then a list from 1 and a table, with no blank line: each is still a list and a table
