@@ -34,6 +34,13 @@ test('inline: code, strong, emphasis, struck out, links, an image as its link, e
   ]);
 });
 
+test('underscores inside a word are not emphasis, as on GitHub; around a word they are', () => {
+  assert.deepEqual(markdown('Call my__init__ first.'), [['p', {}, 'Call my__init__ first.']]);
+  assert.deepEqual(markdown('a__b__c and a_b_c'), [['p', {}, 'a__b__c and a_b_c']]);
+  assert.deepEqual(markdown('__bold__ and _em_'), [['p', {}, ['strong', {}, 'bold'], ' and ', ['em', {}, 'em']]]);
+  assert.deepEqual(markdown('my**init**'), [['p', {}, 'my', ['strong', {}, 'init']]]);
+});
+
 test('lists: tight, nested, ordered; loose items keep their paragraphs', () => {
   assert.deepEqual(markdown('- one\n- two\n  - nested\n\n1. a\n\n2. b\n'), [
     ['ul', {}, ['li', {}, 'one'], ['li', {}, 'two', ['ul', {}, ['li', {}, 'nested']]]],
