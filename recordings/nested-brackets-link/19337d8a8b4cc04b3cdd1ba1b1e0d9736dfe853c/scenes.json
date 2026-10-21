@@ -1,0 +1,99 @@
+{
+  "title": "A link's text may hold balanced brackets",
+  "head": "19337d8a8b4cc04b3cdd1ba1b1e0d9736dfe853c",
+  "base": "2e847596c370060b2922f8cfef8b575c68b2be29",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 40,
+        "text": "a code span binds tighter than emphasis, struck-out text and a link's text, as on GitHub: ``**Pass `**kwargs` through**`` is \"Pass **kwargs through\" in bold, its `**kwargs` as code"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "A code span still binds tighter than the link's text: \"[the `[beta` guide](…)\": its unbalanced [ in code, still a link",
+          "start": 6.765
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "a link's text may hold balanced brackets, as on GitHub: \"Read [the [beta] guide](https://kotlinlang.org/docs).\" is \"Read the [beta] guide.\", \"the [beta] guide\" a link"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "\"Read [the [beta] guide](…).\" is \"Read the [beta] guide.\", \"the [beta] guide\" a link",
+          "start": 0.958
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 43,
+        "text": "an unbalanced `[` is text, and a link holds no other link: in `[a [b](u) c](v)` only `b` is one"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "An unbalanced [ is text; in [a [b](…) c](…) only b is a link",
+          "start": 3.867
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"\"Read [the [beta] guide](…).\" is \"Read the [beta] guide.\", \"the [beta] guide\" a link\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Read the [beta] guide.\"\nReceived: \"Read [the [beta] guide](https://kotlinlang.org/docs).\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown p') with timeout 5000ms\n  - waiting for locator('#detail .markdown p')\n    14 × locator resolved to <p>Read [the [beta] guide](https://kotlinlang.org/do…</p>\n       - unexpected value \"Read [the [beta] guide](https://kotlinlang.org/docs).\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "3 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 9.9 s, 248 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.0 s, 250 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 211 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.08 s, SSIM ≥ 0.996"
+    }
+  ]
+}

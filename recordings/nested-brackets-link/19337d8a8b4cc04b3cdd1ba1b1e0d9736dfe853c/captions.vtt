@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.958 --> 00:00:03.867
+"Read [the [beta] guide](…)." is "Read the [beta] guide.", "the [beta] guide" a link
+
+2
+00:00:03.867 --> 00:00:06.765
+An unbalanced [ is text; in [a [b](…) c](…) only b is a link
+
+3
+00:00:06.765 --> 00:00:09.670
+A code span still binds tighter than the link's text: "[the `[beta` guide](…)": its unbalanced [ in code, still a link
