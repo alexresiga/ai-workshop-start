@@ -34,6 +34,26 @@ test('inline: code, strong, emphasis, struck out, links, an image as its link, e
   ]);
 });
 
+test('struck out in one tilde or two, as on GitHub: the same run closes it; three, a space inside or an escape is text', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('Use ~old~ new names.'), ['Use ', ['del', {}, 'old'], ' new names.']);
+  assert.deepEqual(inline('Use ~~old~~ new names.'), ['Use ', ['del', {}, 'old'], ' new names.']);
+  // The closing run as long as the opening one.
+  assert.deepEqual(inline('~a~~'), ['~a~~']);
+  assert.deepEqual(inline('~~a~'), ['~~a~']);
+  // Three or more tildes are text.
+  assert.deepEqual(inline('Use ~~~a~~~ here'), ['Use ~~~a~~~ here']);
+  // A space after the opening tilde or before the closing one.
+  assert.deepEqual(inline('~ a~ and ~a ~'), ['~ a~ and ~a ~']);
+  // An escaped tilde opens and closes nothing; it is a tilde in struck-out text.
+  assert.deepEqual(inline('\\~a~'), ['~a~']);
+  assert.deepEqual(inline('~a\\~'), ['~a~']);
+  assert.deepEqual(inline('~a\\~ b~'), [['del', {}, 'a~ b']]);
+  // One inside the other, and a code span binds tighter.
+  assert.deepEqual(inline('~~a ~b~ c~~'), [['del', {}, 'a ', ['del', {}, 'b'], ' c']]);
+  assert.deepEqual(inline('~a `~` b~'), [['del', {}, 'a ', ['code', {}, '~'], ' b']]);
+});
+
 test('a code span binds tighter than strong, emphasis, struck out and a link, as on GitHub', () => {
   const inline = (text: string) => markdown(text)[0].slice(2);
   assert.deepEqual(inline('**Pass `**kwargs` through**'), [['strong', {}, 'Pass ', ['code', {}, '**kwargs'], ' through']]);

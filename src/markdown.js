@@ -195,11 +195,13 @@ const INLINE = new RegExp(
     // 7, 8: emphasis; a strong inside it is one piece, so its closing ** does not end the emphasis, and stars with a space
     // on each side are text. Each character starts at most one piece, so text with no closing * fails fast.
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
-    /~~(?=\S)([\s\S]*?\S)~~/, // 9: struck out
-    /\\([!-/:-@[-`{-~])/, // 10: an escaped character
+    // 9, 10: struck out, as on GitHub: in one tilde or two, the closing run as long as the opening one; three or more are text,
+    // and an escaped ~ closes nothing.
+    /(?<!~)(~~?)(?=[^\s~])((?:\\[\s\S]|[^\\])*?(?:[^\s~\\]|\\[^\s~]))\9(?!~)/,
+    /\\([!-/:-@[-`{-~])/, // 11: an escaped character
     // a hard line break, as on GitHub: a \ or two spaces at the end of a line; a run of spaces tried once, from its first
     /(?<! ) {2,}\n|\\\n/,
-    // 11: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
+    // 12: a bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
     /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/,
   ]
     .map((part) => (typeof part === 'string' ? part : part.source))
@@ -248,7 +250,7 @@ export function inline(text, inLink = false) {
     pushText(last, match.index);
     last = match.index + match[0].length;
     // Each part as the text has it, code spans and all.
-    const [, label, href, autolink, email, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
+    const [, label, href, autolink, email, strong1, strong2, em1, em2, , del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
     if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
     else if (label !== undefined) {
       // An image in a link's text is its text: the link around it is the one link, as on GitHub, where a badge goes where its link does.

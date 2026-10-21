@@ -24,6 +24,9 @@ const answers = replay({
   ...searchAnswers('example/email', {
     '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nAsk <kotlin-team@example.com>.\n',
   }),
+  ...searchAnswers('example/tilde', {
+    '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nUse ~old~ new names.\n',
+  }),
   ...searchAnswers('example/tasks', {
     '.claude/skills/release/SKILL.md': '---\nname: release\ndescription: Release steps.\n---\n- [ ] Tag the release\n- [x] Write the notes\n',
   }),
@@ -82,6 +85,16 @@ browserTest('an email autolink is a mailto link, without its brackets: "Ask <kot
   await expect(paragraph).toHaveText('Ask kotlin-team@example.com.');
   await expect(paragraph.locator('a')).toHaveAttribute('href', 'mailto:kotlin-team@example.com');
   await expect(paragraph.locator('a')).toHaveText('kotlin-team@example.com');
+});
+
+browserTest('text in one tilde is struck out, its tildes gone: "Use ~old~ new names."', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/tilde`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('Use old new names.');
+  await expect(paragraph.locator('del')).toHaveText('old');
+  await expect(paragraph.locator('del')).toHaveCSS('text-decoration-line', 'line-through');
 });
 
 browserTest('a task list: "- [ ] Tag the release" and "- [x] Write the notes" are checkboxes, unticked then ticked, and the text alone', async (t) => {
