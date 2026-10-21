@@ -29,7 +29,7 @@ export const PAGE = `<!doctype html>
   html, body { height: 100%; margin: 0; }
   body { display: flex; flex-direction: column; background: var(--page); color: var(--text); font: 16px/1.5 var(--sans); }
 
-  header { display: flex; align-items: center; gap: 1.5rem; padding: .85rem 2rem; background: var(--panel); border-bottom: 1px solid var(--line); }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; padding: .85rem 2rem; background: var(--panel); border-bottom: 1px solid var(--line); }
   header h1 { margin: 0; font-size: 1.45rem; font-weight: 700; letter-spacing: -.01em; white-space: nowrap; }
   header h1 a { color: inherit; text-decoration: none; }
   form { display: flex; gap: .5rem; flex: 1; max-width: 42rem; }
@@ -44,8 +44,8 @@ export const PAGE = `<!doctype html>
     background: var(--panel); border: 1px solid var(--line); border-radius: .5rem; cursor: pointer; }
   button.dice:hover { background: var(--pill); }
   button.dice:disabled { opacity: .6; cursor: progress; }
-  #repository { display: flex; align-items: center; gap: .6rem; white-space: nowrap; }
-  #repository a { font-family: var(--mono); color: var(--text); text-decoration: none; }
+  #repository { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; min-width: 0; white-space: nowrap; }
+  #repository a { min-width: 0; font-family: var(--mono); color: var(--text); text-decoration: none; white-space: normal; overflow-wrap: anywhere; }
   #repository a:hover { text-decoration: underline; }
   .pill { padding: .1rem .7rem; font-size: .9rem; color: var(--muted); background: var(--pill); border-radius: 1rem; }
 
@@ -147,7 +147,7 @@ export const PAGE = `<!doctype html>
   .markdown .raw { white-space: pre-wrap; }
 
   @media (max-width: 50rem) {
-    header { flex-wrap: wrap; padding: .75rem 1rem; }
+    header { padding: .75rem 1rem; }
     form { order: 3; flex-basis: 100%; max-width: none; }
     main { grid-template-columns: 1fr; grid-template-rows: minmax(8rem, 35%) 1fr; }
     aside { border-right: 0; border-bottom: 1px solid var(--line); }
