@@ -12,5 +12,5 @@
     "allowJs": true,
     "skipLibCheck": true
   },
-  "include": ["src", "scripts", "tests", ".agents/skills/record-feature", ".agents/skills/issue-to-pr", ".agents/skills/red-agent", "recordings"]
+  "include": ["src", "scripts", "tests", ".agents/skills/record-feature", ".agents/skills/issue-to-pr", ".agents/skills/red-agent", ".agents/skills/status-update", "recordings"]
 }
