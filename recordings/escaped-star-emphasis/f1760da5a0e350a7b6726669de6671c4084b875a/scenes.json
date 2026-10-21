@@ -1,0 +1,85 @@
+{
+  "title": "An escaped star is a plain star",
+  "head": "f1760da5a0e350a7b6726669de6671c4084b875a",
+  "base": "75c4ec9911c5f0b98d133d21f04dd0eb19dbdcef",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 44,
+        "text": "An escaped `\\*`, `\\_` or `\\~` is a plain character, and never opens or ends emphasis, strong or struck-out text, as on GitHub: `Use *\\*.kt* files` is \"Use *.kt files\", \"*.kt\" in italics"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "\"Use *\\*.kt* files\": \"*.kt\" in italics, its star kept, no backslash, no stray star",
+          "start": 0.953
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 45,
+        "text": "`_a \\_ b_` is \"a _ b\" in italics"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "\"_a \\_ b_\": \"a _ b\" in italics, the escaped underscore kept inside",
+          "start": 3.929
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 2, \"\"_a \\_ b_\": \"a _ b\" in italics, the escaped underscore kept inside\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown').locator('p')\nExpected: \"Keep a _ b together\"\nReceived: \"Keep a \\\\ b_ together\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown').locator('p') with timeout 5000ms\n  - waiting for locator('#detail .markdown').locator('p')\n    14 × locator resolved to <p>…</p>\n       - unexpected value \"Keep a \\ b_ together\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.1 s, 177 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.0 s, 174 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.4 s, 284 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.10 s, SSIM ≥ 0.996"
+    }
+  ]
+}
