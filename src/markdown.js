@@ -13,19 +13,29 @@ const QUOTE = /^ {0,3}> ?/;
 const ITEM = /^( {0,3})([-*+]|\d{1,9}[.)])(?:[ \t]+|$)/;
 const INDENTED = /^(?: {4}|\t)/;
 const DELIMITER = /^ {0,3}\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/;
+// Marks a line with no `>` that a quote took in, to go on with the paragraph the quote ends in: a lazy continuation, as on
+// GitHub. Only a paragraph takes it; anywhere else, every quote it is in ends just before it. U+0000 is never in the text.
+const LAZY = '\u0000';
 
 /** The blocks of a Markdown text. */
 export function markdown(text) {
-  return blocks(text.replace(/\r\n?/g, '\n').split('\n'));
+  return blocks(text.replace(/\r\n?/g, '\n').replace(/\u0000/g, '\uFFFD').split('\n'));
 }
 
 function blocks(lines) {
+  return parse(lines).nodes;
+}
+
+/** The blocks of these lines, up to the first lazy line that no paragraph takes: `end`. */
+function parse(lines) {
   const out = [];
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
     let match;
-    if (!line.trim()) {
+    if (line.startsWith(LAZY)) {
+      break;
+    } else if (!line.trim()) {
       i++;
     } else if (INDENTED.test(line)) {
       // Indented code, as it is: its blank lines too, but not the ones after it.
@@ -36,8 +46,8 @@ function blocks(lines) {
     } else if ((match = FENCE.exec(line))) {
       const fence = match[1];
       const code = [];
-      for (i++; i < lines.length && !isClosingFence(lines[i], fence); i++) code.push(lines[i]);
-      i++;
+      for (i++; i < lines.length && !isClosingFence(lines[i], fence) && !lines[i].startsWith(LAZY); i++) code.push(lines[i]);
+      if (i < lines.length && !lines[i].startsWith(LAZY)) i++; // past the closing fence, if there is one
       out.push(['pre', {}, ['code', {}, code.join('\n')]]);
     } else if ((match = HEADING.exec(line))) {
       out.push([`h${match[1].length}`, {}, ...inline(match[2] ?? '')]);
@@ -46,9 +56,18 @@ function blocks(lines) {
       out.push(['hr', {}]);
       i++;
     } else if (QUOTE.test(line)) {
+      // The `>` lines, and each line with no `>` that may go on with a paragraph, marked: the quote ends before the first
+      // that none takes.
+      const start = i;
       const quoted = [];
-      for (; i < lines.length && QUOTE.test(lines[i]); i++) quoted.push(lines[i].replace(QUOTE, ''));
-      out.push(['blockquote', {}, ...blocks(quoted)]);
+      for (; i < lines.length; i++) {
+        if (QUOTE.test(lines[i])) quoted.push(lines[i].replace(QUOTE, ''));
+        else if (canBeLazy(lines, i, quoted)) quoted.push(lines[i].startsWith(LAZY) ? lines[i] : LAZY + lines[i]);
+        else break;
+      }
+      const { nodes, end } = parse(quoted);
+      out.push(['blockquote', {}, ...nodes]);
+      i = start + end;
     } else if (ITEM.test(line)) {
       i = list(lines, i, out);
     } else if (isTable(lines, i)) {
@@ -56,11 +75,11 @@ function blocks(lines) {
     } else {
       // A paragraph, up to a blank line or a block that interrupts it; a table does, as on GitHub.
       const paragraph = [lines[i++].trim()];
-      for (; i < lines.length && lines[i].trim() && !startsBlock(lines[i]) && !isTable(lines, i); i++) paragraph.push(lines[i].trim());
+      for (; i < lines.length && lines[i].trim() && !startsBlock(lines[i]) && !isTable(lines, i); i++) paragraph.push(lines[i].replace(LAZY, '').trim());
       out.push(['p', {}, ...inline(paragraph.join(' '))]);
     }
   }
-  return out;
+  return { nodes: out, end: i };
 }
 
 function isClosingFence(line, fence) {
@@ -84,6 +103,11 @@ function cells(line) {
     .map((cell) => cell.trim().replace(/\\\|/g, '|'));
 }
 
+/** A line with no `>` right after a quoted line that is not blank, and that starts no block: it may go on with a paragraph. */
+function canBeLazy(lines, i, quoted) {
+  return !!quoted.at(-1)?.trim() && (lines[i].startsWith(LAZY) || (!!lines[i].trim() && !startsBlock(lines[i]) && !isTable(lines, i)));
+}
+
 function startsBlock(line) {
   return FENCE.test(line) || HEADING.test(line) || RULE.test(line) || QUOTE.test(line) || ITEM.test(line);
 }
@@ -99,6 +123,7 @@ function list(lines, start, out) {
     if (!match || /\d/.test(match[2]) !== ordered) break;
     const indent = match[0].length;
     const item = [lines[i].slice(indent)];
+    item.start = i;
     for (i++; i < lines.length; i++) {
       const line = lines[i];
       if (!line.trim()) {
@@ -124,7 +149,17 @@ function list(lines, start, out) {
       }
     }
   }
-  out.push([ordered ? 'ol' : 'ul', {}, ...items.map((item) => ['li', {}, ...itemContent(blocks(item), loose)])]);
+  // An item that ends before a lazy line no paragraph takes ends the list there too.
+  const content = [];
+  for (const item of items) {
+    const { nodes, end } = parse(item);
+    content.push(['li', {}, ...itemContent(nodes, loose)]);
+    if (end < item.length) {
+      i = item.start + end;
+      break;
+    }
+  }
+  out.push([ordered ? 'ol' : 'ul', {}, ...content]);
   return i;
 }
 
@@ -141,7 +176,7 @@ function table(lines, start, out) {
   const head = cells(lines[start]);
   const rows = [];
   let i = start + 2;
-  for (; i < lines.length && lines[i].trim() && lines[i].includes('|') && !startsBlock(lines[i]); i++) rows.push(cells(lines[i]));
+  for (; i < lines.length && lines[i].trim() && lines[i].includes('|') && !startsBlock(lines[i]) && !lines[i].startsWith(LAZY); i++) rows.push(cells(lines[i]));
   const row = (tag, values) => ['tr', {}, ...head.map((_, index) => [tag, {}, ...inline(values[index] ?? '')])];
   out.push(['table', {}, ['thead', {}, row('th', head)], ['tbody', {}, ...rows.map((values) => row('td', values))]]);
   return i;
