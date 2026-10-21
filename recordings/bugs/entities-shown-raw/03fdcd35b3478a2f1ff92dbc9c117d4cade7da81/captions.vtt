@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.949 --> 00:00:02.962
+code-style's SKILL.md: "Replace &lt;version&gt; &amp; tag it."
+
+2
+00:00:02.962 --> 00:00:09.184
+✗ It should read "Replace <version> & tag it."

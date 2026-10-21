@@ -1,0 +1,22 @@
+{
+  "title": "An entity in a SKILL.md (`&lt;version&gt;`, `&amp;`) shows as typed, not as \"<version>\" and \"&\"",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, **rendered Markdown**: … paragraphs\", as on GitHub, where an entity reference is its character (CommonMark, \"Entity and numeric character references\"): \"Replace &lt;version&gt; &amp; tag it.\" reads \"Replace <version> & tag it.\"; `markdown.js` leaves `&lt;`, `&gt;` and `&amp;` in the text. Still text, never HTML.",
+  "head": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Replace <version> & tag it.\"",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Replace <version> & tag it.\"\nReceived: \"Replace &lt;version&gt; &amp; tag it.\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 259 frames"
+    }
+  ]
+}
