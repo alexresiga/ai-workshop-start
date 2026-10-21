@@ -7,11 +7,14 @@ import { replay } from '../src/core/replay.ts';
 import { createWebServer } from '../src/web.ts';
 import { searchAnswers } from './helpers.ts';
 
-const answers = replay(
-  searchAnswers('example/emphasis', {
+const answers = replay({
+  ...searchAnswers('example/emphasis', {
     '.claude/skills/testing/SKILL.md': '---\nname: testing\ndescription: Run the tests.\n---\n*Always **run** the tests*\n',
   }),
-);
+  ...searchAnswers('example/autolink', {
+    '.claude/skills/code-style/SKILL.md': '---\nname: code-style\ndescription: Kotlin style.\n---\nSee https://kotlinlang.org/docs.\n',
+  }),
+});
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: answers, token: 'test' }),
   organization: () => Promise.reject(new Error('not scanned')),
@@ -33,4 +36,14 @@ browserTest('strong inside emphasis: "*Always **run** the tests*" is the words, 
   await expect(paragraph).toHaveText('Always run the tests');
   await expect(paragraph.locator('> em')).toHaveText('Always run the tests');
   await expect(paragraph.locator('> em > strong')).toHaveText('run');
+});
+
+browserTest('a bare URL is a link, without its trailing period: "See https://kotlinlang.org/docs."', async (t) => {
+  const page = await browser!.newPage();
+  t.after(() => page.close());
+  await page.goto(`${base}/?repo=example/autolink`);
+  const paragraph = page.locator('#detail .markdown p');
+  await expect(paragraph).toHaveText('See https://kotlinlang.org/docs.');
+  await expect(paragraph.locator('a')).toHaveAttribute('href', 'https://kotlinlang.org/docs');
+  await expect(paragraph.locator('a')).toHaveText('https://kotlinlang.org/docs');
 });
