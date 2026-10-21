@@ -233,3 +233,41 @@ test('the GitHub token, when set, goes with each request', async (t) => {
   assert.equal(run.code, 0, run.stderr);
   assert.deepEqual(seen, ['Bearer ghp-test', 'Bearer ghp-test']);
 });
+
+test('over 4,000 characters → several messages, in order, each at most 4,000, cut between lines; a link for each', async (t) => {
+  const title = 'A long title that makes each line of the digest well over a hundred characters, as real ones are';
+  const gh = await github(t, {
+    pulls: [Array.from({ length: 100 }, (_, i) => pull(100 + i, title, `2026-10-21T10:${String(i % 60).padStart(2, '0')}:00Z`)), []],
+    issues: [Array.from({ length: 60 }, (_, i) => issue(300 + i, title, '2026-10-21T10:00:00Z'))],
+  });
+  const dry = await status(['--since', SINCE, '--dry-run'], { GITHUB_API: gh.api });
+  const sl = await slack(t);
+  const run = await status(['--since', SINCE], { GITHUB_API: gh.api, SLACK_API: sl.api });
+  assert.equal(run.code, 0, run.stderr);
+  const texts = posts(sl.calls).map((c) => c.body.text);
+  assert.ok(texts.length > 1, `${texts.length} message`);
+  for (const text of texts) assert.ok(text.length <= 4000, `${text.length} characters`);
+  assert.match(texts[0], /^📣 \*Status update/);
+  assert.match(texts.at(-1)!, /🎉 100 PRs merged, 60 issues resolved\. Keep shipping! 🙌$/);
+  // Every line, once, in order: only blank lines may go, at the cuts.
+  const lines = (text: string) => text.split('\n').filter(Boolean);
+  assert.deepEqual(lines(texts.join('\n')), lines(dry.stdout));
+  assert.equal(run.stdout, 'posted in Slack: https://example.slack.com/archives/C1/p12\n'.repeat(texts.length));
+});
+
+test('Slack refuses a message after the first → its error, with which, exit 1, the rest not posted', async (t) => {
+  const gh = await github(t, { pulls: [Array.from({ length: 60 }, (_, i) => pull(100 + i, 'x'.repeat(100), '2026-10-21T10:00:00Z'))] });
+  let n = 0;
+  const server = createServer((request, response) => {
+    if (request.url === '/chat.postMessage') n++;
+    const body = request.url === '/chat.postMessage' && n > 1 ? { ok: false, error: 'ratelimited' } : { ok: true, ts: '1.2', permalink: 'https://example.slack.com/p1' };
+    request.resume().on('end', () => response.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(body)));
+  });
+  await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+  t.after(() => server.close());
+  const run = await status(['--since', SINCE], { GITHUB_API: gh.api, SLACK_API: `http://127.0.0.1:${(server.address() as AddressInfo).port}` });
+  assert.equal(run.code, 1);
+  assert.match(run.stderr, /^Slack refused the status update, message 2 of [3-9]: ratelimited\n$/);
+  assert.equal(n, 2);
+  assert.equal(run.stdout, 'posted in Slack: https://example.slack.com/p1\n');
+});

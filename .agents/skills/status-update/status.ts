@@ -67,6 +67,22 @@ export function message(repo: string, since: Date, pulls: Item[], issues: Item[]
   ].join('\n');
 }
 
+/** Slack truncates a message over 40,000 characters, and says nothing; it advises 4,000 at most. */
+export const LIMIT = 4000;
+
+/** The message in parts of at most `limit` characters, cut between lines, so none is truncated. */
+export function split(text: string, limit = LIMIT): string[] {
+  const parts: string[] = [];
+  let part = '';
+  for (const line of text.split('\n')) {
+    if (part && part.length + 1 + line.length > limit) {
+      parts.push(part.replace(/\n+$/, ''));
+      part = line;
+    } else part = part ? `${part}\n${line}` : line;
+  }
+  return [...parts, part];
+}
+
 class Refused extends Error {}
 
 async function github<T>(api: string, token: string | undefined, path: string): Promise<T[]> {
@@ -155,19 +171,23 @@ export async function main(args: string[], env = process.env): Promise<number> {
   }
 
   const api = (env.SLACK_API || 'https://slack.com/api').replace(/\/$/, '');
-  let posted: Answer;
-  try {
-    posted = await slack(api, token!, 'chat.postMessage', { channel: channel!, text, unfurl_links: 'false' });
-  } catch (error) {
-    console.error(`Slack is out of reach: ${(error as Error).message}`);
-    return 1;
+  const parts = split(text);
+  for (const [i, part] of parts.entries()) {
+    const which = parts.length > 1 ? `, message ${i + 1} of ${parts.length}` : '';
+    let posted: Answer;
+    try {
+      posted = await slack(api, token!, 'chat.postMessage', { channel: channel!, text: part, unfurl_links: 'false' });
+    } catch (error) {
+      console.error(`Slack is out of reach${which}: ${(error as Error).message}`);
+      return 1;
+    }
+    if (!posted.ok) {
+      console.error(`Slack refused the status update${which}: ${posted.error}`);
+      return 1;
+    }
+    const link = await slack(api, token!, 'chat.getPermalink', { channel: channel!, message_ts: posted.ts as string }).catch(() => undefined);
+    console.log(`posted in Slack: ${link?.ok ? link.permalink : `${channel} at ${posted.ts}`}`);
   }
-  if (!posted.ok) {
-    console.error(`Slack refused the status update: ${posted.error}`);
-    return 1;
-  }
-  const link = await slack(api, token!, 'chat.getPermalink', { channel: channel!, message_ts: posted.ts as string }).catch(() => undefined);
-  console.log(`posted in Slack: ${link?.ok ? link.permalink : `${channel} at ${posted.ts}`}`);
   return 0;
 }
 
