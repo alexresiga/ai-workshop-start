@@ -1,0 +1,22 @@
+{
+  "title": "On a narrow window (375 px) the skills and the SKILL.md overflow it: the page scrolls sideways",
+  "expected": "A broken layout (overflow): below 50rem the page stacks the list above the SKILL.md, so both should fit the window; at 375 px the page is 375 px wide, and the filter and each skill end inside it",
+  "head": "55a4b2789f7c726e76a2f63b7024754d3d8278a2",
+  "failed": {
+    "step": 2,
+    "caption": "The filter and the skills should fit the window too, with no sideways scroll",
+    "error": "expect(locator).toBeInViewport() failed\n\nLocator:  getByLabel('Filter skills')\nExpected: in viewport\nReceived: viewport ratio 0.6209039092063904\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.9 s, 272 frames"
+    }
+  ]
+}
