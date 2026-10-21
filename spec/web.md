@@ -10,6 +10,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - **Skill Atlas** in the header returns home: the page as it first opens, the input empty, no scan; the address with no `?repo=`
   or `?org=`, so Back returns to the scan; a scan still running is dropped; Back or Forward to that address returns home too;
   a click with Ctrl, ⌘, Shift or Alt is the browser's, as on any link: home in a new tab or window, and this one keeps its scan
+- While a scan runs, in the list: a **spinner** and `Scanning <owner/repo>…`; the button says `Scanning…`; a slower spinner
+  when the system asks for reduced motion
 - The warnings, under the header
 - On the left, the skills, cluster by cluster: the name, and the description on one line; the first is selected; ↑ and ↓ move, across the clusters too
 - Beside each name, a **tag** with the folder it lives in: the one that holds its `skills` folder (`.claude`, `.agents`, `agent`), else
@@ -34,6 +36,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - `?repo=<owner/repo>` in the address scans at once
 ## An organization
 - `<org>`, `<org>/` or `github.com/<org>` in the input scans the organization: `?org=<org>` in the address, and it scans at once
+- While it scans, in the list: the spinner and `Listing <org>’s repositories…`, until they are listed; then
+  `Scanned N of M repositories` and a **progress bar**, moving on as each repository is done, a skipped one too
 - The header: the organization, an `N skills` pill and an `M of N repositories` pill
 - On the left, the repositories with skills, *most first*: the name and an `N skills` pill; ↑ and ↓ move; no filter.
   None → `No SKILL.md in any of <org>’s N repositories.`
@@ -51,4 +55,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   other front matter keys as `properties`, and the `body`; a failure → status 400, `{ error }`
 - `GET /api/organization?name=<org | org/ | GitHub URL>` → JSON `{ organization: { id, url }, repositories: [{ id, url, skills }], scanned, warnings }`;
   not an organization, or a failure → status 400, `{ error }`
+- `GET /api/organization/progress?name=<org | org/ | GitHub URL>` → the same scan, as NDJSON, one JSON a line, as it goes:
+  `{ progress: { scanned, of } }`, from `0` once the repositories are listed; the last line, the answer of `/api/organization`,
+  or `{ error }`; not an organization → status 400, `{ error }`; what the page reads
 - Nothing is stored

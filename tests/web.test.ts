@@ -14,7 +14,8 @@ import { atlas, CLI, EXAMPLE_COMMIT, github, noWait, organizationAnswers, ORGANI
 const missing = replay({ 'https://api.github.com/repos/JetBrains/missing': { status: 404, body: { message: 'Not Found' } } }, github);
 const server = createWebServer({
   open: (url) => openGitHub(url, { fetch: missing, token: 'test', wait: noWait }),
-  organization: (url) => scanOrganization(url, { fetch: replay(organizationAnswers('JetBrains', 'Organization', ORGANIZATION), missing), token: 'test' }),
+  organization: (url, progress) =>
+    scanOrganization(url, { fetch: replay(organizationAnswers('JetBrains', 'Organization', ORGANIZATION), missing), token: 'test' }, progress),
 });
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -150,9 +151,33 @@ test('organization: not an organization → status 400 and the clear message', a
   assert.match(((await missing.json()) as { error: string }).error, /^Cannot reach GitHub: /);
 });
 
+const progressFor = (name: string) => fetch(`${base}/api/organization/progress?name=${encodeURIComponent(name)}`);
+/** The lines of a streamed answer, each parsed. */
+const lines = async (response: Response) => (await response.text()).split('\n').filter(Boolean).map((line) => JSON.parse(line));
+
+test('organization progress: NDJSON, the progress from 0 once listed, then the answer of /api/organization last', async () => {
+  const response = await progressFor('JetBrains');
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type') ?? '', /application\/x-ndjson/);
+  const answer = await lines(response);
+  assert.deepEqual(answer.slice(0, -1), [0, 1, 2, 3, 4, 5].map((scanned) => ({ progress: { scanned, of: 5 } })));
+  assert.deepEqual(answer.at(-1), await (await organizationFor('JetBrains')).json());
+});
+
+test('organization progress: not an organization → status 400; a failure while it scans → { error }, last', async () => {
+  const response = await progressFor('JetBrains/example/x');
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'Not a GitHub organization: JetBrains/example/x' });
+  const missing = await progressFor('nobody');
+  assert.equal(missing.status, 200);
+  const answer = await lines(missing);
+  assert.equal(answer.length, 1);
+  assert.match(answer[0].error, /^Cannot reach GitHub: /);
+});
+
 test('the page: an organization lists its repositories with their counts; a repository scans it, Back returns', async () => {
   const page = await (await fetch(`${base}/`)).text();
-  assert.match(page, /'\/api\/organization\?name=' \+ encodeURIComponent\(name\)/);
+  assert.match(page, /'\/api\/organization\/progress\?name=' \+ encodeURIComponent\(name\)/);
   assert.match(page, /'\?org=' : '\?repo='/);
   assert.match(page, /setAttribute\('aria-label', 'Repositories'\)/);
   assert.match(page, /' of ' \+ plural\(answer.scanned, 'repository'\)/);

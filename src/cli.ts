@@ -3,13 +3,13 @@
 // stderr, or the web view. Nothing is stored.
 import { run } from './commands.ts';
 import { openGitHub, parseGitHubUrl } from './core/github.ts';
-import { scanOrganization } from './core/organization.ts';
+import { scanOrganization, type Progress } from './core/organization.ts';
 import { openDirectory } from './local.ts';
 import { createWebServer, listen } from './web.ts';
 
 const token = process.env.GITHUB_TOKEN || undefined;
 const open = (url: string) => openGitHub(url, { fetch, token });
-const organization = (url: string) => scanOrganization(url, { fetch, token });
+const organization = (url: string, progress?: Progress) => scanOrganization(url, { fetch, token }, progress);
 
 process.exitCode = await run(process.argv.slice(2), {
   open: (input) => (parseGitHubUrl(input) ? open(input) : openDirectory(input)),
