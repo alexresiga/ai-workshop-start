@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.948 --> 00:00:03.909
+"Pass `**kwargs` through" in ** **: all of it bold, **kwargs as code, its asterisks kept
+
+2
+00:00:03.909 --> 00:00:06.794
+A table right after a line of text, no blank line between: still a table
