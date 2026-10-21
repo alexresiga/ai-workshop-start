@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.950 --> 00:00:02.969
+code-style's SKILL.md says "***Never*** commit tabs."
+
+2
+00:00:02.969 --> 00:00:09.189
+✗ It should read "Never commit tabs.", no stars left

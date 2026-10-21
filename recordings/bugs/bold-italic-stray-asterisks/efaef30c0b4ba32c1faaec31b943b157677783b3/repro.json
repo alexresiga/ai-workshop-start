@@ -1,0 +1,22 @@
+{
+  "title": "`***Never***` in a SKILL.md shows as \"*Never*\" in bold, its stars left in the text",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … emphasis\". `***Never***` is strong and emphasised, as on GitHub: the paragraph reads \"Never commit tabs.\", with no `*` left.",
+  "head": "efaef30c0b4ba32c1faaec31b943b157677783b3",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Never commit tabs.\", no stars left",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Never commit tabs.\"\nReceived: \"*Never* commit tabs.\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 260 frames"
+    }
+  ]
+}
