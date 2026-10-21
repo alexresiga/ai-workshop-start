@@ -4,6 +4,8 @@
 A port already in use, or not a port (above 65535) → a clear message, exit code 1.
 ## The page
 - A header: **Skill Atlas**, an input for `owner/repo`, an **organization** or a **GitHub link**, a **Scan** button; then `<owner>/<repo>` and an `N skills` pill
+- The header fits the window, at any width: what does not fit on its line goes on the next, and a name
+  too long for a line breaks within it; never past the right edge nor into a sideways scroll
 - In the header, a **dice** button (🎲): a random skill from `JetBrains/kotlin`; it scans `JetBrains/kotlin` first, unless
   it is the repository on the page, then empties the filter and selects a skill at random, never the selected one while there
   is another; a failed scan → its message, in the list; disabled while a scan runs
