@@ -1,0 +1,99 @@
+{
+  "title": "Scanning a GitHub link says Scanning owner/repo…",
+  "head": "31e06c1d4564c758be922ab86d4f617a44b8219d",
+  "base": "31e06c1d4564c758be922ab86d4f617a44b8219d",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 13,
+        "text": "While a scan runs, in the list: a **spinner** and `Scanning <owner/repo>…`, for a GitHub link too"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Paste https://github.com/example/fixture: a spinner and Scanning example/fixture…; the button says Scanning…",
+          "start": 0.967
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 13,
+        "text": "the button says `Scanning…`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Paste https://github.com/example/fixture: a spinner and Scanning example/fixture…; the button says Scanning…",
+          "start": 0.967
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 13,
+        "text": "a slower spinner when the system asks for reduced motion"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Reduced motion, and the link with .git: Scanning example/fixture…, the spinner three times slower",
+          "start": 8.182
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"Paste https://github.com/example/fixture: a spinner and Scanning example/fixture…; the button says Scanning…\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#skills #loading')\nExpected: \"Scanning example/fixture…\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" locator('#skills #loading') with timeout 5000ms\n  - waiting for locator('#skills #loading')\n    7 × locator resolved to <div id=\"loading\" role=\"status\" class=\"message loading\">…</div>\n      - unexpected value \"Scanning https://github.com/example/fixture…\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 17.5 s, 438 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 17.5 s, 437 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 14.8 s, 370 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.04 s, SSIM ≥ 0.995"
+    }
+  ]
+}
