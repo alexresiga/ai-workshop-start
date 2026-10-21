@@ -111,7 +111,7 @@ export const PAGE = `<!doctype html>
   .theme li a:hover { text-decoration: underline; }
   .theme li .in { font-family: var(--mono); font-size: .85rem; color: var(--muted); }
   .theme li .description { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--muted); }
-  .message { padding: 1rem; color: var(--muted); }
+  .message { padding: 1rem; color: var(--muted); overflow-wrap: anywhere; }
   .message.error { color: var(--error); }
   .loading { display: flex; flex-direction: column; gap: .6rem; }
   .loading .what { display: flex; align-items: center; gap: .6rem; }
