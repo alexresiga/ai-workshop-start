@@ -1,0 +1,104 @@
+{
+  "title": "Highlight the letters matched after an \"İ\"",
+  "head": "c6844616d43a4b91533e709ccf0e3e6b4918f356",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 36,
+        "text": "While the filter has text, what each of its words matches is **highlighted** in the names and descriptions shown, every place it is"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's description starts with \"İ\", a capital I with a dot: \"İzmir team's review rules\"",
+          "start": 0.971
+        },
+        {
+          "index": 3,
+          "caption": "Add \"i\": it matches part of \"İ\", so all of \"İ\" is highlighted, and every other \"i\"",
+          "start": 6.009
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 37,
+        "text": "on the letters matched, even after one that grows in lower case (\"İ\" → \"i̇\")"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Type \"review\": the highlight is on \"review\", not one letter too far on",
+          "start": 2.968
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 37,
+        "text": "a match of part of one such letter → all of it"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Add \"i\": it matches part of \"İ\", so all of \"İ\" is highlighted, and every other \"i\"",
+          "start": 6.009
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 2, \"Type \"review\": the highlight is on \"review\", not one letter too far on\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#skills button:visible .description mark')\nTimeout: 5000ms\n- Expected  - 1\n+ Received  + 1\n\n  Array [\n-   \"review\",\n+   \"eview \",\n  ]\n\nCall log:\n  - Expect \"toHaveText\" locator('#skills button:visible .description mark') with timeout 5000ms\n  - waiting for locator('#skills button:visible .description mark')\n    14 × locator resolved to 1 element\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "3 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.2 s, 254 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.1 s, 253 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 12.0 s, 301 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.990"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.09 s, SSIM ≥ 0.995"
+    }
+  ]
+}

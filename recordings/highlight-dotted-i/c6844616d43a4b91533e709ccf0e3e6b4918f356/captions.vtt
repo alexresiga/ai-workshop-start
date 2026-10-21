@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.971 --> 00:00:02.968
+code-style's description starts with "İ", a capital I with a dot: "İzmir team's review rules"
+
+2
+00:00:02.968 --> 00:00:06.009
+Type "review": the highlight is on "review", not one letter too far on
+
+3
+00:00:06.009 --> 00:00:08.592
+Add "i": it matches part of "İ", so all of "İ" is highlighted, and every other "i"
