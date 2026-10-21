@@ -57,6 +57,7 @@ export const PAGE = `<!doctype html>
   #notices > button:hover { text-decoration: underline; }
   #warnings { margin: 0; padding: .15rem 0 .2rem; list-style: none; }
   #warnings[hidden] { display: none; }
+  #warnings li { overflow-wrap: anywhere; }
 
   /* minmax(0, …) and min-width: 0: a long line in the list or the SKILL.md never widens the page past the window. */
   main { display: grid; grid-template-columns: minmax(16rem, 36%) minmax(0, 1fr); flex: 1; min-height: 0; }
