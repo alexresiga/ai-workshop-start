@@ -1,0 +1,22 @@
+{
+  "title": "A task list (`- [ ] Tag the release`) shows \"[ ]\" and \"[x]\" as text, not checkboxes",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, **rendered Markdown**: … lists\", as on GitHub, where `- [ ] Tag the release` and `- [x] Write the notes` are task list items (GFM, \"Task list items\"): a checkbox, unticked then ticked, and the text alone; `markdown.js` leaves `[ ]` and `[x]` at the start of each item.",
+  "head": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "failed": {
+    "step": 2,
+    "caption": "Each item should be a checkbox, unticked then ticked, and its text alone",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator: locator('#detail .markdown li')\nTimeout: 5000ms\n- Expected  - 2\n+ Received  + 2\n\n  Array [\n-   \"Tag the release\",\n-   \"Write the notes\",\n+   \"[ ] Tag the release\",\n+   \"[x] Write the notes\","
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 259 frames"
+    }
+  ]
+}

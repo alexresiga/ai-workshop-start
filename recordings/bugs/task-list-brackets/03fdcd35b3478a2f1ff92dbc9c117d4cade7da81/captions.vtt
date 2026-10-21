@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.956 --> 00:00:02.947
+code-style's SKILL.md: "- [ ] Tag the release", "- [x] Write the notes"
+
+2
+00:00:02.947 --> 00:00:09.169
+✗ Each item should be a checkbox, unticked then ticked, and its text alone
