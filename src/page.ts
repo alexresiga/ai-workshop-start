@@ -84,6 +84,16 @@ export const PAGE = `<!doctype html>
   .summary p { margin: 0 0 .5rem; color: var(--muted); }
   .message { padding: 1rem; color: var(--muted); }
   .message.error { color: var(--error); }
+  .loading { display: flex; flex-direction: column; gap: .6rem; }
+  .loading .what { display: flex; align-items: center; gap: .6rem; }
+  .spinner { flex: none; width: 1rem; height: 1rem; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+  .loading progress { width: 100%; height: .4rem; appearance: none; border: 0; border-radius: .2rem; background: var(--pill); overflow: hidden; }
+  .loading progress::-webkit-progress-bar { background: var(--pill); }
+  .loading progress::-webkit-progress-value { background: var(--accent); transition: width .2s; }
+  .loading progress::-moz-progress-bar { background: var(--accent); }
 
   #detail { overflow-y: auto; padding: 1.6rem 2.2rem 3rem; }
   #detail:empty { display: none; }
@@ -209,11 +219,51 @@ export const PAGE = `<!doctype html>
     if (how === 'push') history.pushState(null, '', address);
     else if (how === 'replace') history.replaceState(null, '', address);
     return organization
-      ? load('/api/organization?name=' + encodeURIComponent(name), name, showOrganization)
-      : load('/api/scan?url=' + encodeURIComponent(text), text, show);
+      ? load('/api/organization/progress?name=' + encodeURIComponent(name), 'Listing ' + name + '’s repositories…', showOrganization)
+      : load('/api/scan?url=' + encodeURIComponent(text), 'Scanning ' + text + '…', show);
   }
 
-  async function load(api, url, render) {
+  /** What the list shows while a scan runs: a spinner and what it does; for an organization, how far it is, as a bar. */
+  function loading(text, progress) {
+    const spinner = element('span.spinner');
+    spinner.setAttribute('aria-hidden', 'true');
+    const status = element('div.message.loading', element('span.what', spinner, element('span', text)));
+    status.id = 'loading';
+    status.setAttribute('role', 'status');
+    if (progress) {
+      const bar = element('progress');
+      bar.max = progress.of;
+      bar.value = progress.scanned;
+      bar.setAttribute('aria-label', 'Repositories scanned');
+      status.append(bar);
+    }
+    return status;
+  }
+
+  /**
+   * The answer of a streamed scan, one JSON a line: each \`{ progress }\` shown while this scan is the latest, the last line
+   * the answer.
+   */
+  async function streamed(response, mine) {
+    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buffered = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      buffered += value ?? '';
+      const lines = buffered.split('\\n');
+      buffered = lines.pop();
+      for (const line of lines.filter(Boolean)) {
+        const answer = JSON.parse(line);
+        if (!answer.progress) return answer;
+        if (mine !== latest) continue; // a later scan replaced this one
+        const { scanned, of } = answer.progress;
+        $('skills').replaceChildren(loading('Scanned ' + scanned + ' of ' + plural(of, 'repository'), answer.progress));
+      }
+      if (done) throw new Error('The scan stopped before its answer; try again.');
+    }
+  }
+
+  async function load(api, message, render) {
     const mine = ++latest;
     onPage = '';
     $('button').disabled = true;
@@ -226,12 +276,14 @@ export const PAGE = `<!doctype html>
     $('filter').hidden = true;
     $('skills').classList.remove('repositories');
     $('skills').setAttribute('aria-label', 'Skills');
-    $('skills').replaceChildren(element('p.message', 'Scanning ' + url + '…'));
+    $('skills').replaceChildren(loading(message));
     try {
       const response = await fetch(api);
-      const answer = await response.json();
+      const answer = response.ok && response.headers.get('content-type')?.startsWith('application/x-ndjson')
+        ? await streamed(response, mine)
+        : await response.json();
       if (mine !== latest) return; // a later scan replaced this one
-      if (!response.ok) throw new Error(answer.error);
+      if (!response.ok || answer.error) throw new Error(answer.error);
       render(answer);
     } catch (error) {
       if (mine === latest) $('skills').replaceChildren(element('p.message.error', error.message));

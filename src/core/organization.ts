@@ -35,11 +35,14 @@ export type OrganizationResult = {
   warnings: string[];
 };
 
+/** How far the scan is: the repositories done, of how many; called with 0 once they are listed. */
+export type Progress = (scanned: number, of: number) => void;
+
 type Account = { login: string; type: string; public_repos: number };
 type Listed = { full_name: string; default_branch: string; fork: boolean; private: boolean };
 
 /** Every repository of the account scanned, the skills counted; a problem in one is a warning. */
-export async function scanOrganization(input: string, options: GitHubOptions): Promise<OrganizationResult> {
+export async function scanOrganization(input: string, options: GitHubOptions, progress: Progress = () => {}): Promise<OrganizationResult> {
   const name = parseOrganizationUrl(input);
   if (!name) throw new AtlasError(`Not a GitHub organization URL: ${input}`);
   const limited = { ...options, fetch: atMost(AT_ONCE, options.fetch) };
@@ -60,7 +63,14 @@ export async function scanOrganization(input: string, options: GitHubOptions): P
 
   const counts = new Map<string, number>();
   const warnings: string[] = [];
+  let scanned = 0;
+  progress(scanned, repositories.length);
   await forEach(repositories, async (repository) => {
+    await scanOne(repository);
+    progress(++scanned, repositories.length);
+  });
+  /** One repository: its skills counted, or a warning. */
+  async function scanOne(repository: Listed) {
     const id = repository.full_name;
     const paths = found?.get(id);
     if (found && !paths) return; // no SKILL.md in it
@@ -82,7 +92,7 @@ export async function scanOrganization(input: string, options: GitHubOptions): P
       if (error instanceof GitHubError || !(error instanceof AtlasError)) throw error;
       warnings.push(`${id}: ${error.message}; skipped`);
     }
-  });
+  }
 
   const sorted = [...counts].sort(([a, m], [b, n]) => n - m || (a < b ? -1 : a > b ? 1 : 0));
   return {

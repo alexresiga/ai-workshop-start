@@ -7,7 +7,7 @@ import type { AddressInfo } from 'node:net';
 import { AtlasError } from './core/errors.ts';
 import { parseGitHubUrl } from './core/github.ts';
 import { skillLink } from './core/model.ts';
-import { parseOrganizationUrl, type OrganizationResult } from './core/organization.ts';
+import { parseOrganizationUrl, type OrganizationResult, type Progress } from './core/organization.ts';
 import { parseSkill } from './core/parse.ts';
 import { scan, type Source } from './core/scan.ts';
 import { PAGE } from './page.ts';
@@ -32,12 +32,18 @@ const CLUSTER = readFileSync(new URL('./cluster.js', import.meta.url), 'utf8');
 export type WebOptions = {
   /** Opens a GitHub repository URL. */
   open(url: string): Promise<Source>;
-  /** Scans a GitHub organization URL. */
-  organization(url: string): Promise<OrganizationResult>;
+  /** Scans a GitHub organization URL; `progress` hears how far it is. */
+  organization(url: string, progress?: Progress): Promise<OrganizationResult>;
 };
 
 /** What `GET /api/organization?name=<organization | GitHub URL>` answers: the result, or `{ error }` with status 400. */
 export type OrganizationAnswer = OrganizationResult;
+
+/**
+ * What `GET /api/organization/progress?name=…` streams, one JSON a line: `{ progress }` as the scan goes,
+ * then the result, or `{ error }`, last.
+ */
+export type OrganizationProgressLine = { progress: { scanned: number; of: number } } | OrganizationAnswer | { error: string };
 
 /** What `GET /api/scan?url=<GitHub URL>` answers: the result, or `{ error }` with status 400. */
 export type ScanAnswer = {
@@ -82,12 +88,28 @@ export function createWebServer(options: WebOptions): Server {
         const input = organizationUrl(url.searchParams.get('name') ?? '');
         if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
         json(200, (await options.organization(input)) satisfies OrganizationAnswer);
+      } else if (url.pathname === '/api/organization/progress') {
+        const input = organizationUrl(url.searchParams.get('name') ?? '');
+        if (!parseOrganizationUrl(input)) throw new AtlasError(`Not a GitHub organization: ${input}`);
+        response.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
+        const line = (body: OrganizationProgressLine) => response.write(JSON.stringify(body) + '\n');
+        try {
+          line(await options.organization(input, (scanned, of) => line({ progress: { scanned, of } })));
+        } catch (error) {
+          line({ error: failure(error) });
+        }
+        response.end();
       } else json(404, { error: `Not found: ${url.pathname}` });
     } catch (error) {
-      if (error instanceof AtlasError) json(400, { error: error.message });
-      else json(500, { error: `Unexpected error: ${error instanceof Error ? error.message : String(error)}` });
+      json(error instanceof AtlasError ? 400 : 500, { error: failure(error) });
     }
   });
+}
+
+/** An AtlasError's message; anything else, as unexpected. */
+function failure(error: unknown): string {
+  if (error instanceof AtlasError) return error.message;
+  return `Unexpected error: ${error instanceof Error ? error.message : String(error)}`;
 }
 
 /**

@@ -257,3 +257,17 @@ test('an empty repository on its own → a clear message, exit code 1', async ()
   });
   await assert.rejects(openGitHub('https://github.com/JetBrains/empty', { fetch: empty }), { message: 'Repository is empty: https://github.com/JetBrains/empty' });
 });
+
+test('an organization: its progress, 0 of N once listed, then one more as each repository is done, a skipped one too', async () => {
+  for (const token of ['t', undefined]) {
+    const steps: [number, number][] = [];
+    const scanned = await scanOrganization('https://github.com/JetBrains', { fetch: replay(jetbrains()), token }, (done, of) => void steps.push([done, of]));
+    assert.equal(scanned.scanned, 5);
+    // With a token, the repositories the search found no SKILL.md in count at once; without, each through its tree.
+    assert.deepEqual(steps, [0, 1, 2, 3, 4, 5].map((done) => [done, 5]), `token: ${token}`);
+  }
+  // Nothing to scan: 0 of 0, and done.
+  const steps: [number, number][] = [];
+  await scanOrganization('https://github.com/JetBrains', { fetch: replay(jetbrains({ 'kotlin-fork': 'fork' })), token: 't' }, (done, of) => void steps.push([done, of]));
+  assert.deepEqual(steps, [[0, 0]]);
+});
