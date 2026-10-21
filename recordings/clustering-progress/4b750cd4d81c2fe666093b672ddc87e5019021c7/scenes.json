@@ -1,0 +1,223 @@
+{
+  "title": "A progress bar while haiku clusters the skills",
+  "head": "4b750cd4d81c2fe666093b672ddc87e5019021c7",
+  "base": "31e06c1d4564c758be922ab86d4f617a44b8219d",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 53,
+        "text": "while it runs, under the button: the spinner and `Listing <org>’s repositories…`, then `Scanned N of M repositories` and the progress bar, as the organization's own scan shows them"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "The organization scanned again, as its own scan shows it: “Scanned 3 of 5 repositories” and the repositories’ bar",
+          "start": 6.384
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 54,
+        "text": "then `Clustering N skills with haiku…` and a **progress bar** of the skills, in the repositories' bar's place, from 0"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "Then haiku: “Clustering 7 skills with haiku…”, and a bar of the skills from 0 in the repositories’ bar’s place",
+          "start": 10.95
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 55,
+        "text": "as the model's answer streams, `Clustered K of N skills with haiku…`, the bar moving on with each skill it puts in a cluster"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "The answer so far, “[3, 5”: 3 is whole, 5 may still grow; “Clustered 1 of 7 skills with haiku…”",
+          "start": 14.515
+        },
+        {
+          "index": 7,
+          "caption": "The answer: 7 skills in 2 clusters, the bar gone, the button enabled again",
+          "start": 20.786
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 56,
+        "text": "the same spinner throughout"
+      },
+      "scenes": [
+        {
+          "index": 6,
+          "caption": "All 7 placed: the bar full, and the same spinner turning since clustering began",
+          "start": 18.667
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 56,
+        "text": "the button disabled"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan JetBrains, then Cluster skills: “Listing JetBrains’s repositories…”, the button disabled",
+          "start": 0.948
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 64,
+        "text": "The model: **haiku**, through Claude Code on the server: `claude -p --model haiku --output-format stream-json --verbose --include-partial-messages`, no session kept"
+      },
+      "scenes": [],
+      "notShown": "the server’s claude -p has nothing on screen; tests/organization-clusters.test.ts checks its arguments"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 65,
+        "text": "the answer, its last `result` line"
+      },
+      "scenes": [],
+      "notShown": "claude’s raw output has nothing on screen; tests/organization-clusters.test.ts reads it streamed"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 65,
+        "text": "`CLAUDE`, optional: another `claude` binary"
+      },
+      "scenes": [],
+      "notShown": "the server’s environment has nothing on screen; tests/organization-clusters.test.ts runs a fake claude"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 66,
+        "text": "How far the model is: each skill number in a `\"skills\"` list of the answer so far, once it is *whole* (a comma, a space or the `]` after it: `1` may be the start of `12`), counts the skills of its line, once"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "The answer so far, “[3, 5”: 3 is whole, 5 may still grow; “Clustered 1 of 7 skills with haiku…”",
+          "start": 14.515
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 67,
+        "text": "a number not in the list, or named again, does not"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Then “3, 5, 3, 9, 1, 2] … [7,”: build named again and 9, not in the list, do not count; 5 of 7",
+          "start": 16.584
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 91,
+        "text": "`GET /api/clusters/progress?name=<org | org/ | GitHub URL>` → the same, as NDJSON, one JSON a line, as it goes: `{ progress: { scanned, of } }` as the organization is scanned again"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen, only what the page makes of it; tests/organization-clusters.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 92,
+        "text": "`{ clustering }`, how many skills the model is asked about, unless there are none"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 93,
+        "text": "`{ clustered: { skills, of } }` each time the model's answer has put more of them in a cluster"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 93,
+        "text": "the last line, the answer of `/api/clusters`, or `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    }
+  ],
+  "before": {
+    "failed": "scene 3, \"Then haiku: “Clustering 7 skills with haiku…”, and a bar of the skills from 0 in the repositories’ bar’s place\": expect(locator).toHaveJSProperty(expected) failed\n\nLocator: locator('#clusters #clustering').getByRole('progressbar', { name: 'Skills clustered' })\nExpected: 0\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveJSProperty\" locator('#clusters #clustering').getByRole('progressbar', { name: 'Skills clustered' }) with timeout 5000ms\n  - waiting for locator('#clusters #clustering').getByRole('progressbar', { name: 'Skills clustered' })\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "7 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 24.2 s, 604 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 24.2 s, 605 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 21.8 s, 546 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.991"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.05 s, SSIM ≥ 0.997"
+    }
+  ]
+}

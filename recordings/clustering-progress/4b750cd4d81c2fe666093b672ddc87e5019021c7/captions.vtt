@@ -1,0 +1,29 @@
+WEBVTT
+
+1
+00:00:00.948 --> 00:00:06.384
+Scan JetBrains, then Cluster skills: “Listing JetBrains’s repositories…”, the button disabled
+
+2
+00:00:06.384 --> 00:00:10.950
+The organization scanned again, as its own scan shows it: “Scanned 3 of 5 repositories” and the repositories’ bar
+
+3
+00:00:10.950 --> 00:00:14.515
+Then haiku: “Clustering 7 skills with haiku…”, and a bar of the skills from 0 in the repositories’ bar’s place
+
+4
+00:00:14.515 --> 00:00:16.584
+The answer so far, “[3, 5”: 3 is whole, 5 may still grow; “Clustered 1 of 7 skills with haiku…”
+
+5
+00:00:16.584 --> 00:00:18.667
+Then “3, 5, 3, 9, 1, 2] … [7,”: build named again and 9, not in the list, do not count; 5 of 7
+
+6
+00:00:18.667 --> 00:00:20.786
+All 7 placed: the bar full, and the same spinner turning since clustering began
+
+7
+00:00:20.786 --> 00:00:22.858
+The answer: 7 skills in 2 clusters, the bar gone, the button enabled again
