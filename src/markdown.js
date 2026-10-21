@@ -185,6 +185,19 @@ const SPANS = new RegExp(
 // A bare URL, as on GitHub: at the start, or after a space, *, _, ~ or (; no _ in the last two parts of its domain.
 const BARE = /(?<![^\s*_~(])((?:https?:\/\/|www\.)(?:(?:[\w-]+\.)*[A-Za-z0-9-]+\.)?[A-Za-z0-9-]+(?![\w-]|\.[\w-])[^\s<\uE000-\uE002]*)/;
 
+// A run of tildes as long as the opening one (group 9), as GFM reads it: one before punctuation opens only after a space or
+// punctuation, and one after punctuation closes only before them, so in "~/bin, see https://example.edu/~jdoe" none does.
+const PUNCTUATION = '!-/:-@[-`{-}'; // ASCII punctuation, but ~
+const OPENS = String.raw`(?<!~)\9(?=[^\s~])(?:(?<=(?:^|[\s${PUNCTUATION}])~+)|(?![${PUNCTUATION}]))`;
+const CLOSES = String.raw`(?<=[^\s~])\9(?!~)(?!(?<=[${PUNCTUATION}]~+)[^\s${PUNCTUATION}~])`;
+// Struck-out text holds no run that opens or closes, but struck-out pieces inside it, as long, nested up to 3 deep: in
+// "Build takes ~2 min. Old step ~deprecated~." only "deprecated" is struck out. Each character starts at most one piece,
+// so it fails fast.
+const TEXT = String.raw`(?:\\[\s\S]|(?!${OPENS}|${CLOSES})[^\\])`;
+const LAST = String.raw`(?:[^\s~\\]|\\[^\s~])`;
+const STRUCK_TEXT = Array.from({ length: 3 }).reduce((inner) => String.raw`(?:${OPENS}${inner}${CLOSES}|${TEXT})*?${LAST}`, `${TEXT}*?${LAST}`);
+const STRUCK = String.raw`(?<!~)(~~?)(?=[^\s~])(?:(?<=(?:^|[\s${PUNCTUATION}])~+)|(?![${PUNCTUATION}]))(${STRUCK_TEXT})${CLOSES}`;
+
 // A link, not an image, nor an escaped `[`: a `!` or `\` right before it, after an even run of backslashes.
 const INNER_LINK = new RegExp(String.raw`(?<!(?<!\\)(?:\\\\)*[!\\])${LINK.source}`);
 
@@ -199,9 +212,8 @@ const INLINE = new RegExp(
     // on each side are text. Each character starts at most one piece, so text with no closing * fails fast.
     /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
     // 9, 10: struck out, as on GitHub: in one tilde or two, the closing run as long as the opening one; three or more are text,
-    // and an escaped ~ closes nothing. As GFM has it, a run before punctuation opens only after a space or punctuation, and
-    // one after punctuation closes only before them: in "~/bin, see https://example.edu/~jdoe" no tilde is struck out.
-    /(?<!~)(~~?)(?=[^\s~])(?:(?<=(?:^|[\s!-/:-@[-`{-}])~+)|(?![!-/:-@[-`{-}]))((?:\\[\s\S]|[^\\])*?(?:[^\s~\\]|\\[^\s~]))\9(?!~)(?!(?<=[!-/:-@[-`{-}]~+)[^\s!-/:-@[-`{-~])/,
+    // and an escaped ~ closes nothing; a closing run ends the nearest one that opens, as on GitHub.
+    STRUCK,
     /\\([!-/:-@[-`{-~])/, // 11: an escaped character
     // a hard line break, as on GitHub: a \ or two spaces at the end of a line; a run of spaces tried once, from its first
     /(?<! ) {2,}\n|\\\n/,
