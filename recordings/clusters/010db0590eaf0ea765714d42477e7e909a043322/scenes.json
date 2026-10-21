@@ -1,0 +1,169 @@
+{
+  "title": "Cluster the skills by shared words",
+  "head": "010db0590eaf0ea765714d42477e7e909a043322",
+  "base": "1fdb4ff33fca8cb7e33f80b7a18af237b46b285e",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 15,
+        "text": "The skills in **clusters**, by the words their *names* share, split at `-`, `_`, `.` and spaces, in any case: the word the most skills share makes the first cluster, with every skill that has it"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "build is in the most names, so it is first, with every skill that has it: gradle-build too",
+          "start": 7.712
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 16,
+        "text": "then the same among the skills left, while a word is shared by two of them"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "gradle-build is taken: of the skills left, only gradle-bump has gradle, so gradle is no cluster",
+          "start": 9.577
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 17,
+        "text": "a tie → the word first in the alphabet"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "java, kotlin, lint and test are each in 2 names: java, first in the alphabet, takes java-lint and java-test",
+          "start": 11.827
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 17,
+        "text": "the skills left → **Other**, last"
+      },
+      "scenes": [
+        {
+          "index": 6,
+          "caption": "commits and gradle-bump share no word left: Other, last",
+          "start": 13.699
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 18,
+        "text": "Each cluster under a heading, `<word> · N`, largest first, its skills by name"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Scan example/build: a heading over each cluster, build · 3, java · 2, kotlin · 2, Other · 2, each by name",
+          "start": 2.812
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 18,
+        "text": "↑ and ↓ move across them"
+      },
+      "scenes": [
+        {
+          "index": 7,
+          "caption": "↑ and ↓ move across the clusters: from build-docs, ↓ to gradle-build, ↓ to java-lint, ↑ back",
+          "start": 15.566
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 18,
+        "text": "the filter hides a cluster with no skill shown"
+      },
+      "scenes": [
+        {
+          "index": 8,
+          "caption": "Filter \"test\": only java-test and kotlin-test are left, so only java · 2 and kotlin · 2 show",
+          "start": 19.964
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 19,
+        "text": "no word shared → the plain list, no heading"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "example/fixture: code-style, commits, release-checklist share no word, so the plain list, no heading",
+          "start": 0.93
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 2, \"Scan example/build: a heading over each cluster, build · 3, java · 2, kotlin · 2, Other · 2, each by name\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#skills .cluster:visible h2')\nTimeout: 5000ms\n- Expected  - 6\n+ Received  + 1\n\n- Array [\n-   \"build · 3\",\n-   \"java · 2\",\n-   \"kotlin · 2\",\n-   \"Other · 2\",\n- ]\n+ Array []\n\nCall log:\n  - Expect \"toHaveText\" locator('#skills .cluster:visible h2') with timeout 5000ms\n  - waiting for locator('#skills .cluster:visible h2')\n    14 × locator resolved to 0 elements\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "8 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 24.3 s, 608 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 24.2 s, 606 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 14.1 s, 352 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.987"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.984"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "SSIM ≥ 1.000"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.08 s, SSIM ≥ 0.995"
+    }
+  ]
+}
