@@ -1,0 +1,339 @@
+{
+  "title": "Cluster an organization’s skills from its one scan",
+  "head": "31e06c1d4564c758be922ab86d4f617a44b8219d",
+  "base": "31e06c1d4564c758be922ab86d4f617a44b8219d",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 46,
+        "text": "On the right, the totals, and `Pick a repository to see its skills.`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan the organization JetBrains: the totals and its repositories, the Scan button enabled again",
+          "start": 0.947
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 46,
+        "text": "then, unless there are no skills, its clusters, which start by themselves: [an organization’s clusters](#an-organizations-clusters)"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Its clusters start by themselves: “Clustering 7 skills with haiku…”, no button to press",
+          "start": 11.747
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 53,
+        "text": "Once the organization is scanned, its skills are grouped by theme by a small model, **at once**, from that same scan: the organization is not scanned again"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "7 skills in 3 clusters, from that one scan: the page asked the server once, the organization not scanned again",
+          "start": 13.057
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 54,
+        "text": "its repositories shown meanwhile, the Scan button enabled again"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan the organization JetBrains: the totals and its repositories, the Scan button enabled again",
+          "start": 0.947
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 55,
+        "text": "While it runs, under the totals: the spinner and `Clustering N skills with haiku…`"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Its clusters start by themselves: “Clustering 7 skills with haiku…”, no button to press",
+          "start": 11.747
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 55,
+        "text": "a new scan, or home, drops the answer, and stops the model"
+      },
+      "scenes": [
+        {
+          "index": 9,
+          "caption": "Scan it again, then Skill Atlas while haiku clusters: home, the answer dropped",
+          "start": 40.179
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 57,
+        "text": "A failure → the clear message, and a **Cluster skills** button, to try again: nothing is stored, so the organization scanned again"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Scan it again, claude not logged in: the clear message under the totals, and Cluster skills to try again",
+          "start": 15.85
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 58,
+        "text": "while it runs, under the button: the spinner and `Listing <org>’s repositories…`, then `Scanned N of M repositories` and the progress bar, as the organization's own scan shows them"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Cluster skills: the organization scanned again, “Listing JetBrains’s repositories…”, the button disabled",
+          "start": 29.113
+        },
+        {
+          "index": 6,
+          "caption": "Its progress, as the organization’s own scan shows it: “Scanned 3 of 5 repositories” and the bar",
+          "start": 31.374
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 59,
+        "text": "then `Clustering N skills with haiku…`"
+      },
+      "scenes": [
+        {
+          "index": 7,
+          "caption": "Then haiku: “Clustering 7 skills with haiku…”",
+          "start": 34.969
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 59,
+        "text": "the button disabled"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Cluster skills: the organization scanned again, “Listing JetBrains’s repositories…”, the button disabled",
+          "start": 29.113
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 60,
+        "text": "the clusters come → the button hidden again"
+      },
+      "scenes": [
+        {
+          "index": 8,
+          "caption": "The clusters come: the Cluster skills button hidden again",
+          "start": 38.053
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 61,
+        "text": "Under the totals, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "7 skills in 3 clusters, from that one scan: the page asked the server once, the organization not scanned again",
+          "start": 13.057
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 61,
+        "text": "its skills by **name**, each linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "7 skills in 3 clusters, from that one scan: the page asked the server once, the organization not scanned again",
+          "start": 13.057
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 76,
+        "text": "No `claude`, an error from it (not logged in, …), or an answer that is not the clusters → the clear message, under the totals"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Scan it again, claude not logged in: the clear message under the totals, and Cluster skills to try again",
+          "start": 15.85
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 87,
+        "text": "the last line, the answer of `/api/organization`, or `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/web.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 88,
+        "text": "not an organization → status 400, `{ error }`, no line"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/web.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 91,
+        "text": "`GET /api/clusters/progress?name=<org | org/ | GitHub URL>` → the same, as NDJSON, one JSON a line, as it goes: `{ progress: { scanned, of } }` as the organization is scanned"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen, only what the page makes of it; tests/organization-clusters.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 92,
+        "text": "`{ scan }`, the answer of `/api/organization`, once it is scanned"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 92,
+        "text": "`{ clustering }`, how many skills the model is asked about, unless there are none"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 93,
+        "text": "the last line, the answer of `/api/clusters`, or `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 93,
+        "text": "no model on the server → `{ error }` after `{ scan }`"
+      },
+      "scenes": [],
+      "notShown": "every scene here has an ask; tests/organization-clusters.test.ts and tests/progress.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 94,
+        "text": "not an organization → status 400, `{ error }`, as above"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen; tests/organization-clusters.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 94,
+        "text": "what the page reads for an organization"
+      },
+      "scenes": [],
+      "notShown": "the stream has nothing on screen, only what the page makes of it"
+    }
+  ],
+  "before": {
+    "failed": "scene 2, \"Its clusters start by themselves: “Clustering 7 skills with haiku…”, no button to press\": expect(locator).toHaveText(expected) failed\n\nLocator: locator('#clusters #clustering')\nExpected: \"Clustering 7 skills with haiku…\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" locator('#clusters #clustering') with timeout 5000ms\n  - waiting for locator('#clusters #clustering')\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "9 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 50.2 s, 1254 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 49.9 s, 1248 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 13.0 s, 326 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.993"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7, 8, 9"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.991"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7, 8, 9"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.08 s, SSIM ≥ 0.997"
+    }
+  ]
+}
