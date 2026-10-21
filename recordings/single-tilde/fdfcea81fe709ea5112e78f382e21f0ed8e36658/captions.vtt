@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.966 --> 00:00:03.033
+code-style's SKILL.md says "Use ~old~ new names.", then "Use ~~old~~ new names.": "old" struck out each time, no tilde left
+
+2
+00:00:03.033 --> 00:00:05.023
+"~a~~" and "~~a~": the closing tildes are not as many as the opening ones, so it is text
+
+3
+00:00:05.023 --> 00:00:07.006
+"~~~a~~~", "~ a~" and "\~a~" are text: three tildes, a space inside, an escaped tilde
