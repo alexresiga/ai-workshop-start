@@ -1,0 +1,33 @@
+WEBVTT
+
+1
+00:00:00.922 --> 00:00:02.817
+example/fixture: code-style, commits, release-checklist share no word, so the plain list, no heading
+
+2
+00:00:02.817 --> 00:00:07.697
+Scan example/build: a heading over each cluster, build · 3, java · 2, kotlin · 2, Other · 2, each by name
+
+3
+00:00:07.697 --> 00:00:09.580
+build is in the most names, so it is first, with every skill that has it: gradle-build too
+
+4
+00:00:09.580 --> 00:00:11.843
+gradle-build is taken: of the skills left, only gradle-bump has gradle, so gradle is no cluster
+
+5
+00:00:11.843 --> 00:00:13.722
+java, kotlin, lint and test are each in 2 names: java, first in the alphabet, takes java-lint and java-test
+
+6
+00:00:13.722 --> 00:00:15.593
+commits and gradle-bump share no word left: Other, last
+
+7
+00:00:15.593 --> 00:00:19.992
+↑ and ↓ move across the clusters: from build-docs, ↓ to gradle-build, ↓ to java-lint, ↑ back
+
+8
+00:00:19.992 --> 00:00:22.815
+Filter "test": only java-test and kotlin-test are left, so only java · 2 and kotlin · 2 show
