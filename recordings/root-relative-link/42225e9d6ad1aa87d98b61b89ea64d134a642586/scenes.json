@@ -1,0 +1,99 @@
+{
+  "title": "A link starting with / opens from the repository root",
+  "head": "42225e9d6ad1aa87d98b61b89ea64d134a642586",
+  "base": "2e847596c370060b2922f8cfef8b575c68b2be29",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "Links in the body resolve next to the SKILL.md on GitHub"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "\"the notes\" → notes.md: next to code-style's SKILL.md, in .github/skills/code-style/",
+          "start": 4.774
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "one starting with a single `/`, from the repository's root at the scanned commit, as on GitHub: `/docs/guide.md` is `https://github.com/<owner>/<repo>/blob/<commit>/docs/guide.md`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "\"the guide\" → /docs/guide.md: docs/guide.md in example/fixture, at the scanned commit",
+          "start": 0.981
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 44,
+        "text": "only http, https and mailto links"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "A javascript: link is plain text; https and mailto links stay links",
+          "start": 7.704
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"\"the guide\" → /docs/guide.md: docs/guide.md in example/fixture, at the scanned commit\": expect(locator).toHaveAttribute(expected) failed\n\nLocator:  locator('#detail .markdown a').filter({ hasText: 'the guide' })\nExpected: \"https://github.com/example/fixture/blob/0123456789abcdef0123456789abcdef01234567/docs/guide.md\"\nReceived: \"https://github.com/docs/guide.md\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveAttribute\" locator('#detail .markdown a').filter({ hasText: 'the guide' }) with timeout 5000ms\n  - waiting for locator('#detail .markdown a').filter({ hasText: 'the guide' })\n    14 × locator resolved to <a rel=\"noopener\" target=\"_blank\" href=\"https://github.com/docs/guide.md\">the guide</a>\n       - unexpected value \"https://github.com/docs/guide.md\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "3 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.8 s, 270 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.8 s, 271 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 9.2 s, 231 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.987"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.14 s, SSIM ≥ 0.996"
+    }
+  ]
+}

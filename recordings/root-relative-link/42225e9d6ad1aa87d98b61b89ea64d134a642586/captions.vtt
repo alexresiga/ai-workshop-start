@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.981 --> 00:00:04.774
+"the guide" → /docs/guide.md: docs/guide.md in example/fixture, at the scanned commit
+
+2
+00:00:04.774 --> 00:00:07.704
+"the notes" → notes.md: next to code-style's SKILL.md, in .github/skills/code-style/
+
+3
+00:00:07.704 --> 00:00:10.588
+A javascript: link is plain text; https and mailto links stay links
