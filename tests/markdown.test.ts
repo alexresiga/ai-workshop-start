@@ -97,6 +97,11 @@ test("a link's text may hold balanced brackets, as on GitHub; an unbalanced [ is
   // A link in a link's text: only the inner one is a link; an image in one is still fine.
   assert.deepEqual(inline('[a [b](u) c](v)'), ['[a ', ['a', { href: 'u' }, 'b'], ' c](v)']);
   assert.deepEqual(inline('[![logo](l.png)](u)'), [['a', { href: 'u' }, ['a', { href: 'l.png' }, 'logo']]]);
+  // An escaped backslash or ! before the inner link escapes neither its [ nor makes it an image.
+  assert.deepEqual(inline('[a \\\\[b](u) c](v)'), ['[a \\', ['a', { href: 'u' }, 'b'], ' c](v)']);
+  assert.deepEqual(inline('[a \\![b](u) c](v)'), ['[a !', ['a', { href: 'u' }, 'b'], ' c](v)']);
+  assert.deepEqual(inline('[a \\[b](u) c](v)'), [['a', { href: 'u' }, 'a [b'], ' c](v)']);
+  assert.deepEqual(inline('[a \\\\![b](u) c](v)'), [['a', { href: 'v' }, 'a \\', ['a', { href: 'u' }, 'b'], ' c']]);
   // A backtick in the destination or title of a link with brackets in its text is still the link's.
   assert.deepEqual(inline('[the [beta] guide](u "it`s") and `x`'), [['a', { href: 'u' }, 'the [beta] guide'], ' and ', ['code', {}, 'x']]);
   // A bracket in a code span in the text needs no partner.
