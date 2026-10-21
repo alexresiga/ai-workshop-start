@@ -1,0 +1,22 @@
+{
+  "title": "\"**Pass `**kwargs` through**\" in a SKILL.md loses its code: the bold ends inside the backticks",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … code, … emphasis\", as on GitHub, where a code span binds tighter than emphasis. \"**Pass `**kwargs` through**\" is \"Pass **kwargs through\" in bold, with `**kwargs` as code; `markdown.js` closes the bold at the `**` inside the backticks.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Pass **kwargs through\", in bold, **kwargs as code",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Pass **kwargs through\"\nReceived: \"Pass `kwargs` through**\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 260 frames"
+    }
+  ]
+}
