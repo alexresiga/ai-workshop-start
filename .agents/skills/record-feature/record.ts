@@ -36,8 +36,8 @@ const SHOT = 500;
 const LIMITS = { duration: 60, frame: 0.9, baseline: 0.98, rerun: 0.98, drift: 0.5 };
 
 type Options = { scenes: string; base: string; head?: string; update: boolean; list: boolean };
-type Run = { video: string; timings: Timing[]; shots: { path: string; at: number }[]; failed?: string };
-type Check = { name: string; ok: boolean; detail: string };
+export type Run = { video: string; timings: Timing[]; shots: { path: string; at: number }[]; failed?: string };
+export type Check = { name: string; ok: boolean; detail: string };
 
 const KEYS: Record<string, string> = { Escape: 'Esc', ArrowDown: '↓', ArrowUp: '↑', ArrowLeft: '←', ArrowRight: '→', Enter: '⏎', Tab: '⇥' };
 
@@ -103,7 +103,7 @@ export async function serve(root: string, ask: Ask | undefined) {
 }
 
 /** Records the scenes against `root` into `dir`, up to the first that fails: the video, each scene's timing and end screenshot, and the trace. */
-async function record(root: string, scenes: Scene[], scheme: 'light' | 'dark', dir: string, trace: string, ask?: Ask): Promise<Run> {
+export async function record(root: string, scenes: Scene[], scheme: 'light' | 'dark', dir: string, trace: string, ask?: Ask): Promise<Run> {
   mkdirSync(dir, { recursive: true });
   const server = await serve(root, ask);
   const browser = await chromium.launch();
@@ -169,13 +169,13 @@ function checkout(repository: string, ref: string): { root: string; remove(): vo
   };
 }
 
-function ffmpeg(...args: string[]) {
+export function ffmpeg(...args: string[]) {
   const result = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`ffmpeg ${args.join(' ')}: ${result.stderr}`);
 }
 
 /** The video as H.264 with the captions as a subtitle track and a chapter for each scene. */
-function encode(webm: string, mp4: string, title: string, timings: Timing[]) {
+export function encode(webm: string, mp4: string, title: string, timings: Timing[]) {
   const vtt = `${mp4}.vtt`;
   const chapters = `${mp4}.chapters`;
   writeFileSync(vtt, webvtt(timings));
@@ -199,7 +199,7 @@ function ssim(a: string, b: string): number {
   return Number(all[1]);
 }
 
-function probe(video: string): Check {
+export function probe(video: string): Check {
   const result = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-count_packets', '-show_entries',
     'stream=width,height,nb_read_packets:format=duration', '-of', 'json', video], { encoding: 'utf8' });
   const { streams: [stream], format } = JSON.parse(result.stdout);
