@@ -41,7 +41,7 @@ async function slack(t: TestContext, handlers: Record<string, Handler>) {
 
 function ask(args: string[], env: Record<string, string | undefined>) {
   const child = spawn(process.execPath, [ASK, ...args], {
-    env: { PATH: process.env.PATH, SLACK_BOT_TOKEN: 'xoxb-test', CHANNEL_ID: 'C1', ...env },
+    env: { PATH: process.env.PATH, SLACK_BOT_TOKEN: 'xoxb-test', SLACK_CHANNEL_ID: 'C1', ...env },
   });
   let stdout = '';
   let stderr = '';
@@ -102,9 +102,43 @@ test('each reply read is marked with a funny emoji reaction, one from REACTIONS'
   assert.doesNotMatch(run.stderr, /warning/);
 });
 
-test('a reaction that fails, no reactions:write scope, is a warning: the answer stands', async (t) => {
-  const { api } = await slack(t, {
+test('reactions Slack refuses, no reactions:write scope: a warning each, and their funny emojis in one thread message', async (t) => {
+  const { api, calls } = await slack(t, {
     'chat.postMessage': posted,
+    'chat.getPermalink': permalink,
+    'conversations.replies': thread(
+      { ts: '1700000002.000000', user: 'U1', text: 'yes' },
+      { ts: '1700000003.000000', user: 'U2', text: 'and keep the filter' },
+      { ts: '1700000004.000000', user: 'U3', text: 'agreed' },
+    ),
+    'reactions.add': (body) => ({ body: body.timestamp === '1700000003.000000' ? { ok: true } : { ok: false, error: 'missing_scope' } }),
+  });
+  const run = await ask([QUESTION, ...FAST], { SLACK_API: api });
+  assert.equal(run.code, 0, run.stderr);
+  assert.equal(run.stdout, 'U1: yes\nU2: and keep the filter\nU3: agreed\n');
+  assert.match(run.stderr, /^warning: could not mark the reply 1700000002\.000000 as read: missing_scope$/m);
+  assert.match(run.stderr, /^warning: could not mark the reply 1700000004\.000000 as read: missing_scope$/m);
+  assert.doesNotMatch(run.stderr, /1700000003/);
+  const refused = calls.filter((c) => c.method === 'reactions.add' && c.body.timestamp !== '1700000003.000000').map((c) => `:${c.body.name}:`);
+  const receipts = calls.filter((c) => c.method === 'chat.postMessage').slice(1);
+  assert.deepEqual(receipts.map((c) => c.body), [{ channel: 'C1', thread_ts: TS, text: `Read, thanks ${refused.join(' ')}` }]);
+});
+
+test('every reaction taken: no read receipt in the thread', async (t) => {
+  const { api, calls } = await slack(t, {
+    'chat.postMessage': posted,
+    'chat.getPermalink': permalink,
+    'conversations.replies': thread({ ts: '1700000002.000000', user: 'U1', text: 'yes' }),
+    'reactions.add': () => ({ body: { ok: true } }),
+  });
+  const run = await ask([QUESTION, ...FAST], { SLACK_API: api });
+  assert.equal(run.code, 0, run.stderr);
+  assert.equal(calls.filter((c) => c.method === 'chat.postMessage').length, 1);
+});
+
+test('a read receipt Slack refuses too is a warning: the answer stands', async (t) => {
+  const { api } = await slack(t, {
+    'chat.postMessage': (body, nth) => (nth === 0 ? posted(body, nth) : { body: { ok: false, error: 'not_in_channel' } }),
     'chat.getPermalink': permalink,
     'conversations.replies': thread({ ts: '1700000002.000000', user: 'U1', text: 'yes' }),
     'reactions.add': () => ({ body: { ok: false, error: 'missing_scope' } }),
@@ -112,7 +146,7 @@ test('a reaction that fails, no reactions:write scope, is a warning: the answer 
   const run = await ask([QUESTION, ...FAST], { SLACK_API: api });
   assert.equal(run.code, 0, run.stderr);
   assert.equal(run.stdout, 'U1: yes\n');
-  assert.match(run.stderr, /^warning: could not mark the reply 1700000002\.000000 as read: missing_scope$/m);
+  assert.match(run.stderr, /^warning: could not post the read receipt in the thread: not_in_channel$/m);
 });
 
 test('it waits until the first reply, checking every --poll', async (t) => {
@@ -193,7 +227,8 @@ for (const [name, args, env, message] of [
   ['a missing --poll', [QUESTION, '--poll'], {}, /^--poll needs a positive number$/m],
   ['an unknown option', [QUESTION, '--channel', 'C2'], {}, /^unknown option: --channel$/m],
   ['no SLACK_BOT_TOKEN', [QUESTION], { SLACK_BOT_TOKEN: '' }, /^SLACK_BOT_TOKEN is not set/m],
-  ['no CHANNEL_ID', [QUESTION], { CHANNEL_ID: undefined }, /^CHANNEL_ID is not set/m],
+  ['no SLACK_CHANNEL_ID', [QUESTION], { SLACK_CHANNEL_ID: undefined }, /^SLACK_CHANNEL_ID is not set/m],
+  ['only the old CHANNEL_ID', [QUESTION], { SLACK_CHANNEL_ID: undefined, CHANNEL_ID: 'C1' }, /^SLACK_CHANNEL_ID is not set/m],
 ] as const) {
   test(`${name}: a clear message, exit 2, nothing posted`, async (t) => {
     const { api, calls } = await slack(t, { 'chat.postMessage': posted });
