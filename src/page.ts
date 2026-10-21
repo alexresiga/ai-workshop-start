@@ -58,8 +58,9 @@ export const PAGE = `<!doctype html>
   #warnings { margin: 0; padding: .15rem 0 .2rem; list-style: none; }
   #warnings[hidden] { display: none; }
 
-  main { display: grid; grid-template-columns: minmax(16rem, 36%) 1fr; flex: 1; min-height: 0; }
-  aside { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--line); }
+  /* minmax(0, …) and min-width: 0: a long line in the list or the SKILL.md never widens the page past the window. */
+  main { display: grid; grid-template-columns: minmax(16rem, 36%) minmax(0, 1fr); flex: 1; min-height: 0; }
+  aside { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); }
   #filter { flex: none; margin: .9rem .9rem 0; font-family: var(--sans); }
   #filter[hidden] { display: none; }
   nav { flex: 1; overflow-y: auto; padding: .9rem; }
@@ -123,7 +124,7 @@ export const PAGE = `<!doctype html>
   .loading progress::-webkit-progress-value { background: var(--accent); transition: width .2s; }
   .loading progress::-moz-progress-bar { background: var(--accent); }
 
-  #detail { overflow-y: auto; padding: 1.6rem 2.2rem 3rem; }
+  #detail { min-width: 0; overflow-y: auto; padding: 1.6rem 2.2rem 3rem; }
   #detail:empty { display: none; }
   .file { display: flex; align-items: baseline; gap: 1rem; font-family: var(--mono); }
   .file .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
@@ -151,6 +152,8 @@ export const PAGE = `<!doctype html>
   .markdown pre code { padding: 0; background: none; font-size: .9rem; }
   .markdown blockquote { padding-left: 1rem; color: var(--muted); border-left: 3px solid var(--line); }
   .markdown hr { border: 0; border-top: 1px solid var(--line); margin: 1.5rem 0; }
+  .markdown .table { margin: 0 0 1rem; overflow-x: auto; }
+  .markdown .table table { margin: 0; }
   .markdown table { border-collapse: collapse; }
   .markdown th, .markdown td { padding: .35rem .75rem; border: 1px solid var(--line); text-align: left; }
   .markdown .raw { white-space: pre-wrap; }
@@ -158,7 +161,7 @@ export const PAGE = `<!doctype html>
   @media (max-width: 50rem) {
     header { padding: .75rem 1rem; }
     form { order: 3; flex-basis: 100%; max-width: none; }
-    main { grid-template-columns: 1fr; grid-template-rows: minmax(8rem, 35%) 1fr; }
+    main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(8rem, 35%) 1fr; }
     aside { border-right: 0; border-bottom: 1px solid var(--line); }
     #detail { padding: 1.2rem 1rem 2rem; }
   }
@@ -678,7 +681,12 @@ export const PAGE = `<!doctype html>
       } catch {}
     }
     result.append(...children.map((child) => build(child, base)));
-    return result;
+    if (tag !== 'table') return result;
+    // A wide table scrolls in its own box, as code does, not the page.
+    const box = document.createElement('div');
+    box.className = 'table';
+    box.append(result);
+    return box;
   }
 
   // Up and down move through the skills the filter shows in open clusters, or through an organization's repositories.
