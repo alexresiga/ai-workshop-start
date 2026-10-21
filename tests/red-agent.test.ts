@@ -1,6 +1,6 @@
 // spec/red-agent.md: a bug's steps recorded against the fixture, twice, and filed as one issue with its video.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -135,7 +135,7 @@ function file({ dir, bin }: { dir: string; bin: string }, issues: { title: strin
   const run = spawnSync('bash', [FILE, '--dry-run', dir, ...args], {
     cwd: REPOSITORY,
     encoding: 'utf8',
-    env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, FAKE_ISSUES: JSON.stringify(issues) },
+    env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, FAKE_ISSUES: JSON.stringify(issues), SLACK_CHANNEL_ID: 'C9' },
   });
   return { ...run, calls: existsSync(join(bin, 'calls')) ? readFileSync(join(bin, 'calls'), 'utf8') : '' };
 }
@@ -152,6 +152,7 @@ test('filing: --dry-run prints what it would push and file, labelled "delegated 
   assert.ok(run.stdout.includes(`![preview](${media}/preview.gif)\n[Video](${media}/repro.mp4)\n\n---\nProduced by a test\n`), run.stdout);
   // Every open issue, matched by its title here: a search would read a `:` or `(` in the title as its syntax.
   assert.match(run.calls, /^issue list --repo alexresiga\/ai-workshop-start --state open --json title,url --limit 1000\n/);
+  assert.match(run.stdout, /would post it in Slack: C9\n$/);
   assert.doesNotMatch(run.calls, /issue create/);
 });
 
@@ -175,4 +176,63 @@ test('filing: no recording → listed, exit 1, nothing filed', (t) => {
   const run = spawnSync('bash', [FILE, '--dry-run', dir], { cwd: REPOSITORY, encoding: 'utf8' });
   assert.equal(run.status, 1);
   assert.match(run.stderr, /no recording: .*esc-filter\/out\/repro\.json/);
+});
+
+// Posting in Slack: announce.sh, against a local fake Slack API.
+const ANNOUNCE = fileURLToPath(new URL('../.agents/skills/red-agent/announce.sh', import.meta.url));
+const { createServer } = await import('node:http');
+
+/** A fake Slack that answers chat.postMessage with `answer`, and keeps what it was sent. */
+async function slack(t: { after(fn: () => void): void }, answer: object) {
+  const posts: { auth?: string; body: { channel: string; text: string } }[] = [];
+  const server = createServer((request, response) => {
+    let data = '';
+    request.on('data', (chunk) => (data += chunk));
+    request.on('end', () => {
+      if (request.url === '/chat.postMessage') posts.push({ auth: request.headers.authorization, body: JSON.parse(data) });
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify(answer));
+    });
+  });
+  await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+  t.after(() => server.close());
+  return { api: `http://127.0.0.1:${(server.address() as { port: number }).port}`, posts };
+}
+
+const announce = (env: Record<string, string>) =>
+  new Promise<{ status: number | null; stdout: string; stderr: string }>((done) => {
+    const child = spawn('bash', [ANNOUNCE, 'https://github.com/alexresiga/ai-workshop-start/issues/99', 'Esc <leaves> the pill & more'], {
+      env: { ...process.env, SLACK_BOT_TOKEN: '', SLACK_CHANNEL_ID: '', ...env },
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => (stdout += chunk));
+    child.stderr.on('data', (chunk) => (stderr += chunk));
+    child.on('close', (status) => done({ status, stdout, stderr }));
+  });
+
+test('posting in Slack: each filed issue, its link and its title, in SLACK_CHANNEL_ID', async (t) => {
+  const fake = await slack(t, { ok: true, ts: '1.2' });
+  const run = await announce({ SLACK_API: fake.api, SLACK_BOT_TOKEN: 'xoxb-test', SLACK_CHANNEL_ID: 'C123' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.deepEqual(fake.posts, [{
+    auth: 'Bearer xoxb-test',
+    body: { channel: 'C123', text: '🐞 The red agent filed a bug: <https://github.com/alexresiga/ai-workshop-start/issues/99|Esc &lt;leaves&gt; the pill &amp; more>' },
+  }]);
+  assert.equal(run.stdout, 'posted in Slack: https://github.com/alexresiga/ai-workshop-start/issues/99\n');
+});
+
+test('posting in Slack: no SLACK_BOT_TOKEN or SLACK_CHANNEL_ID → a warning, exit 0, nothing posted', async (t) => {
+  const fake = await slack(t, { ok: true });
+  const run = await announce({ SLACK_API: fake.api, SLACK_BOT_TOKEN: 'xoxb-test' });
+  assert.equal(run.status, 0);
+  assert.equal(run.stderr, 'warning: no SLACK_BOT_TOKEN or SLACK_CHANNEL_ID: not posted in Slack\n');
+  assert.deepEqual(fake.posts, []);
+});
+
+test('posting in Slack: Slack refuses → its error as a warning, exit 0: the issue stands', async (t) => {
+  const fake = await slack(t, { ok: false, error: 'not_in_channel' });
+  const run = await announce({ SLACK_API: fake.api, SLACK_BOT_TOKEN: 'xoxb-test', SLACK_CHANNEL_ID: 'C123' });
+  assert.equal(run.status, 0);
+  assert.equal(run.stderr, 'warning: not posted in Slack: not_in_channel\n');
 });

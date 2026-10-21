@@ -1,12 +1,12 @@
 ---
 name: red-agent
-description: Use when asked to break, attack, bug-hunt or QA this repo's web view, and to file what breaks as issues, one per bug, with steps and a video, labelled "delegated to AI".
+description: Use when asked to break, attack, bug-hunt or QA this repo's web view, and to file what breaks as issues, one per bug, with steps and a video, labelled "delegated to AI", each posted in Slack.
 ---
 
 # Red agent
 
 Break the web view (`./skill-atlas serve`), then file **one issue per bug**, each with its steps and a video, labelled
-`delegated to AI`, so the issue-to-pr automation fixes it. The video is **evidence that the bug exists**: its last step
+`delegated to AI`, so the issue-to-pr automation fixes it, and post each one in Slack. The video is **evidence that the bug exists**: its last step
 ends on a Playwright `expect` of what `spec/` promises, and that `expect` fails, in both runs. Contract: [spec/red-agent.md](../../../spec/red-agent.md).
 
 ## What a bug is
@@ -40,6 +40,9 @@ ends on a Playwright `expect` of what `spec/` promises, and that `expect` fails,
 5. **File it**: `bash .agents/skills/red-agent/file.sh --dry-run recordings/bugs/<slug>`, then without `--dry-run`.
    The second argument is a footer: put your signature there if an automation runs you. `file.sh` exits 1 with the URL
    when an open issue has the same title. Add a comment there if you have something new, and don't file it again.
+6. **Post it in Slack**: `file.sh` does this once the issue is filed, with `announce.sh`, in `SLACK_CHANNEL_ID`. If it warns
+   that nothing was posted, post the link yourself: `bash .agents/skills/red-agent/announce.sh <issue url> "<title>"`.
+   An issue filed by hand (below) is posted the same way.
 
 **At most 5 issues per run**, the most severe first: each one starts an issue-to-pr run.
 
@@ -84,5 +87,5 @@ export const steps: Step[] = [
 | An `expect` of what the page does now | An `expect` of what the spec says; the step fails while the bug is there |
 | Expected values computed with the code under test | Values from the spec, worked out by hand for the fixture |
 | A `timeout` so short the step fails anyway | Let the right state have time to show; the repro must also pass once fixed |
-| Filing without `file.sh` | `file.sh`: it publishes the video, checks for duplicates and adds the label |
+| Filing without `file.sh` | `file.sh`: it publishes the video, checks for duplicates, adds the label and posts it in Slack |
 | Fixing the bug | Only file it; the issue-to-pr automation fixes it |
