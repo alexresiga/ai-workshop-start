@@ -1,0 +1,22 @@
+{
+  "title": "`*Always **run** the tests*` in a SKILL.md shows stray stars: \"Always **run\" in italics, then \"* the tests*\"",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … emphasis\", as on GitHub. \"*Always **run** the tests*\" is \"Always run the tests\" in italics, \"run\" in bold too, no star left; `markdown.js` ends the emphasis at the first `*` of the closing `**`.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 2,
+    "caption": "It should read \"Always run the tests\", in italics, \"run\" in bold, no star",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Always run the tests\"\nReceived: \"Always **run* the tests*\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 260 frames"
+    }
+  ]
+}

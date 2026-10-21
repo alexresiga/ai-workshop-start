@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.949 --> 00:00:02.948
+code-style's SKILL.md: "*Always **run** the tests*"
+
+2
+00:00:02.948 --> 00:00:09.168
+✗ It should read "Always run the tests", in italics, "run" in bold, no star
