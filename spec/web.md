@@ -45,6 +45,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   `[![build](https://ci.example.com/badge.svg)](https://ci.example.com)` is "build", a link to `https://ci.example.com`
 - Emphasis may hold strong, as on GitHub: `*Always **run** the tests*` is the words in italics, `run` in bold too, no star left;
   a star with a space on each side is text in it: `*5 * 60 seconds*`
+- Text in one tilde or two is struck out, as on GitHub (GFM's strikethrough): "Use ~old~ new names." strikes out "old", no tilde left,
+  as `~~old~~` does; the closing tildes are as many as the opening ones, else it is text: `~a~~`; three or more, `~~~a~~~`, a tilde
+  with a space after the opening one or before the closing one, `~ a~`, or an escaped `\~` is text
 - A list item that starts with `[ ]` or `[x]` (or `[X]`), then a space and text, is a task list item, as on GitHub (GFM's task list items):
   a checkbox, unticked or ticked, that a click does not change, then the text alone, no bullet: "- [ ] Tag the release" is an
   unticked box and "Tag the release"; in a loose list, the box is in the item's first paragraph; `[ ]` with no text after it,
