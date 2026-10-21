@@ -168,7 +168,9 @@ function table(lines, start, out) {
 
 // A link's text: its brackets balanced, as on GitHub, nested up to 4 deep; an escaped one is text. It may hold a line break.
 const LABEL = Array.from({ length: 4 }).reduce((inner) => String.raw`(?:\\[\s\S]|[^[\]\\]|\[${inner}\])*`, String.raw`(?:\\[\s\S]|[^[\]\\])*`);
-const DESTINATION = String.raw`\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`;
+// A link's destination: in `<…>`, as CommonMark has it, spaces and parentheses too, but no `<` or `>`; else no space and
+// balanced parentheses. Its `<…>` is in the match, so a `<` with no `>` is no link.
+const DESTINATION = String.raw`\(\s*(<[^<>\n]*>|[^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)`;
 const LINK = new RegExp(String.raw`\[(${LABEL})\]${DESTINATION}`);
 
 // An email autolink's address, as CommonMark has it: `<kotlin-team@example.com>`.
@@ -178,7 +180,7 @@ const EMAIL = String.raw`[A-Za-z0-9.!#$%&'*+/=?^_\`{|}~-]+@${LABEL_PART}(?:\.${L
 // A code span binds tighter than the rest, as on GitHub; only an escape, an autolink, an email one, or a link's `](destination "title")`
 // after a `[`, is read before it.
 const SPANS = new RegExp(
-  String.raw`\\[!-/:-@[-\`{-~]|<https?:\/\/[^\s<>]+>|<${EMAIL}>|(?<=\[${LABEL})\]${DESTINATION.replace('<?(', '<?(?:')}|(\`+)([^\`]|[^\`][\s\S]*?[^\`])\1(?!\`)`,
+  String.raw`\\[!-/:-@[-\`{-~]|<https?:\/\/[^\s<>]+>|<${EMAIL}>|(?<=\[${LABEL})\]${DESTINATION.replace('\\s*(', '\\s*(?:')}|(\`+)([^\`]|[^\`][\s\S]*?[^\`])\1(?!\`)`,
   'g',
 );
 
@@ -250,7 +252,7 @@ export function inline(text, inLink = false) {
     // Each part as the text has it, code spans and all.
     const [, label, href, autolink, email, strong1, strong2, em1, em2, del, escaped, bare] = match.indices.map((at) => at && text.slice(...at));
     if (codes.has(match.index)) push(['code', {}, codes.get(match.index)]);
-    else if (label !== undefined) push(['a', { href: decode(href) }, ...inline(label, true)]);
+    else if (label !== undefined) push(['a', { href: decode(href.replace(/^<([\s\S]*)>$/, '$1')) }, ...inline(label, true)]);
     else if (autolink !== undefined) push(['a', { href: decode(autolink) }, decode(autolink)]);
     else if (email !== undefined) push(['a', { href: `mailto:${email}` }, email]);
     else if (strong1 !== undefined || strong2 !== undefined) push(['strong', {}, ...inline(strong1 ?? strong2, inLink)]);

@@ -116,6 +116,16 @@ test("a link's text may hold balanced brackets, as on GitHub; an unbalanced [ is
   assert.deepEqual(inline('[a `[` b](u)'), [['a', { href: 'u' }, 'a ', ['code', {}, '['], ' b']]);
 });
 
+test("a link's destination in <…> may hold spaces and parentheses, as on GitHub; a < with no > is text", () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('Read [the guide](<docs/my guide.md>).'), ['Read ', ['a', { href: 'docs/my guide.md' }, 'the guide'], '.']);
+  assert.deepEqual(inline('[a](<b (c)> "t")'), [['a', { href: 'b (c)' }, 'a']]);
+  assert.deepEqual(inline('[a](<b &amp; c>)'), [['a', { href: 'b & c' }, 'a']]);
+  assert.deepEqual(inline('[a](<b c>) `x`'), [['a', { href: 'b c' }, 'a'], ' ', ['code', {}, 'x']]);
+  assert.deepEqual(inline('[a](<b c)'), ['[a](<b c)']);
+  assert.deepEqual(inline('[a](<b>c>)'), ['[a](<b>c>)']);
+});
+
 test('a bare http, https or www. URL is a link, without its trailing punctuation, as on GitHub', () => {
   const inline = (text: string) => markdown(text)[0].slice(2);
   const link = (href: string, text = href) => ['a', { href }, text];
