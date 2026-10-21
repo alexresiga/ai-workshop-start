@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.936 --> 00:00:02.948
+code-style's SKILL.md: a paragraph whose second line starts "2024."
+
+2
+00:00:02.948 --> 00:00:09.167
+✗ It should be one paragraph, "2024." in it, and no list

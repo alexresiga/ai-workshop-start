@@ -1,0 +1,22 @@
+{
+  "title": "A line starting \"2024.\" inside a paragraph becomes a numbered list item, and the year is lost",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: headings, paragraphs, lists, …\", as on GitHub. In GitHub Markdown only a list starting at 1 can interrupt a paragraph, so \"The format changed in\\n2024. Use the new one.\" is one paragraph; `markdown.js` ends the paragraph at \"2024.\" and starts a list, so \"2024.\" disappears.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 2,
+    "caption": "It should be one paragraph, \"2024.\" in it, and no list",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p').first()\nExpected: \"The format changed in 2024. Use the new one.\"\nReceived: \"The format changed in\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 259 frames"
+    }
+  ]
+}
