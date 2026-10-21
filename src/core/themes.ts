@@ -3,8 +3,8 @@
 import { AtlasError } from './errors.ts';
 import { firstSentence, sortSkills, type Skill } from './model.ts';
 
-/** Asks the model; resolves to its answer, as text. */
-export type Ask = (prompt: string) => Promise<string>;
+/** Asks the model; resolves to its answer, as text. The signal aborts when no one waits for it any more. */
+export type Ask = (prompt: string, signal?: AbortSignal) => Promise<string>;
 
 export type Cluster = { theme: string; skills: Skill[] };
 
@@ -24,10 +24,10 @@ type Entry = { line: string; skills: Skill[] };
  * `Other`; one it names twice stays in the first cluster; a number not in the list is ignored. The
  * clusters with most skills first, then by theme; `Other` last. No skills → no question, no clusters.
  */
-export async function clusterSkills(skills: Skill[], ask: Ask): Promise<ClusterResult> {
+export async function clusterSkills(skills: Skill[], ask: Ask, signal?: AbortSignal): Promise<ClusterResult> {
   if (skills.length === 0) return { clusters: [], warnings: [] };
   const list = entries(skills);
-  const answer = parseAnswer(await ask(prompt(list)));
+  const answer = parseAnswer(await ask(prompt(list), signal));
   const placed = new Set<number>();
   const unknown: number[] = [];
   const twice: Entry[] = [];

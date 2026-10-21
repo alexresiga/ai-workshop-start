@@ -14,16 +14,23 @@ import { replay } from '../src/core/replay.ts';
 import { createWebServer, type ClustersAnswer } from '../src/web.ts';
 import { organizationAnswers, ORGANIZATION, skill, type Listed } from './helpers.ts';
 
-/** A `claude` that saves its arguments and stdin to `asked.json`, then prints `answer.txt` and exits with `exit.txt`. */
+/**
+ * A `claude` that saves its pid, working directory and what that holds to `started.json`, its arguments and stdin to
+ * `asked.json`; waits `wait.txt` milliseconds, if there is one; then prints `answer.txt` and exits with `exit.txt`.
+ */
 const FAKE = `#!/usr/bin/env node
-const { readFileSync, writeFileSync } = require('node:fs');
+const { existsSync, readdirSync, readFileSync, writeFileSync } = require('node:fs');
 const { join } = require('node:path');
+const here = (name) => join(__dirname, name);
+writeFileSync(here('started.json'), JSON.stringify({ pid: process.pid, cwd: process.cwd(), files: readdirSync(process.cwd()) }));
 let stdin = '';
 process.stdin.on('data', (chunk) => (stdin += chunk));
 process.stdin.on('end', () => {
-  writeFileSync(join(__dirname, 'asked.json'), JSON.stringify({ args: process.argv.slice(2), stdin }));
-  process.stdout.write(readFileSync(join(__dirname, 'answer.txt'), 'utf8'));
-  process.exitCode = Number(readFileSync(join(__dirname, 'exit.txt'), 'utf8'));
+  writeFileSync(here('asked.json'), JSON.stringify({ args: process.argv.slice(2), stdin }));
+  setTimeout(() => {
+    process.stdout.write(readFileSync(here('answer.txt'), 'utf8'));
+    process.exitCode = Number(readFileSync(here('exit.txt'), 'utf8'));
+  }, existsSync(here('wait.txt')) ? Number(readFileSync(here('wait.txt'), 'utf8')) : 0);
 });
 `;
 
@@ -33,8 +40,8 @@ const reply = (result: string, isError = false) => JSON.stringify({ type: 'resul
 /** The model's JSON: each theme and its skill numbers. */
 const clusters = (themes: [string, number[]][]) => JSON.stringify({ clusters: themes.map(([theme, skills]) => ({ theme, skills })) });
 
-/** A fake `claude` that prints `stdout` and exits with `exit`; what it was asked, once it ran. */
-function fakeClaude(t: TestContext, stdout: string, exit = 0) {
+/** A fake `claude` that prints `stdout` and exits with `exit`, after `wait` ms; what it was asked, once it ran. */
+function fakeClaude(t: TestContext, stdout: string, exit = 0, wait?: number) {
   const dir = mkdtempSync(join(tmpdir(), 'skill-atlas-claude-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const binary = join(dir, 'claude.cjs');
@@ -42,11 +49,11 @@ function fakeClaude(t: TestContext, stdout: string, exit = 0) {
   chmodSync(binary, 0o755);
   writeFileSync(join(dir, 'answer.txt'), stdout);
   writeFileSync(join(dir, 'exit.txt'), String(exit));
-  const asked = () => {
-    const file = join(dir, 'asked.json');
-    return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as { args: string[]; stdin: string }) : undefined;
-  };
-  return { binary, asked };
+  if (wait !== undefined) writeFileSync(join(dir, 'wait.txt'), String(wait));
+  const read = <T>(name: string) => (existsSync(join(dir, name)) ? (JSON.parse(readFileSync(join(dir, name), 'utf8')) as T) : undefined);
+  const asked = () => read<{ args: string[]; stdin: string }>('asked.json');
+  const started = () => read<{ pid: number; cwd: string; files: string[] }>('started.json');
+  return { binary, asked, started };
 }
 
 /** The web view, GitHub answering for JetBrains' repositories, the model asked through `ask`. */
@@ -64,10 +71,10 @@ async function serve(t: { after(fn: () => void): void }, ask: Ask | undefined, r
 /** `GET /api/clusters?name=<name>`, with the fake `claude` printing `stdout`. */
 async function clustersFor(t: TestContext, stdout: string, { name = 'JetBrains', exit = 0, repositories = ORGANIZATION } = {}) {
   const claude = fakeClaude(t, stdout, exit);
-  const base = await serve(t, (prompt) => askClaude(prompt, claude.binary), repositories);
+  const base = await serve(t, (prompt, signal) => askClaude(prompt, { binary: claude.binary, signal }), repositories);
   const response = await fetch(`${base}/api/clusters?name=${encodeURIComponent(name)}`);
   const answer = (await response.json()) as ClustersAnswer & { error: string };
-  return { status: response.status, answer, asked: claude.asked() };
+  return { status: response.status, answer, asked: claude.asked(), started: claude.started() };
 }
 
 /** Each cluster's theme and its skills' names. */
@@ -110,9 +117,9 @@ test('clusters: most skills first, each with its skills by name, linked to its S
   } satisfies ClustersAnswer);
 });
 
-test('the model: haiku through claude -p, no tools, no session; each skill numbered by name on stdin, the answer as JSON', async (t) => {
+test('the model: haiku through claude -p, no session; each skill numbered by name on stdin, the answer as JSON', async (t) => {
   const { asked } = await clustersFor(t, reply(ANSWER));
-  assert.deepEqual(asked!.args, ['-p', '--model', 'haiku', '--output-format', 'json', '--no-session-persistence', '--tools', '']);
+  assert.deepEqual(asked!.args.slice(0, 6), ['-p', '--model', 'haiku', '--output-format', 'json', '--no-session-persistence']);
   assert.match(asked!.stdin, /\{"clusters": \[\{"theme": "<theme>", "skills": \[<skill numbers>\]\}\]\}/);
   assert.deepEqual(numbered(asked!.stdin), [
     '1. a — Run the a.',
@@ -123,6 +130,46 @@ test('the model: haiku through claude -p, no tools, no session; each skill numbe
     '6. release — Run the release.',
     '7. review — Run the review.',
   ]);
+});
+
+test('no tools: no built-in tool, no MCP server; in an empty directory of its own, removed after', async (t) => {
+  const { asked, started } = await clustersFor(t, reply(ANSWER));
+  assert.deepEqual(asked!.args.slice(6), ['--tools', '', '--strict-mcp-config', '--disallowedTools', 'mcp__*']);
+  assert.notEqual(started!.cwd, process.cwd());
+  assert.deepEqual(started!.files, []);
+  assert.equal(existsSync(started!.cwd), false);
+});
+
+/** Whether the process is still running. */
+const alive = (pid: number) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+test('more than the time allowed → claude stopped, the clear message, status 400', async (t) => {
+  const claude = fakeClaude(t, reply(ANSWER), 0, 60_000);
+  const base = await serve(t, (prompt) => askClaude(prompt, { binary: claude.binary, timeout: 300 }));
+  const response = await fetch(`${base}/api/clusters?name=JetBrains`);
+  assert.equal(response.status, 400);
+  assert.match(((await response.json()) as { error: string }).error, /claude\.cjs took too long to cluster the skills$/);
+  assert.equal(alive(claude.started()!.pid), false);
+});
+
+test('the page closed while it runs → claude stopped', async (t) => {
+  const claude = fakeClaude(t, reply(ANSWER), 0, 60_000);
+  const { promise: stopped, resolve: stop } = Promise.withResolvers<unknown>();
+  const base = await serve(t, (prompt, signal) => askClaude(prompt, { binary: claude.binary, signal }).catch((error) => (stop(error), '')));
+  const page = new AbortController();
+  const request = fetch(`${base}/api/clusters?name=JetBrains`, { signal: page.signal }).catch(() => undefined);
+  while (!claude.asked()) await new Promise((done) => setTimeout(done, 20));
+  page.abort();
+  await request;
+  assert.match(String(await stopped), /No one is waiting for the clusters/);
+  assert.equal(alive(claude.started()!.pid), false);
 });
 
 test('the question: the description’s first sentence, cut at 160 characters', async (t) => {
@@ -222,7 +269,7 @@ test('not an organization → status 400, the model not asked', async (t) => {
 const NO_CLAUDE = join(tmpdir(), 'skill-atlas-no-such-claude');
 
 test('no claude → the clear message, status 400', async (t) => {
-  const base = await serve(t, (prompt) => askClaude(prompt, NO_CLAUDE));
+  const base = await serve(t, (prompt) => askClaude(prompt, { binary: NO_CLAUDE }));
   const response = await fetch(`${base}/api/clusters?name=JetBrains`);
   assert.equal(response.status, 400);
   assert.deepEqual(await response.json(), {
@@ -317,7 +364,7 @@ browserTest('clustering again: the last answer’s warnings go, the scan’s sta
 });
 
 browserTest('a failure → the clear message, under the button, in the error color', async (t) => {
-  const page = await organizationPage(t, (prompt) => askClaude(prompt, NO_CLAUDE));
+  const page = await organizationPage(t, (prompt) => askClaude(prompt, { binary: NO_CLAUDE }));
   await page.getByRole('button', { name: 'Cluster skills' }).click();
   await expect(page.locator('#clusters .error')).toHaveText(
     `Cannot run ${NO_CLAUDE}: clustering needs Claude Code (claude) on the PATH, or CLAUDE set to it`,
