@@ -100,21 +100,15 @@ browserTest('an organization: Listing <org>’s repositories…, then Scanned N 
   await expect(page.locator('#button')).toHaveText('Scan');
 });
 
-browserTest('an organization: the page reads the progress, from 0 once listed, and the answer last', async (t) => {
+browserTest('an organization: the page reads /api/organization/progress, then shows the repositories', async (t) => {
   const page = await open(t);
-  const steps: string[] = [];
-  // The lines as the page reads them.
-  page.on('response', async (response) => {
-    if (response.url().includes('/api/organization/progress')) steps.push(await response.text());
-  });
+  // The lines themselves: tests/web.test.ts.
+  const asked = page.waitForRequest((request) => new URL(request.url()).pathname === '/api/organization/progress');
   await page.getByLabel('Repository or organization link').fill('JetBrains');
   await page.getByRole('button', { name: 'Scan' }).click();
+  assert.equal(new URL((await asked).url()).searchParams.get('name'), 'JetBrains');
   await expect(page.locator('#skills .name')).toHaveText(['JetBrains/idea', 'JetBrains/android', 'JetBrains/kotlin']);
-  await expect.poll(() => steps.length).toBe(1);
-  const lines = steps[0].trim().split('\n').map((line) => JSON.parse(line));
-  assert.deepEqual(lines[0], { progress: { scanned: 0, of: 5 } });
-  assert.deepEqual(lines.at(-2), { progress: { scanned: 5, of: 5 } });
-  assert.equal(lines.at(-1).organization.id, 'JetBrains');
+  await expect(page.locator('#loading')).toHaveCount(0);
 });
 
 browserTest('an organization that fails as it scans: its message, in the list, and no spinner', async (t) => {
