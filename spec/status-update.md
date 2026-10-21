@@ -20,6 +20,9 @@ and the issues resolved since then, posted in the Slack channel. The skill: [sta
 - Nothing merged or resolved → `🦗 Nothing merged or resolved in *<repo>* since <YYYY-MM-DD HH:MM> UTC. Quiet times! 😴`, still posted
 ## Posting
 - The message posted in `SLACK_CHANNEL_ID`, with the token, link previews off; `posted in Slack: <permalink>` on stdout, exit 0
+- Over 4,000 characters → several messages, in order, each at most 4,000, cut between lines, so Slack truncates none
+  (it cuts one over 40,000 and still answers `ok`); a `posted in Slack: <permalink>` line for each
 - `--dry-run` → the message on stdout, exit 0, nothing posted
 - GitHub refuses (a rate limit, a missing repository) → `GitHub answered <status> for <path>`, exit 1, nothing posted
-- Slack refuses (`not_in_channel`, `invalid_auth`, …) or is out of reach → its error, exit 1
+- Slack refuses (`not_in_channel`, `invalid_auth`, …) or is out of reach → its error, exit 1; for a message after the first,
+  with `, message <n> of <N>`, and the rest not posted
