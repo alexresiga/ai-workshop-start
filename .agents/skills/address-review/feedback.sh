@@ -10,9 +10,11 @@
 #   feedback.sh claim PR KEY        reply "On it"; exit 1 if another run got there first
 #   feedback.sh answer PR KEY TEXT  turn the claim into the answer
 #   feedback.sh note PR TEXT        post a comment that is not an answer
+#   feedback.sh ready PR            rebase on main and label the PR and its issues "ready to merge"
 set -euo pipefail
 
 repo='repos/alexresiga/ai-workshop-start'
+label='ready to merge'
 
 fetch() { # endpoint kind
   gh api --paginate "$repo/$1" --jq ".[] | {key: \"$2-\\(.id)\", id, author: .user.login,
@@ -37,6 +39,32 @@ edit() { # pr key id body
   local endpoint="issues/comments/$3"
   [[ $2 == line-* ]] && endpoint="pulls/comments/$3"
   gh api -X PATCH "$repo/$endpoint" -f body="$4" --jq .html_url
+}
+
+note() { # pr text
+  gh api -X POST "$repo/issues/$1/comments" -f body="$2
+
+<!-- agent: note -->" --jq .html_url
+}
+
+# A note, unless the PR already has the same one: each round of watching asks again.
+note_once() { # pr text
+  fetch "issues/$1/comments" x | jq -e --arg b "$2
+
+<!-- agent: note -->" 'select(.body == $b)' >/dev/null || note "$1" "$2" >/dev/null
+}
+
+# The label on the PR and on each issue it closes. Removing one that is not there is no error.
+labels() { # add|remove pr issues...
+  local how=$1 n
+  shift
+  for n in "$@"; do
+    if [[ $how == add ]]; then
+      gh api -X POST "$repo/issues/$n/labels" -f "labels[]=$label" >/dev/null
+    else
+      gh api -X DELETE "$repo/issues/$n/labels/${label// /%20}" >/dev/null 2>&1 || true
+    fi
+  done
 }
 
 case "${1:-}" in
@@ -73,12 +101,51 @@ case "${1:-}" in
 <!-- agent: $key -->"
     ;;
   note)
-    gh api -X POST "$repo/issues/$2/comments" -f body="$3
-
-<!-- agent: note -->" --jq .html_url
+    note "$2" "$3"
+    ;;
+  ready)
+    # Ready: nothing pending, rebased on the latest main, the tests pass, pushed. Then labelled.
+    pr=$2
+    info=$(gh pr view "$pr" --repo "${repo#repos/}" --json headRefName,closingIssuesReferences \
+      --jq '[.headRefName] + [.closingIssuesReferences[].number | tostring] | join(" ")')
+    read -r head rest <<<"$info"
+    read -ra issues <<<"${rest:-}"
+    count=$(bash "$0" pending "$pr" | jq length)
+    if ((count > 0)); then
+      labels remove "$pr" "${issues[@]}"
+      echo "not ready: $count pending" >&2
+      exit 1
+    fi
+    [[ $(git branch --show-current) == "$head" ]] || { echo "check out $head first" >&2; exit 2; }
+    [[ -z $(git status --porcelain --untracked-files=no) ]] || { echo "uncommitted changes: commit them first" >&2; exit 2; }
+    git fetch -q origin main
+    before=$(git rev-parse HEAD)
+    if ! git rebase -q origin/main >/dev/null 2>&1; then
+      conflicts=$(git diff --name-only --diff-filter=U | paste -sd ' ')
+      git rebase --abort
+      labels remove "$pr" "${issues[@]}"
+      note_once "$pr" "Not ready to merge: rebasing on main conflicts in ${conflicts:-the branch}. The branch is left as it was."
+      echo "not ready: rebasing on main conflicts in ${conflicts:-the branch}" >&2
+      exit 1
+    fi
+    if [[ $(git rev-parse HEAD) != "$before" ]]; then
+      echo "rebased on origin/main" >&2
+      if ! { npm test && npm run typecheck; } >&2; then
+        git reset -q --hard "$before"
+        labels remove "$pr" "${issues[@]}"
+        note_once "$pr" "Not ready to merge: rebased on main, the tests or the typecheck fail. The branch is left as it was."
+        echo "not ready: rebased on main, the tests or the typecheck fail" >&2
+        exit 1
+      fi
+    fi
+    git push -q --force-with-lease origin "HEAD:$head"
+    labels add "$pr" "${issues[@]}"
+    printf 'ready to merge: #%s' "$pr"
+    ((${#issues[@]} == 0)) || printf ' #%s' "${issues[@]}"
+    echo
     ;;
   *)
-    sed -n '9,12p' "$0" >&2
+    sed -n '9,13p' "$0" >&2
     exit 2
     ;;
 esac
