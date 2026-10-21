@@ -1,0 +1,22 @@
+{
+  "title": "A link to a path with a space (`[the guide](<docs/my guide.md>)`) shows as raw Markdown, not a link",
+  "expected": "`spec/web.md`, the SKILL.md: \"links\", \"Links in the body resolve next to the SKILL.md on GitHub\". On GitHub (CommonMark's link destinations) a destination in `<…>` may hold spaces: \"the guide\" is a link to `docs/my%20guide.md` next to the SKILL.md",
+  "head": "18d4630f65e80b7cce1915d6cc666400290b30de",
+  "failed": {
+    "step": 2,
+    "caption": "\"the guide\" should be a link to docs/my guide.md, next to the SKILL.md",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Read the guide.\"\nReceived: \"Read [the guide](<docs/my guide.md>).\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.0 s, 275 frames"
+    }
+  ]
+}

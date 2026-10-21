@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.947 --> 00:00:02.970
+code-style's SKILL.md says "Read [the guide](<docs/my guide.md>)."
+
+2
+00:00:02.970 --> 00:00:09.798
+✗ "the guide" should be a link to docs/my guide.md, next to the SKILL.md
