@@ -11,6 +11,8 @@ asked of the team, for the `issue-to-pr` skill. The skill: [issue-to-pr](../.age
 - The answer: the replies in the question's thread, *oldest first*, each `<user>: <text>` on stdout, exit 0
 - It waits until the first reply, checking every `--poll`; then it takes every reply there is then
 - The bot's own messages in the thread are not an answer
+- Each reply read is marked with a *funny emoji* reaction, one picked at random from `REACTIONS`; one that fails, such as
+  no `reactions:write` scope, → a warning on stderr, the answer stands
 - No reply in `--wait` minutes → `No answer in <N> minutes` on stderr, exit 1: go on without one
 - A check that fails, Slack out of reach or a rate limit, → a warning on stderr, and the wait goes on
 - Slack refuses the thread for good (`invalid_auth`, `account_inactive`, `token_revoked`, `not_in_channel`, …) → its error, exit 1 at once

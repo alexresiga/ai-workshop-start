@@ -7,6 +7,9 @@ type Answer = { ok: boolean; error?: string; [key: string]: unknown };
 /** Errors a later check cannot get past: no answer can come. */
 const FATAL = ['invalid_auth', 'account_inactive', 'token_revoked', 'not_authed', 'missing_scope', 'not_in_channel', 'channel_not_found'];
 
+/** Each reply read gets one of these, so the person answering sees it was read. */
+export const REACTIONS = ['clown_face', 'upside_down_face', 'exploding_head', 'unicorn_face', 'sunglasses', 'nerd_face', 'partying_face', 'robot_face'];
+
 const USAGE = 'usage: node .agents/skills/issue-to-pr/ask.ts "<question>" [--wait <minutes>] [--poll <seconds>]';
 
 /** The command line, or the reason it is wrong. */
@@ -84,6 +87,11 @@ export async function main(args: string[], env = process.env): Promise<number> {
         .sort((a, b) => Number(a.ts) - Number(b.ts));
       if (replies.length) {
         for (const m of replies) console.log(`${m.user ?? m.username ?? m.bot_id ?? 'someone'}: ${m.text ?? ''}`);
+        for (const m of replies) {
+          const name = REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
+          const reacted = await slack(api, token, 'reactions.add', { channel, timestamp: m.ts, name }).catch((error: Error) => ({ ok: false, error: error.message }));
+          if (!reacted.ok) console.error(`warning: could not mark the reply ${m.ts} as read: ${reacted.error}`);
+        }
         return 0;
       }
     } catch (error) {
