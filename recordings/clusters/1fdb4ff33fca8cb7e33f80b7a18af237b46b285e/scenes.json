@@ -1,0 +1,343 @@
+{
+  "title": "Cluster an organization’s skills",
+  "head": "1fdb4ff33fca8cb7e33f80b7a18af237b46b285e",
+  "base": "1fdb4ff33fca8cb7e33f80b7a18af237b46b285e",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/record-feature.md",
+        "line": 16,
+        "text": "The web view of the recorded commit on a free port, GitHub answering from this checkout's `fixture/` as `example/fixture`, and for `example` as an organization with only that repository"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan the organization example: the totals, then a Cluster skills button",
+          "start": 0.948
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/record-feature.md",
+        "line": 17,
+        "text": "the same for the before and the after: no network, no token"
+      },
+      "scenes": [],
+      "notShown": "the network and the token have nothing on screen"
+    },
+    {
+      "clause": {
+        "file": "spec/record-feature.md",
+        "line": 18,
+        "text": "The model, for a scene that asks it: the scenes file's `ask(prompt)`, never `claude`"
+      },
+      "scenes": [],
+      "notShown": "where the answer comes from has nothing on screen: here it is always this file’s ask"
+    },
+    {
+      "clause": {
+        "file": "spec/record-feature.md",
+        "line": 18,
+        "text": "none → the question fails"
+      },
+      "scenes": [],
+      "notShown": "every scene here has an ask; a recording without one is a scenes file that does not cluster"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 30,
+        "text": "On the right, the totals, and `Pick a repository to see its skills.`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan the organization example: the totals, then a Cluster skills button",
+          "start": 0.948
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 30,
+        "text": "then a **Cluster skills** button, unless there are no skills"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "Scan the organization example: the totals, then a Cluster skills button",
+          "start": 0.948
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 36,
+        "text": "**Cluster skills**: the organization scanned again, nothing is stored, and its skills grouped by theme by a small model"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Cluster skills: “Clustering 3 skills with haiku…”, the button disabled",
+          "start": 5.184
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 37,
+        "text": "`Clustering N skills with haiku…` while it runs, the button disabled"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Cluster skills: “Clustering 3 skills with haiku…”, the button disabled",
+          "start": 5.184
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 37,
+        "text": "a new scan, or home, drops the answer"
+      },
+      "scenes": [
+        {
+          "index": 7,
+          "caption": "Cluster skills, then Skill Atlas before the answer: home, and the answer is dropped",
+          "start": 18.054
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 38,
+        "text": "Under the button, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "3 skills in 3 clusters: Git, Style, then Other; each with its pill",
+          "start": 7.437
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 38,
+        "text": "its skills by **name**, each linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*"
+      },
+      "scenes": [
+        {
+          "index": 4,
+          "caption": "Each skill: its name, linked to its SKILL.md, its repository and its first sentence",
+          "start": 9.997
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 40,
+        "text": "The clusters with most skills *first*, then by theme"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "3 skills in 3 clusters: Git, Style, then Other; each with its pill",
+          "start": 7.437
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 41,
+        "text": "**Every skill in exactly one cluster**: one the model leaves out → `Other`, last"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "3 skills in 3 clusters: Git, Style, then Other; each with its pill",
+          "start": 7.437
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 41,
+        "text": "one it names twice → the first cluster"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Under the header, after the scan’s warning, one for each kind: not in the list, twice, left out",
+          "start": 12.246
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "a number not in the list → ignored"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Under the header, after the scan’s warning, one for each kind: not in the list, twice, left out",
+          "start": 12.246
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "each kind a *warning*, naming ten and how many more, under the header after the scan's, until the next answer"
+      },
+      "scenes": [
+        {
+          "index": 5,
+          "caption": "Under the header, after the scan’s warning, one for each kind: not in the list, twice, left out",
+          "start": 12.246
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 44,
+        "text": "The model: **haiku**, through Claude Code on the server: `claude -p --model haiku --output-format json`, no tools, no session kept"
+      },
+      "scenes": [],
+      "notShown": "the server’s claude -p has nothing on screen; tests/cluster.test.ts checks its arguments"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 45,
+        "text": "`CLAUDE`, optional: another `claude` binary"
+      },
+      "scenes": [],
+      "notShown": "the server’s environment has nothing on screen; tests/cluster.test.ts runs a fake claude"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 46,
+        "text": "The question, on stdin: each skill numbered, sorted by name, with its name and its description's first sentence, cut at 160 characters"
+      },
+      "scenes": [],
+      "notShown": "the question has nothing on screen; tests/cluster.test.ts checks each line"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 47,
+        "text": "skills with the same line, a skill copied into many repositories, share a number"
+      },
+      "scenes": [],
+      "notShown": "the question has nothing on screen; tests/cluster.test.ts checks it"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 47,
+        "text": "the answer asked for as JSON, `{\"clusters\": [{\"theme\", \"skills\": [<numbers>]}]}`, read even inside a code fence"
+      },
+      "scenes": [],
+      "notShown": "the model’s raw answer has nothing on screen; tests/cluster.test.ts reads it fenced too"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 49,
+        "text": "No `claude`, an error from it (not logged in, …), or an answer that is not the clusters → the clear message, under the button"
+      },
+      "scenes": [
+        {
+          "index": 6,
+          "caption": "Cluster skills again, claude not logged in: the clear message, under the button",
+          "start": 13.511
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 59,
+        "text": "`GET /api/clusters?name=<org | org/ | GitHub URL>` → JSON `{ organization: { id, url }, skills, clusters: [{ theme, skills: [{ name, description, repository, path, link }] }], warnings }`, `skills` the count"
+      },
+      "scenes": [],
+      "notShown": "the JSON API has nothing on screen; tests/cluster.test.ts"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 60,
+        "text": "not an organization, or a failure → status 400, `{ error }`"
+      },
+      "scenes": [],
+      "notShown": "the JSON API has nothing on screen; tests/cluster.test.ts"
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"Scan the organization example: the totals, then a Cluster skills button\": expect(locator).toBeEnabled() failed\n\nLocator: getByRole('button', { name: 'Cluster skills', exact: true })\nExpected: enabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeEnabled\" getByRole('button', { name: 'Cluster skills', exact: true }) with timeout 5000ms\n  - waiting for getByRole('button', { name: 'Cluster skills', exact: true })\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "7 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 24.6 s, 615 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 24.5 s, 612 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 11.5 s, 287 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.985"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3, 4, 5, 6, 7"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.12 s, SSIM ≥ 0.996"
+    }
+  ]
+}
