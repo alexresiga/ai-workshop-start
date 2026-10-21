@@ -196,3 +196,13 @@ test('every node is one of the tags the page builds', () => {
   };
   markdown('# a\n\n- **b** [c](d)\n\n> e\n\n```\nf\n```\n\n| g |\n|---|\n| h |\n\n***\n').forEach(walk);
 });
+
+test('an email autolink is a mailto link, its text the address; one that is not an address is text', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('Ask <kotlin-team@example.com>.'), ['Ask ', ['a', { href: 'mailto:kotlin-team@example.com' }, 'kotlin-team@example.com'], '.']);
+  assert.deepEqual(inline('**<a_b@c.d>**'), [['strong', {}, ['a', { href: 'mailto:a_b@c.d' }, 'a_b@c.d']]]);
+  // Read before a code span, as a URL autolink is; in code it is code.
+  assert.deepEqual(inline('<a`b@c.d> `x`'), [['a', { href: 'mailto:a`b@c.d' }, 'a`b@c.d'], ' ', ['code', {}, 'x']]);
+  assert.deepEqual(inline('`<a@c.d>`'), [['code', {}, '<a@c.d>']]);
+  assert.deepEqual(inline('<a b@c.d> <a@-c.d> <foo\\+@c.d>'), ['<a b@c.d> <a@-c.d> <foo+@c.d>']);
+});
