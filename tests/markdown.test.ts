@@ -66,6 +66,9 @@ test('a quote ends at a blank line, at a block, or when it does not end in a par
   assert.deepEqual(markdown('> ```\n> a\n> ```\nb\n'), [['blockquote', {}, ['pre', {}, ['code', {}, 'a']]], ['p', {}, 'b']]);
   assert.deepEqual(markdown('> > ```\n> b\n'), [['blockquote', {}, ['blockquote', {}, ['pre', {}, ['code', {}, '']]], ['p', {}, 'b']]]);
   assert.deepEqual(markdown('> > a\n> >\nb\n'), [['blockquote', {}, ['blockquote', {}, ['p', {}, 'a']]], ['p', {}, 'b']]);
+  assert.deepEqual(markdown('> ```\n# a\n'), [['blockquote', {}, ['pre', {}, ['code', {}, '']]], ['h1', {}, 'a']]);
+  assert.deepEqual(markdown('> ```sh\n> npm i\n- one\n- two\n'), [['blockquote', {}, ['pre', {}, ['code', {}, 'npm i']]], ['ul', {}, ['li', {}, 'one'], ['li', {}, 'two']]]);
+  assert.deepEqual(markdown('- > ```\n  # a\n'), [['ul', {}, ['li', {}, ['blockquote', {}, ['pre', {}, ['code', {}, '']]], ['h1', {}, 'a']]]]);
   assert.deepEqual(markdown('> - ```\n>   a\nb\n'), [['blockquote', {}, ['ul', {}, ['li', {}, ['pre', {}, ['code', {}, 'a']]]]], ['p', {}, 'b']]);
 });
 

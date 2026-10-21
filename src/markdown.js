@@ -47,7 +47,7 @@ function parse(lines) {
       const fence = match[1];
       const code = [];
       for (i++; i < lines.length && !isClosingFence(lines[i], fence) && !lines[i].startsWith(LAZY); i++) code.push(lines[i]);
-      if (!lines[i]?.startsWith(LAZY)) i++;
+      if (i < lines.length && !lines[i].startsWith(LAZY)) i++; // past the closing fence, if there is one
       out.push(['pre', {}, ['code', {}, code.join('\n')]]);
     } else if ((match = HEADING.exec(line))) {
       out.push([`h${match[1].length}`, {}, ...inline(match[2] ?? '')]);
