@@ -1,0 +1,22 @@
+{
+  "title": "A numbered list that starts at 3 is shown numbered 1, 2",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … lists\". `3. Run the tests.` then `4. Commit.` are steps 3 and 4, as on GitHub; the page drops the start number (a list node has no attributes in `markdown.js`), so the steps read 1 and 2.",
+  "head": "efaef30c0b4ba32c1faaec31b943b157677783b3",
+  "failed": {
+    "step": 2,
+    "caption": "The list should be numbered from 3, as written",
+    "error": "expect(locator).toHaveJSProperty(expected) failed\n\nLocator:  locator('#detail .markdown ol')\nExpected: 3\nReceived: 1\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 259 frames"
+    }
+  ]
+}
