@@ -545,7 +545,10 @@ export const PAGE = `<!doctype html>
             link.rel = 'noopener';
             const description = element('span.description', firstSentence(skill.description));
             description.title = skill.description;
-            return element('li', link, element('span.in', skill.repository), description);
+            link.title = skill.name;
+            const repository = element('span.in', skill.repository);
+            repository.title = skill.repository;
+            return element('li', link, repository, description);
           })),
         );
         return theme;

@@ -46,14 +46,16 @@ export const scenes: Scene[] = [
     },
   },
   {
-    caption: 'The long name and its repository cut with …, inside the window: no sideways scroll',
-    covers: ['repository or sentence cut with …, so a cluster fits the window'],
+    caption: 'The long name and its repository cut with …, in full when hovered, inside the window: no sideways scroll',
+    covers: ['repository or sentence cut with …, so a cluster fits the window', 'each in full when hovered'],
     async run(page, act) {
       await page.setViewportSize({ width: 375, height: 720 });
       await act.pause(800);
       const name = page.locator('.theme li a', { hasText: LONG });
       await expect(name).toHaveCSS('text-overflow', 'ellipsis');
       expect(await name.evaluate((link) => link.scrollWidth > link.clientWidth)).toBe(true);
+      await expect(name).toHaveAttribute('title', LONG);
+      await expect(page.locator('.theme li .in', { hasText: 'example/fixture' }).first()).toHaveAttribute('title', 'example/fixture');
       for (const part of await rows(page).locator('a, .in, .description').all()) {
         const box = (await part.boundingBox())!;
         expect(box.x + box.width).toBeLessThanOrEqual(375);

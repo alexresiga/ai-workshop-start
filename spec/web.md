@@ -70,7 +70,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   in the repositories' bar's place, as above; the button disabled; the clusters come → the button hidden again
 - Under the totals, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill; its skills by **name**, each
   linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*, on one line; a long name,
-  repository or sentence cut with …, so a cluster fits the window, a phone's 375 px too
+  repository or sentence cut with …, so a cluster fits the window, a phone's 375 px too; each in full when hovered
 - Each cluster **collapsed by default**: its theme and pill are a button, ▸ or ▾ (`aria-expanded`), that shows its skills, and hides
   them again; each new answer comes collapsed
 - The clusters with most skills *first*, then by theme

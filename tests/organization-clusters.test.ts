@@ -738,7 +738,7 @@ browserTest('no skills → no clusters, no Cluster skills button, the model not 
   assert.equal(asked, 0);
 });
 
-browserTest('375 px, a long skill name in an open cluster: its name and repository cut with …, no sideways scroll', async (t) => {
+browserTest('375 px, a long skill name in an open cluster: its name and repository cut with …, each in full when hovered, no sideways scroll', async (t) => {
   const repositories = {
     'kotlin-multiplatform-gradle-plugin': { '.claude/skills/kotlin-multiplatform-gradle-plugin-release/SKILL.md': skill('kotlin-multiplatform-gradle-plugin-release') },
     idea: { '.agents/skills/commits/SKILL.md': skill('commits') },
@@ -758,6 +758,10 @@ browserTest('375 px, a long skill name in an open cluster: its name and reposito
   const name = rows.getByRole('link', { name: 'kotlin-multiplatform-gradle-plugin-release' });
   assert.equal(await name.evaluate((link) => link.scrollWidth > link.clientWidth), true, 'the name cut');
   assert.equal(await name.evaluate((link) => link.ownerDocument.defaultView!.getComputedStyle(link).textOverflow), 'ellipsis');
+  // Each in full when hovered.
+  await expect(name).toHaveAttribute('title', 'kotlin-multiplatform-gradle-plugin-release');
+  await expect(rows.locator('.in', { hasText: 'kotlin-multiplatform' })).toHaveAttribute('title', 'JetBrains/kotlin-multiplatform-gradle-plugin');
+  await expect(rows.locator('.description').last()).toHaveAttribute('title', 'Run the kotlin-multiplatform-gradle-plugin-release.');
   assert.equal(await page.evaluate('document.documentElement.scrollWidth'), 375, 'no sideways scroll');
   assert.equal(await page.evaluate('document.body.scrollWidth'), 375, 'no sideways scroll');
 });
