@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.948 --> 00:00:02.945
+code-style's description: "İzmir team's review rules"
+
+2
+00:00:02.945 --> 00:00:06.003
+Type "review" in the filter
+
+3
+00:00:06.003 --> 00:00:12.220
+✗ The highlight should be on "review", not "eview "

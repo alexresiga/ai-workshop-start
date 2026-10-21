@@ -1,0 +1,22 @@
+{
+  "title": "After an \"İ\" in a description, the filter highlights the wrong letters: \"eview \" for \"review\"",
+  "expected": "`spec/web.md`, the filter: \"what each of its words matches is highlighted in the names and descriptions shown, every place it is\". Typing \"review\" should mark \"review\" in \"İzmir team's review rules\"; `marks()` in `list.js` finds it in `text.toLowerCase()`, where \"İ\" becomes two characters, and marks one character too far on.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 3,
+    "caption": "The highlight should be on \"review\", not \"eview \"",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator: locator('#skills .description mark')\nTimeout: 5000ms\n- Expected  - 1\n+ Received  + 1\n\n  Array [\n-   \"review\",\n+   \"eview \",\n  ]"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 3 of 3, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 13.6 s, 339 frames"
+    }
+  ]
+}
