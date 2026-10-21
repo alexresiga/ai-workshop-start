@@ -1,0 +1,22 @@
+{
+  "title": "A quote's second line without \">\" falls out of the quote into a paragraph of its own",
+  "expected": "`spec/web.md`, the SKILL.md: \"the body, rendered Markdown: … quotes …\", as on GitHub. A line right after a quoted line, with no blank line between, continues the quote's paragraph (a lazy continuation): \"> Never push to main\\non a Friday.\" is one quote, \"Never push to main on a Friday.\"; `markdown.js` ends the quote at the first line.",
+  "head": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "failed": {
+    "step": 2,
+    "caption": "The quote should hold both lines: \"Never push to main on a Friday.\"",
+    "error": "expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown blockquote')\nExpected: \"Never push to main on a Friday.\"\nReceived: \"Never push to main\"\nTimeout:  5000ms"
+  },
+  "checks": [
+    {
+      "name": "the last step fails, the others pass",
+      "ok": true,
+      "detail": "step 2 of 2, in 2 of 2 runs"
+    },
+    {
+      "name": "ffprobe repro.mp4",
+      "ok": true,
+      "detail": "1280×720, 10.4 s, 261 frames"
+    }
+  ]
+}
