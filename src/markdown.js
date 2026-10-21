@@ -158,7 +158,9 @@ const INLINE = new RegExp(
     /!?\[((?:\\.|[^\]\\])*)\]\(\s*<?([^\s<>()]*(?:\([^\s()]*\)[^\s<>()]*)*)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/, // 1, 2: a link; an image as its link
     /<(https?:\/\/[^\s<>]+)>/, // 3: an autolink
     /\*\*(?=\S)([\s\S]*?\S)\*\*|__(?=\S)([\s\S]*?\S)__(?!\w)/, // 4, 5: strong
-    /\*(?=[^\s*])([\s\S]*?[^\s*])\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/, // 6, 7: emphasis
+    // 6, 7: emphasis; a strong inside it is one piece, so its closing ** does not end the emphasis, and stars with a space
+    // on each side are text. Each character starts at most one piece, so text with no closing * fails fast.
+    /\*(?=[^\s*])((?:\*\*(?=[^\s*])(?:\\[\s\S]|[^*\\])+?(?<=\S)\*\*|\\[\s\S]|(?<=\s)\*+(?=\s)|[^*\\])+?)(?<=[^\s*]|\*\*)\*|(?<!\w)_(?=[^\s_])([\s\S]*?[^\s_])_(?!\w)/,
     /~~(?=\S)([\s\S]*?\S)~~/, // 8: struck out
     /\\([!-/:-@[-`{-~])/, // 9: an escaped character
   ]
