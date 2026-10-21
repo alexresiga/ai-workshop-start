@@ -59,15 +59,17 @@ export const scenes: Scene[] = [
     },
   },
   {
-    caption: 'In a link\'s text and its destination, and in a bare URL: "<docs>" links to ?a=1&b=2, the bare URL is ?x=1&y=2',
+    caption: 'In a link\'s text and destination, an autolink and a bare URL: "<docs>" links to ?a=1&b=2, the others are ?x=1&y=2',
     covers: ["in text, a link's text and its destination"],
     async run(page, act) {
-      await withBody(page, '[&lt;docs&gt;](https://kotlinlang.org/?a=1&amp;b=2) and https://kotlinlang.org/?x=1&amp;y=2\n');
+      await withBody(page, '[&lt;docs&gt;](https://kotlinlang.org/?a=1&amp;b=2), <https://kotlinlang.org/?x=1&amp;y=2> and https://kotlinlang.org/?x=1&amp;y=2\n');
       const links = page.locator('#detail .markdown p a');
       await expect(links.first()).toHaveText('<docs>');
       await expect(links.first()).toHaveAttribute('href', 'https://kotlinlang.org/?a=1&b=2');
-      await expect(links.nth(1)).toHaveText('https://kotlinlang.org/?x=1&y=2');
-      await expect(links.nth(1)).toHaveAttribute('href', 'https://kotlinlang.org/?x=1&y=2');
+      for (const link of [links.nth(1), links.nth(2)]) {
+        await expect(link).toHaveText('https://kotlinlang.org/?x=1&y=2');
+        await expect(link).toHaveAttribute('href', 'https://kotlinlang.org/?x=1&y=2');
+      }
       await act.pause();
     },
   },
