@@ -1,0 +1,113 @@
+{
+  "title": "Reference links in a SKILL.md",
+  "head": "be0ed6318cddc1e33b55162e6d7b57de62025326",
+  "base": "a5bff164b0e8c6fcec3aa1e8adb9ff16d0fdf13b",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 41,
+        "text": "Links in the body as on GitHub: `[text](url)`, and reference links, `[text][label]`, `[text][]` or `[text]`, to a `[label]: url` line anywhere in the file, which is not shown"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "\"See [the guide][guide].\", \"[Docs][]\" and \"[docs]\", with their [label]: url lines: links, the lines not shown",
+          "start": 0.946
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "a label in any case, its spaces collapsed"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "\"[the guide][The  GUIDE]\" matches \"[the guide]: …/first\", in any case, spaces collapsed; the second line is ignored",
+          "start": 3.017
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 42,
+        "text": "the first line of a label counts"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "\"[the guide][The  GUIDE]\" matches \"[the guide]: …/first\", in any case, spaces collapsed; the second line is ignored",
+          "start": 3.017
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 43,
+        "text": "no such line → the text as it is written, brackets and all"
+      },
+      "scenes": [
+        {
+          "index": 3,
+          "caption": "\"[the guide][nowhere]\" has no [nowhere]: line, so it reads as it is written, brackets and all",
+          "start": 4.988
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"\"See [the guide][guide].\", \"[Docs][]\" and \"[docs]\", with their [label]: url lines: links, the lines not shown\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown')\nExpected: \"See the guide.Docs and docs.\"\nReceived: \"See [the guide][guide].[Docs][] and [docs].[guide]: https://example.com/guide [docs]: https://example.com/docs\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown') with timeout 5000ms\n  - waiting for locator('#detail .markdown')\n    14 × locator resolved to <div class=\"markdown\">…</div>\n       - unexpected value \"See [the guide][guide].[Docs][] and [docs].[guide]: https://example.com/guide [docs]: https://example.com/docs\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "3 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.2 s, 181 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 7.2 s, 180 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 210 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.988"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2, 3"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.07 s, SSIM ≥ 0.995"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.946 --> 00:00:03.017
+"See [the guide][guide].", "[Docs][]" and "[docs]", with their [label]: url lines: links, the lines not shown
+
+2
+00:00:03.017 --> 00:00:04.988
+"[the guide][The  GUIDE]" matches "[the guide]: …/first", in any case, spaces collapsed; the second line is ignored
+
+3
+00:00:04.988 --> 00:00:06.974
+"[the guide][nowhere]" has no [nowhere]: line, so it reads as it is written, brackets and all
