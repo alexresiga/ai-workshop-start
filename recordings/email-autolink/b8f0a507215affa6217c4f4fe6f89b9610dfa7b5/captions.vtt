@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.944 --> 00:00:02.980
+code-style's SKILL.md says "Ask <kotlin-team@example.com>.": no brackets, the address a mailto link
+
+2
+00:00:02.980 --> 00:00:04.955
+Now "Ask <a b@c.d>.": with a space it is not an address, so it stays text, brackets and all

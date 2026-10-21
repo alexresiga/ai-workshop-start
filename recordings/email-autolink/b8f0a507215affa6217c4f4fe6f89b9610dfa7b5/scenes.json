@@ -1,0 +1,85 @@
+{
+  "title": "An email autolink is a mailto link: Ask <kotlin-team@example.com>.",
+  "head": "b8f0a507215affa6217c4f4fe6f89b9610dfa7b5",
+  "base": "03fdcd35b3478a2f1ff92dbc9c117d4cade7da81",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 49,
+        "text": "An email autolink is a mailto link, as on GitHub (CommonMark's autolinks): \"Ask <kotlin-team@example.com>.\" is \"Ask kotlin-team@example.com.\", the address a link to `mailto:kotlin-team@example.com`"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "code-style's SKILL.md says \"Ask <kotlin-team@example.com>.\": no brackets, the address a mailto link",
+          "start": 0.944
+        }
+      ]
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 50,
+        "text": "one that is not an address, `<a b@c.d>`, is text"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "Now \"Ask <a b@c.d>.\": with a space it is not an address, so it stays text, brackets and all",
+          "start": 2.98
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"code-style's SKILL.md says \"Ask <kotlin-team@example.com>.\": no brackets, the address a mailto link\": expect(locator).toHaveText(expected) failed\n\nLocator:  locator('#detail .markdown p')\nExpected: \"Ask kotlin-team@example.com.\"\nReceived: \"Ask <kotlin-team@example.com>.\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveText\" locator('#detail .markdown p') with timeout 5000ms\n  - waiting for locator('#detail .markdown p')\n    14 × locator resolved to <p>Ask <kotlin-team@example.com>.</p>\n       - unexpected value \"Ask <kotlin-team@example.com>.\"\n"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.2 s, 130 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.2 s, 129 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 8.4 s, 209 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.989"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.987"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.09 s, SSIM ≥ 0.995"
+    }
+  ]
+}
