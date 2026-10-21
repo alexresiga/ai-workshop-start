@@ -1,0 +1,33 @@
+WEBVTT
+
+1
+00:00:00.963 --> 00:00:05.935
+Scan example/build: gradle · 3, release · 2, Other · 1, all collapsed; gradle-bump still selected, on the right
+
+2
+00:00:05.935 --> 00:00:09.781
+Click the heading release · 2: ▾, its skills show; click it again: ▸, hidden
+
+3
+00:00:09.781 --> 00:00:15.466
+Open gradle and Other; from gradle-wrapper, ↓ skips the collapsed release, to commits; ↑ back
+
+4
+00:00:15.466 --> 00:00:19.119
+Filter "write": release opens, with release-notes; Other, with commits
+
+5
+00:00:19.119 --> 00:00:23.965
+Scan example/build again: every cluster collapsed again
+
+6
+00:00:23.965 --> 00:00:26.226
+The dice picks release-checklist from JetBrains/kotlin: only its cluster, release, opens
+
+7
+00:00:26.226 --> 00:00:33.924
+The organization example, Cluster skills: Quality and Git, collapsed; a click shows Quality’s skills, another hides them
+
+8
+00:00:33.924 --> 00:00:37.192
+Open Git, then Cluster skills again: the new answer comes collapsed
