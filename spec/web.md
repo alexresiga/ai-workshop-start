@@ -49,7 +49,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - Light and dark, as the system is
 ## An organization’s clusters
 - **Cluster skills**: the organization scanned again, nothing is stored, and its skills grouped by theme by a small model;
-  `Clustering N skills with haiku…` while it runs, the button disabled; a new scan, or home, drops the answer
+  while it runs, under the button: the spinner and `Listing <org>’s repositories…`, then `Scanned N of M repositories` and the
+  progress bar, as the organization's own scan shows them; then `Clustering N skills with haiku…`; the button disabled;
+  a new scan, or home, drops the answer
 - Under the button, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill; its skills by **name**, each
   linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*
 - The clusters with most skills *first*, then by theme
@@ -80,4 +82,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   or `{ error }`; not an organization → status 400, `{ error }`; what the page reads
 - `GET /api/clusters?name=<org | org/ | GitHub URL>` → JSON `{ organization: { id, url }, skills, clusters: [{ theme, skills: [{ name,
   description, repository, path, link }] }], warnings }`, `skills` the count; not an organization, or a failure → status 400, `{ error }`
+- `GET /api/clusters/progress?name=<org | org/ | GitHub URL>` → the same, as NDJSON, one JSON a line, as it goes: `{ progress: { scanned, of } }`
+  as the organization is scanned again; `{ clustering }`, how many skills the model is asked about, unless there are none; the last line,
+  the answer of `/api/clusters`, or `{ error }`; not an organization → status 400, `{ error }`; what the page reads
 - Nothing is stored

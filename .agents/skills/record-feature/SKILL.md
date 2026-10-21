@@ -41,7 +41,7 @@ export const scenes: Scene[] = [
 ];
 ```
 
-`example` is also an organization with only that repository. For a scene that asks the model, export `ask(prompt)`: what it
+`example` is also an organization with only that repository, and `JetBrains` is the tests' organization (`tests/helpers.ts`). For a scene that asks the model, export `ask(prompt)`: what it
 answers. The recorder never runs `claude`.
 
 `act.click`, `act.type`, `act.press` (which shows the key on screen) and `act.pause` keep the action readable. Scenes run in order on one page, so each starts where the last one ended.

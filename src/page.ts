@@ -237,12 +237,12 @@ export const PAGE = `<!doctype html>
       : load('/api/scan?url=' + encodeURIComponent(text), 'Scanning ' + text + '…', show);
   }
 
-  /** What the list shows while a scan runs: a spinner and what it does. */
-  function loading(text) {
+  /** What the list shows while a scan runs, or the clusters while they come: a spinner and what it does. */
+  function loading(text, id = 'loading') {
     const spinner = element('span.spinner');
     spinner.setAttribute('aria-hidden', 'true');
     const status = element('div.message.loading', element('span.what', spinner, element('span.text', text)));
-    status.id = 'loading';
+    status.id = id;
     status.setAttribute('role', 'status');
     return status;
   }
@@ -251,8 +251,7 @@ export const PAGE = `<!doctype html>
    * How far an organization's scan is, as text and a bar, in the list's \`#loading\`: updated, not rebuilt, so the spinner
    * keeps turning, the bar eases, and a screen reader hears only the text that changed.
    */
-  function progressed({ scanned, of }) {
-    const status = $('loading');
+  function progressed({ scanned, of }, status = $('loading')) {
     status.querySelector('.text').textContent = 'Scanned ' + scanned + ' of ' + plural(of, 'repository');
     let bar = status.querySelector('progress');
     if (!bar) {
@@ -268,7 +267,7 @@ export const PAGE = `<!doctype html>
    * The answer of a streamed scan, one JSON a line: each \`{ progress }\` shown while this scan is the latest, the last line
    * the answer.
    */
-  async function streamed(response, mine) {
+  async function streamed(response, mine, show = (line) => progressed(line.progress)) {
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffered = '';
     for (;;) {
@@ -278,9 +277,9 @@ export const PAGE = `<!doctype html>
       buffered = lines.pop();
       for (const line of lines.filter(Boolean)) {
         const answer = JSON.parse(line);
-        if (!answer.progress) return answer;
+        if (!answer.progress && answer.clustering === undefined) return answer;
         if (mine !== latest) continue; // a later scan replaced this one
-        progressed(answer.progress);
+        show(answer);
       }
       if (done) throw new Error('The scan stopped before its answer; try again.');
     }
@@ -360,7 +359,7 @@ export const PAGE = `<!doctype html>
       const button = element('button.scan', 'Cluster skills');
       button.id = 'cluster';
       button.type = 'button';
-      button.addEventListener('click', () => cluster(answer.organization.id, total, answer.warnings));
+      button.addEventListener('click', () => cluster(answer.organization.id, answer.warnings));
       const clusters = element('div');
       clusters.id = 'clusters';
       parts.push(element('p', 'Pick a repository to see its skills.'), button, clusters);
@@ -369,18 +368,26 @@ export const PAGE = `<!doctype html>
   }
 
   /** The organization's skills by theme, from a small model; a new scan, or home, drops the answer. */
-  async function cluster(organization, total, warnings) {
+  async function cluster(organization, warnings) {
     const mine = latest;
     // The scan's warnings, without the last answer's.
     $('warnings').replaceChildren(...warnings.map((warning) => element('li', 'warning: ' + warning)));
     $('cluster').disabled = true;
     $('cluster').textContent = 'Clustering…';
-    $('clusters').replaceChildren(element('p.message', 'Clustering ' + plural(total, 'skill') + ' with haiku…'));
+    $('clusters').replaceChildren(loading('Listing ' + organization + '’s repositories…', 'clustering'));
+    // The organization scanned again, its progress as the list shows it; then the model asked.
+    const show = (line) => {
+      if (line.progress) progressed(line.progress, $('clustering'));
+      else {
+        $('clustering').querySelector('.text').textContent = 'Clustering ' + plural(line.clustering, 'skill') + ' with haiku…';
+        $('clustering').querySelector('progress')?.remove();
+      }
+    };
     try {
-      const response = await fetch('/api/clusters?name=' + encodeURIComponent(organization));
-      const answer = await response.json();
+      const response = await fetch('/api/clusters/progress?name=' + encodeURIComponent(organization));
+      const answer = response.ok ? await streamed(response, mine, show) : await response.json();
       if (mine !== latest) return;
-      if (!response.ok) throw new Error(answer.error);
+      if (!response.ok || answer.error) throw new Error(answer.error);
       showClusters(answer);
     } catch (error) {
       if (mine === latest) $('clusters').replaceChildren(element('p.message.error', error.message));

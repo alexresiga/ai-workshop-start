@@ -117,12 +117,14 @@ test('captions and chapters: one for each scene, at its start and end', () => {
   );
 });
 
-test('the web view recorded: example an organization with only example/fixture; the model, the scenes file’s ask', async (t) => {
+test('the web view recorded: example an organization with only example/fixture, JetBrains the tests’; the model, the scenes file’s ask', async (t) => {
   const prompts: string[] = [];
   const server = await serve(REPOSITORY, async (prompt) => (prompts.push(prompt), '{"clusters": [{"theme": "All", "skills": [1, 2, 3]}]}'));
   t.after(() => server.close());
   const organization = (await (await fetch(`${server.url}/api/organization?name=example`)).json()) as OrganizationAnswer;
   assert.deepEqual(organization.repositories, [{ id: 'example/fixture', url: 'https://github.com/example/fixture', skills: 3 }]);
+  const jetbrains = (await (await fetch(`${server.url}/api/organization?name=JetBrains`)).json()) as OrganizationAnswer;
+  assert.deepEqual([jetbrains.repositories.length, jetbrains.scanned], [3, 5]);
   const answer = (await (await fetch(`${server.url}/api/clusters?name=example`)).json()) as ClustersAnswer;
   assert.deepEqual(answer.clusters.map((cluster) => [cluster.theme, cluster.skills.length]), [['All', 3]]);
   assert.match(prompts[0], /^1\. code-style — /m);
