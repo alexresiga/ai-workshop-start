@@ -3,8 +3,14 @@
 import { AtlasError } from './errors.ts';
 import { firstSentence, sortSkills, type Skill } from './model.ts';
 
-/** Asks the model; resolves to its answer, as text. The signal aborts when no one waits for it any more. */
-export type Ask = (prompt: string, signal?: AbortSignal) => Promise<string>;
+/**
+ * Asks the model; resolves to its answer, as text. The signal aborts when no one waits for it any more; `partial`, if
+ * the model streams, hears its text so far.
+ */
+export type Ask = (prompt: string, signal?: AbortSignal, partial?: (text: string) => void) => Promise<string>;
+
+/** Hears how many of the skills the model has put in a cluster so far, of how many. */
+export type Clustered = (clustered: number, of: number) => void;
 
 export type Cluster = { theme: string; skills: Skill[] };
 
@@ -23,11 +29,17 @@ type Entry = { line: string; skills: Skill[] };
  * The skills by theme: every skill in exactly one cluster. A skill the model leaves out goes to
  * `Other`; one it names twice stays in the first cluster; a number not in the list is ignored. The
  * clusters with most skills first, then by theme; `Other` last. No skills → no question, no clusters.
+ * `clustered` hears, as the answer streams, how many skills it has placed: only when that changes.
  */
-export async function clusterSkills(skills: Skill[], ask: Ask, signal?: AbortSignal): Promise<ClusterResult> {
+export async function clusterSkills(skills: Skill[], ask: Ask, signal?: AbortSignal, clustered?: Clustered): Promise<ClusterResult> {
   if (skills.length === 0) return { clusters: [], warnings: [] };
   const list = entries(skills);
-  const answer = parseAnswer(await ask(prompt(list), signal));
+  let heard = 0;
+  const partial = (text: string) => {
+    const count = placedSoFar(text, list);
+    if (count > heard) clustered?.((heard = count), skills.length);
+  };
+  const answer = parseAnswer(await ask(prompt(list), signal, clustered && partial));
   const placed = new Set<number>();
   const unknown: number[] = [];
   const twice: Entry[] = [];
@@ -85,6 +97,26 @@ export function entries(skills: Skill[]): Entry[] {
     lines.set(line, [...(lines.get(line) ?? []), skill]);
   }
   return [...lines].map(([line, skills]) => ({ line, skills }));
+}
+
+/**
+ * How many skills the answer so far has placed: each number in a `"skills": [` list, once it is whole (a comma, a space
+ * or the `]` after it), in the list and not named before, counts its line's skills.
+ */
+export function placedSoFar(text: string, list: Entry[]): number {
+  const placed = new Set<number>();
+  let count = 0;
+  for (const [, numbers, closed] of text.matchAll(/"skills"\s*:\s*\[([^\]]*)(\]?)/g)) {
+    // The last number not ended yet may still grow: 1 may be the start of 12.
+    const whole = closed ? numbers : numbers.replace(/\d+$/, '');
+    for (const [digits] of whole.matchAll(/\d+/g)) {
+      const number = Number(digits);
+      if (placed.has(number) || !list[number - 1]) continue;
+      placed.add(number);
+      count += list[number - 1].skills.length;
+    }
+  }
+  return count;
 }
 
 /** The clusters in the model's answer: its JSON, even inside a ```json fence or after a sentence. */

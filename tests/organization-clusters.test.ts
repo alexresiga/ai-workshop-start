@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
 import { chromium, expect, type Page } from '@playwright/test';
 import { askClaude } from '../src/claude.ts';
-import type { Ask } from '../src/core/themes.ts';
+import { clusterSkills, type Ask } from '../src/core/themes.ts';
 import { scanOrganization } from '../src/core/organization.ts';
 import { replay } from '../src/core/replay.ts';
 import { createWebServer, type ClustersAnswer } from '../src/web.ts';
@@ -34,8 +34,24 @@ process.stdin.on('end', () => {
 });
 `;
 
-/** What `claude -p --output-format json` prints: the model's text as `result`. */
+/** The last line `claude -p --output-format stream-json` prints: the model's text as `result`. */
 const reply = (result: string, isError = false) => JSON.stringify({ type: 'result', subtype: 'success', is_error: isError, result });
+
+/**
+ * What `claude -p --output-format stream-json --verbose --include-partial-messages` prints: the session's start, the text
+ * in `parts` as it streams, the whole message, then the result.
+ */
+const streamed = (parts: string[]) =>
+  [
+    { type: 'system', subtype: 'init', model: 'claude-haiku-4-5' },
+    { type: 'stream_event', event: { type: 'message_start', message: { content: [] } } },
+    { type: 'stream_event', event: { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } } },
+    ...parts.map((text) => ({ type: 'stream_event', event: { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } } })),
+    { type: 'stream_event', event: { type: 'content_block_stop', index: 0 } },
+    { type: 'assistant', message: { content: [{ type: 'text', text: parts.join('') }] } },
+  ]
+    .map((line) => JSON.stringify(line) + '\n')
+    .join('') + reply(parts.join('')) + '\n';
 
 /** The model's JSON: each theme and its skill numbers. */
 const clusters = (themes: [string, number[]][]) => JSON.stringify({ clusters: themes.map(([theme, skills]) => ({ theme, skills })) });
@@ -118,9 +134,18 @@ test('clusters: most skills first, each with its skills by name, linked to its S
   } satisfies ClustersAnswer);
 });
 
-test('the model: haiku through claude -p, no session; each skill numbered by name on stdin, the answer as JSON', async (t) => {
+test('the model: haiku through claude -p, streamed, no session; each skill numbered by name on stdin, the answer as JSON', async (t) => {
   const { asked } = await clustersFor(t, reply(ANSWER));
-  assert.deepEqual(asked!.args.slice(0, 6), ['-p', '--model', 'haiku', '--output-format', 'json', '--no-session-persistence']);
+  assert.deepEqual(asked!.args.slice(0, 8), [
+    '-p',
+    '--model',
+    'haiku',
+    '--output-format',
+    'stream-json',
+    '--verbose',
+    '--include-partial-messages',
+    '--no-session-persistence',
+  ]);
   assert.match(asked!.stdin, /\{"clusters": \[\{"theme": "<theme>", "skills": \[<skill numbers>\]\}\]\}/);
   assert.deepEqual(numbered(asked!.stdin), [
     '1. a — Run the a.',
@@ -135,7 +160,7 @@ test('the model: haiku through claude -p, no session; each skill numbered by nam
 
 test('no tools: no built-in tool, no MCP server; in an empty directory of its own, removed after', async (t) => {
   const { asked, started } = await clustersFor(t, reply(ANSWER));
-  assert.deepEqual(asked!.args.slice(6), ['--tools', '', '--strict-mcp-config', '--disallowedTools', 'mcp__*']);
+  assert.deepEqual(asked!.args.slice(8), ['--tools', '', '--strict-mcp-config', '--disallowedTools', 'mcp__*']);
   assert.notEqual(started!.cwd, process.cwd());
   assert.deepEqual(started!.files, []);
   assert.equal(existsSync(started!.cwd), false);
@@ -250,6 +275,75 @@ test('progress: the organization scanned again, then how many skills the model i
     { clustering: 7 },
   ]);
   assert.deepEqual(lines.at(-1).clusters.map((cluster: { theme: string }) => cluster.theme), ['Build', 'Review', 'Releases']);
+});
+
+// ANSWER as the model streams it, in parts that end inside a list, a number not yet known to be whole.
+const PARTS = ['{"clusters": [{"theme": "Releases", "skills": [6', ']}, {"theme": "Build", "skills": [3, 5', ', 1, 2]}, {"theme": "Review", "skills": [7, ', '4]}]}'];
+
+test('streamed: the text heard as it comes, part by part; the answer from the result line', async (t) => {
+  const claude = fakeClaude(t, streamed(PARTS));
+  const heard: string[] = [];
+  assert.equal(await askClaude('question', { binary: claude.binary, partial: (text) => heard.push(text) }), PARTS.join(''));
+  assert.deepEqual(heard, PARTS.map((_, i) => PARTS.slice(0, i + 1).join('')));
+});
+
+test('streamed: a line split between two chunks is read whole; an error result → its message', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'skill-atlas-claude-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const binary = join(dir, 'claude.cjs');
+  const output = streamed(['{"clusters": [{"theme": "Thème", ', '"skills": [1]}]}']);
+  const at = output.indexOf('Thème') + 2;
+  writeFileSync(
+    binary,
+    `#!/usr/bin/env node\nprocess.stdin.resume().on('end', () => { process.stdout.write(${JSON.stringify(output.slice(0, at))}); setTimeout(() => process.stdout.write(${JSON.stringify(output.slice(at))}), 50); });\n`,
+  );
+  chmodSync(binary, 0o755);
+  const heard: string[] = [];
+  assert.equal(await askClaude('question', { binary, partial: (text) => heard.push(text) }), '{"clusters": [{"theme": "Thème", "skills": [1]}]}');
+  assert.deepEqual(heard, ['{"clusters": [{"theme": "Thème", ', '{"clusters": [{"theme": "Thème", "skills": [1]}]}']);
+  const failing = fakeClaude(t, streamed([]).replace(/"is_error":false,"result":""/, '"is_error":true,"result":"Not logged in · Please run /login"'), 1);
+  await assert.rejects(askClaude('question', { binary: failing.binary }), /could not cluster the skills: Not logged in · Please run \/login$/);
+});
+
+test('progress: as the model answers, how many skills it has put in a cluster, of how many, before the answer', async (t) => {
+  const claude = fakeClaude(t, streamed(PARTS));
+  const base = await serve(t, (prompt, signal, partial) => askClaude(prompt, { binary: claude.binary, signal, partial }));
+  const lines = (await (await fetch(`${base}/api/clusters/progress?name=JetBrains`)).text()).trim().split('\n').map((line) => JSON.parse(line));
+  assert.deepEqual(lines.slice(6, -1), [
+    { clustering: 7 },
+    // 6 whole once its `]` comes; then 3; then 5, 1, 2 and 7; then 4.
+    { clustered: { skills: 2, of: 7 } },
+    { clustered: { skills: 6, of: 7 } },
+    { clustered: { skills: 7, of: 7 } },
+  ]);
+  assert.deepEqual(lines.at(-1).clusters.map((cluster: { theme: string }) => cluster.theme), ['Build', 'Review', 'Releases']);
+});
+
+/** What `clustered` hears as `ask` streams `parts`, for the skills of `repositories`. */
+async function heardFor(parts: string[], repositories: Record<string, Listed> = ORGANIZATION) {
+  const { skills } = await scanOrganization('https://github.com/JetBrains', {
+    fetch: replay(organizationAnswers('JetBrains', 'Organization', repositories)),
+    token: 'test',
+  });
+  const heard: [number, number][] = [];
+  const ask: Ask = async (_, __, partial) => {
+    parts.forEach((_, i) => partial?.(parts.slice(0, i + 1).join('')));
+    return parts.join('');
+  };
+  await clusterSkills(skills, ask, undefined, (clustered, of) => heard.push([clustered, of]));
+  return heard;
+}
+
+test('progress: a number counts once it is whole, once; one not in the list, or named again, does not', async () => {
+  // 1, then 12 not in the list, 1 again, 9 not in the list; `3` not whole until the comma after it.
+  const parts = ['```json\n{"clusters": [{"theme": "A", "skills": [1', '2, 1, 9, 3', ', 4]}', ', {"theme": "B", "skills": [2]}]}\n```'];
+  assert.deepEqual(await heardFor(parts), [[1, 7], [3, 7], [4, 7]]);
+});
+
+test('progress: a number shared by copies in many repositories counts each of its skills', async () => {
+  const copied = { '.claude/skills/commit/SKILL.md': skill('commit') };
+  const parts = ['{"clusters": [{"theme": "Git", "skills": [', '1]}]}'];
+  assert.deepEqual(await heardFor(parts, { one: copied, two: copied, three: copied }), [[3, 3]]);
 });
 
 test('progress: no skills → no clustering line; a failure → { error } last; not an organization → status 400', async (t) => {
@@ -450,6 +544,40 @@ browserTest('Cluster skills: clustering, the button disabled; then each cluster,
   ]);
   await expect(build.first().getByRole('link', { name: 'a', exact: true })).toHaveAttribute('href', A.link);
   await expect(page.locator('#warnings')).toBeEmpty();
+});
+
+browserTest('clustering: a progress bar of the skills, moving on as the model puts them in clusters; the same spinner', async (t) => {
+  const { promise: asked, resolve: ask } = Promise.withResolvers<(text: string) => void>();
+  const { promise: gate, resolve: release } = Promise.withResolvers<void>();
+  const page = await organizationPage(t, async (_, __, partial) => (ask(partial!), await gate, ANSWER));
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  const partial = await asked;
+  const bar = page.getByRole('progressbar', { name: 'Skills clustered' });
+  await expect(page.locator('#clustering .text')).toHaveText('Clustering 7 skills with haiku…');
+  await expect(bar).toHaveJSProperty('value', 0);
+  await expect(bar).toHaveJSProperty('max', 7);
+  await expect(page.getByRole('progressbar', { name: 'Repositories scanned' })).toHaveCount(0);
+  const spinner = await page.locator('#clustering .spinner').elementHandle();
+  partial(PARTS.slice(0, 3).join(''));
+  await expect(page.locator('#clustering .text')).toHaveText('Clustered 6 of 7 skills with haiku…');
+  await expect(bar).toHaveJSProperty('value', 6);
+  partial(PARTS.join(''));
+  await expect(bar).toHaveJSProperty('value', 7);
+  assert.equal(await spinner!.evaluate((node) => node.isConnected), true);
+  await expect(page.locator('#clustering progress')).toHaveCount(1);
+  release();
+  await expect(page.locator('#clusters > p')).toHaveText('7 skills in 3 clusters.');
+  await expect(page.locator('#clusters progress')).toHaveCount(0);
+});
+
+browserTest('clustering: the repositories’ bar while the organization is scanned again, then the skills’ in its place', async (t) => {
+  const { promise: gate, resolve: release } = Promise.withResolvers<void>();
+  const page = await organizationPage(t, async () => (await gate, ANSWER));
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await expect(page.getByRole('progressbar', { name: 'Skills clustered' })).toHaveJSProperty('max', 7);
+  await expect(page.locator('#clustering progress')).toHaveCount(1);
+  release();
+  await expect(page.locator('#clusters .theme')).toHaveCount(3);
 });
 
 browserTest('the model’s warnings go under the header', async (t) => {

@@ -18,5 +18,5 @@ process.exitCode = await run(process.argv.slice(2), {
   print: (text) => console.log(text),
   error: (text) => console.error(text),
   serve: (port) =>
-    listen(createWebServer({ open, organization, ask: (prompt, signal) => askClaude(prompt, { signal }) }), port, (url) => console.log(`Skill Atlas on ${url}`)),
+    listen(createWebServer({ open, organization, ask: (prompt, signal, partial) => askClaude(prompt, { signal, partial }) }), port, (url) => console.log(`Skill Atlas on ${url}`)),
 });

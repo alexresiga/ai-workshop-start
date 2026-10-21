@@ -4,7 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { clusterSkills, type Ask } from './core/themes.ts';
+import { clusterSkills, type Ask, type Clustered } from './core/themes.ts';
 import { AtlasError } from './core/errors.ts';
 import { parseGitHubUrl } from './core/github.ts';
 import { skillLink, type Repository, type Skill } from './core/model.ts';
@@ -62,9 +62,15 @@ export type OrganizationProgressLine = { progress: { scanned: number; of: number
 
 /**
  * What `GET /api/clusters/progress?name=…` streams, one JSON a line: `{ progress }` as the organization is scanned again,
- * `{ clustering }`, how many skills the model is asked about, then the result, or `{ error }`, last.
+ * `{ clustering }`, how many skills the model is asked about, `{ clustered }` as its answer puts them in clusters, then the
+ * result, or `{ error }`, last.
  */
-export type ClustersProgressLine = { progress: { scanned: number; of: number } } | { clustering: number } | ClustersAnswer | { error: string };
+export type ClustersProgressLine =
+  | { progress: { scanned: number; of: number } }
+  | { clustering: number }
+  | { clustered: { skills: number; of: number } }
+  | ClustersAnswer
+  | { error: string };
 
 /** What `GET /api/scan?url=<GitHub URL>` answers: the result, or `{ error }` with status 400. */
 export type ScanAnswer = {
@@ -139,7 +145,7 @@ export function createWebServer(options: WebOptions): Server {
         try {
           const result = await options.organization(input, (scanned, of) => line({ progress: { scanned, of } }));
           if (result.skills.length) line({ clustering: result.skills.length });
-          line(await clustersAnswer(result, options.ask, waiting.signal));
+          line(await clustersAnswer(result, options.ask, waiting.signal, (skills, of) => line({ clustered: { skills, of } })));
         } catch (error) {
           line({ error: failure(error) });
         }
@@ -195,8 +201,8 @@ function organizationUrl(input: string): string {
 }
 
 /** The organization's skills by theme, each linked to its SKILL.md; the scan's warnings, then the model's. */
-async function clustersAnswer(result: OrganizationResult, ask: Ask, signal: AbortSignal): Promise<ClustersAnswer> {
-  const { clusters, warnings } = await clusterSkills(result.skills, ask, signal);
+async function clustersAnswer(result: OrganizationResult, ask: Ask, signal: AbortSignal, clustered?: Clustered): Promise<ClustersAnswer> {
+  const { clusters, warnings } = await clusterSkills(result.skills, ask, signal, clustered);
   // Each skill's link is at the commit its repository was scanned at, its default branch.
   const link = (skill: Skill) => {
     const [organization, name] = skill.repository.split('/');
