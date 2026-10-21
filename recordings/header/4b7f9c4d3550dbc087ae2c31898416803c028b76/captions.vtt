@@ -1,0 +1,9 @@
+WEBVTT
+
+1
+00:00:00.954 --> 00:00:03.755
+The page 820 px wide: the organization and its 3 of 5 repositories pill go on the next line
+
+2
+00:00:03.755 --> 00:00:05.612
+All of the header is left of the 820 px edge: the whole pill shows, nothing to scroll sideways

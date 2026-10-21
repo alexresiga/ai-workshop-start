@@ -1,0 +1,86 @@
+{
+  "title": "The header fits the window",
+  "head": "4b7f9c4d3550dbc087ae2c31898416803c028b76",
+  "base": "31e06c1d4564c758be922ab86d4f617a44b8219d",
+  "clauses": [
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 7,
+        "text": "The header fits the window, at any width: what does not fit on its line goes on the next, and a name too long for a line breaks within it"
+      },
+      "scenes": [
+        {
+          "index": 1,
+          "caption": "The page 820 px wide: the organization and its 3 of 5 repositories pill go on the next line",
+          "start": 0.954
+        }
+      ],
+      "notShown": "the fixture has no name that long, and the recorder films one 1280 px window: tests/header.test.ts scans one at 360 px"
+    },
+    {
+      "clause": {
+        "file": "spec/web.md",
+        "line": 8,
+        "text": "never past the right edge nor into a sideways scroll"
+      },
+      "scenes": [
+        {
+          "index": 2,
+          "caption": "All of the header is left of the 820 px edge: the whole pill shows, nothing to scroll sideways",
+          "start": 3.755
+        }
+      ]
+    }
+  ],
+  "before": {
+    "failed": "scene 1, \"The page 820 px wide: the organization and its 3 of 5 repositories pill go on the next line\": expect(received).toBeGreaterThan(expected)\n\nExpected: > 54.6875\nReceived:   21.984375"
+  },
+  "checks": [
+    {
+      "name": "every scene's expect, light and dark",
+      "ok": true,
+      "detail": "2 scenes"
+    },
+    {
+      "name": "ffprobe after-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.9 s, 147 frames"
+    },
+    {
+      "name": "ffprobe after-dark.mp4",
+      "ok": true,
+      "detail": "1280×720, 5.8 s, 145 frames"
+    },
+    {
+      "name": "ffprobe before-light.mp4",
+      "ok": true,
+      "detail": "1280×720, 4.4 s, 110 frames"
+    },
+    {
+      "name": "light frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.995"
+    },
+    {
+      "name": "light screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "dark frames are the page",
+      "ok": true,
+      "detail": "SSIM ≥ 0.992"
+    },
+    {
+      "name": "dark screenshots match baseline/",
+      "ok": true,
+      "detail": "written: 1, 2"
+    },
+    {
+      "name": "a second run is the same",
+      "ok": true,
+      "detail": "starts ±0.08 s, SSIM ≥ 0.997"
+    }
+  ]
+}
