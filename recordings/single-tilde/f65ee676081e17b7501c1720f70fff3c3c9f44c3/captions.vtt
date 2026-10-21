@@ -1,0 +1,21 @@
+WEBVTT
+
+1
+00:00:00.964 --> 00:00:03.021
+code-style's SKILL.md says "Use ~old~ new names.", then "Use ~~old~~ new names.": "old" struck out each time, no tilde left
+
+2
+00:00:03.021 --> 00:00:05.002
+"~a~~" and "~~a~": the closing tildes are not as many as the opening ones, so it is text
+
+3
+00:00:05.002 --> 00:00:07.007
+"~~~a~~~", "~ a~" and "\~a~" are text: three tildes, a space inside, an escaped tilde
+
+4
+00:00:07.007 --> 00:00:09.027
+"~/bin and ~/lib" is text: a tilde after punctuation, before a letter, closes nothing; "~(a)~" is struck out
+
+5
+00:00:09.027 --> 00:00:11.039
+"Install to ~/bin, see [docs](https://example.edu/~jdoe/).": nothing struck out, the link goes to ~jdoe
