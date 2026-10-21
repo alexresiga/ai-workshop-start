@@ -1,0 +1,13 @@
+WEBVTT
+
+1
+00:00:00.946 --> 00:00:03.035
+code-style's SKILL.md says "Tag the release.\", then "Push the tag.": two lines, no backslash
+
+2
+00:00:03.035 --> 00:00:05.030
+Two spaces at the end of "Tag the release." break the line too; with no \ nor spaces, it is one line
+
+3
+00:00:05.030 --> 00:00:07.014
+A \ at the end of the paragraph, escaped as \\, or in code is text: "Done.\", "a\ b", `x\ y`
