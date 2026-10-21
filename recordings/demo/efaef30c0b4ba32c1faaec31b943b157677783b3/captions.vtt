@@ -1,0 +1,37 @@
+WEBVTT
+
+1
+00:00:00.847 --> 00:00:05.205
+Type an organization, JetBrains, and press Scan
+
+2
+00:00:05.205 --> 00:00:09.007
+Each of its repositories scanned in turn, with a progress bar
+
+3
+00:00:09.007 --> 00:00:10.241
+7 skills in 3 of 5 repositories, most skills first
+
+4
+00:00:10.241 --> 00:00:12.475
+The skills cluster by themselves, with haiku: no button to press
+
+5
+00:00:12.475 --> 00:00:13.723
+The bar moves on as haiku’s answer streams in
+
+6
+00:00:13.723 --> 00:00:17.779
+7 skills in 3 clusters: Build, Docs and Review, each with its count
+
+7
+00:00:17.779 --> 00:00:21.035
+Open Build: build, lint and release, each linked to its SKILL.md, with its repository
+
+8
+00:00:21.035 --> 00:00:24.683
+Open Docs: a, b and c, from JetBrains/idea
+
+9
+00:00:24.683 --> 00:00:27.933
+And Review: review, from JetBrains/android. Every skill in exactly one cluster
