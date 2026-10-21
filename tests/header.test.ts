@@ -51,6 +51,14 @@ browserTest('an organization: the organization and both pills fit, just above 50
   const page = await open(t, '/?org=JetBrains');
   await expect(page.locator('#repositories')).toHaveText('3 of 5 repositories');
   await expectFits(page, ['#repository a', '#repository .pill:not(#repositories)', '#repositories']);
+  // Just above 50rem the organization goes on the next line, under the form, rather than squeezing the form.
+  for (const width of [850, 820, 801]) {
+    await page.setViewportSize({ width, height: 720 });
+    const form = (await page.locator('#scan').boundingBox())!;
+    const repository = (await page.locator('#repository').boundingBox())!;
+    assert.ok(repository.y >= form.y + form.height, `on the next line at ${width} px`);
+    assert.ok(form.width >= 288, `the form keeps 18rem at ${width} px: ${form.width}`);
+  }
 });
 
 browserTest('a repository with a long name: the name and its pill fit', async (t) => {
