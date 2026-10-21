@@ -1,0 +1,29 @@
+WEBVTT
+
+1
+00:00:00.962 --> 00:00:02.978
+code-style's SKILL.md says "Replace &lt;version&gt; &amp; tag it.": it reads "Replace <version> & tag it."
+
+2
+00:00:02.978 --> 00:00:04.967
+Any HTML5 name, a decimal or a hex reference: "&copy; 2026 &mdash; issue &#35;88 &#x2713;" is "© 2026 — issue #88 ✓"
+
+3
+00:00:04.967 --> 00:00:06.944
+Code point 0, one past U+10FFFF and a surrogate are each the replacement character, �
+
+4
+00:00:06.944 --> 00:00:08.915
+An unknown name, or one with no ;, reads as typed: "AT&T &nosuch; &amp more"
+
+5
+00:00:08.915 --> 00:00:10.929
+In a link's text and destination, an autolink and a bare URL: "<docs>" links to ?a=1&b=2, the others are ?x=1&y=2
+
+6
+00:00:10.929 --> 00:00:12.894
+In code, and after a backslash, &amp; stays as typed
+
+7
+00:00:12.894 --> 00:00:14.896
+The character is text: "&ast;not italic&ast; &lt;b&gt;bold?&lt;/b&gt;" has no italics and no bold, only text
