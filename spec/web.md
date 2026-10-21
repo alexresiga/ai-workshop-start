@@ -24,6 +24,10 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a tie → the word first in the alphabet; the skills left → **Other**, last
 - Each cluster under a heading, `<word> · N`, largest first, its skills by name; the filter hides a cluster with no skill shown;
   no word shared → the plain list, by name, no heading
+- The clusters **collapsed by default**: the heading is a button, ▸ or ▾ (`aria-expanded`), that shows its skills, and hides them
+  again; after a scan every cluster is collapsed, and the first skill is still selected, on the right; ↑ and ↓ move only through
+  the skills of open clusters; text typed in the filter opens each cluster with a skill shown; the dice opens the cluster of
+  the skill it picks; a new scan collapses them all again
 - After a scan, above the skills, a **filter**: it keeps the skills whose name or description has *every word* typed, in any case,
   anywhere in a word; the pill shows `N of M skills` while it hides some; none left → `No skill matches <text>.`, and nothing on the right;
   the selected skill stays if it is shown, else the first shown is selected; ↑ and ↓ move through the shown ones; Esc clears it; a new scan empties it
@@ -57,6 +61,8 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   a new scan, or home, drops the answer
 - Under the button, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill; its skills by **name**, each
   linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*
+- Each cluster **collapsed by default**: its theme and pill are a button, ▸ or ▾ (`aria-expanded`), that shows its skills, and hides
+  them again; each new answer comes collapsed
 - The clusters with most skills *first*, then by theme
 - **Every skill in exactly one cluster**: one the model leaves out → `Other`, last; one it names twice → the first cluster;
   a number not in the list → ignored; each kind a *warning*, naming ten and how many more, under the header after the scan's,

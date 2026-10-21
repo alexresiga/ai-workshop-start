@@ -82,6 +82,11 @@ export const PAGE = `<!doctype html>
   nav .cluster { margin-bottom: .9rem; }
   nav .cluster[hidden] { display: none; }
   nav .cluster h2 { margin: 0 0 .3rem; padding: 0 1rem; font: 600 .8rem var(--sans); color: var(--muted); }
+  nav .cluster h2 button.toggle { display: inline; width: auto; margin: 0; padding: .15rem 0; font: inherit; color: inherit; border: 0; border-radius: 0; }
+  nav .cluster h2 button.toggle:hover { background: none; text-decoration: underline; }
+  nav .cluster.collapsed > button { display: none; }
+  button.toggle::before { content: "▸ "; }
+  button.toggle[aria-expanded="true"]::before { content: "▾ "; }
   nav.repositories button { display: flex; align-items: center; gap: 1rem; }
   nav.repositories .name { flex: 1; min-width: 0; }
   nav.repositories .pill { flex: none; }
@@ -93,7 +98,11 @@ export const PAGE = `<!doctype html>
   #clusters .message { padding: 0; }
   #clusters .message.error { color: var(--error); }
   #clusters .theme { margin-bottom: 1.6rem; }
-  .theme h3 { display: flex; align-items: center; gap: .6rem; margin: 0 0 .5rem; font-size: 1.15rem; }
+  .theme h3 { margin: 0 0 .5rem; font-size: 1.15rem; }
+  .theme h3 button.toggle { display: flex; align-items: center; gap: .6rem; padding: 0; font: inherit; color: inherit; background: none;
+    border: 0; cursor: pointer; }
+  .theme h3 button.toggle:hover > span:first-child { text-decoration: underline; }
+  .theme.collapsed ul { display: none; }
   .theme h3 .pill { font-weight: 400; }
   .theme ul { margin: 0; padding: 0; list-style: none; }
   .theme li { display: flex; align-items: baseline; gap: .75rem; padding: .2rem 0; white-space: nowrap; }
@@ -220,6 +229,23 @@ export const PAGE = `<!doctype html>
   }
 
   $('warnings-toggle').addEventListener('click', () => expand($('warnings').hidden));
+
+  /** A cluster's heading: a button that opens and closes it; collapsed at first. */
+  function foldable(cluster, ...label) {
+    const button = element('button.toggle', ...label);
+    button.type = 'button';
+    button.addEventListener('click', () => fold(cluster, cluster.classList.contains('collapsed')));
+    fold(cluster, false, button);
+    return button;
+  }
+
+  function fold(cluster, open, button = cluster.querySelector('.toggle')) {
+    cluster.classList.toggle('collapsed', !open);
+    button.setAttribute('aria-expanded', String(open));
+  }
+
+  /** The skills in the list, not the clusters' headings. */
+  const rows = () => [...$('skills').querySelectorAll('button:not(.toggle)')];
 
   /** Home: the page as it first opens, with no scan; one still running is dropped. */
   function home() {
@@ -437,14 +463,15 @@ export const PAGE = `<!doctype html>
     }
   }
 
-  /** Each cluster: its theme and an \`N skills\` pill, then its skills, each with its repository and first sentence. */
+  /** Each cluster, collapsed: its theme and an \`N skills\` pill, then its skills, each with its repository and first sentence. */
   function showClusters(answer) {
     warn(answer.warnings);
     $('clusters').replaceChildren(
       element('p', plural(answer.skills, 'skill') + ' in ' + plural(answer.clusters.length, 'cluster') + '.'),
-      ...answer.clusters.map((cluster) =>
-        element('section.theme',
-          element('h3', element('span', cluster.theme), element('span.pill', plural(cluster.skills.length, 'skill'))),
+      ...answer.clusters.map((cluster) => {
+        const theme = element('section.theme');
+        theme.append(
+          element('h3', foldable(theme, element('span', cluster.theme), element('span.pill', plural(cluster.skills.length, 'skill')))),
           element('ul', ...cluster.skills.map((skill) => {
             const link = element('a', skill.name);
             link.href = skill.link;
@@ -454,8 +481,9 @@ export const PAGE = `<!doctype html>
             description.title = skill.description;
             return element('li', link, element('span.in', skill.repository), description);
           })),
-        ),
-      ),
+        );
+        return theme;
+      }),
     );
   }
 
@@ -465,7 +493,7 @@ export const PAGE = `<!doctype html>
   };
 
   function show(answer) {
-    // By the words their names share, each cluster under its heading; the list is in their order.
+    // By the words their names share, each cluster under its heading, collapsed; the list is in their order.
     const groups = clusters(answer.skills);
     skills = groups.length ? groups.flatMap((group) => group.skills) : answer.skills;
     onPage = answer.repository.id;
@@ -503,8 +531,8 @@ export const PAGE = `<!doctype html>
     const list = groups.length
       ? groups.map((group) => {
           const label = group.word ?? 'Other';
-          const cluster = element('div.cluster', element('h2', label + ' · ' + group.skills.length),
-            ...items.slice(next, (next += group.skills.length)));
+          const cluster = element('div.cluster');
+          cluster.append(element('h2', foldable(cluster, label + ' · ' + group.skills.length)), ...items.slice(next, (next += group.skills.length)));
           cluster.setAttribute('role', 'group');
           cluster.setAttribute('aria-label', label);
           return cluster;
@@ -519,17 +547,23 @@ export const PAGE = `<!doctype html>
     if (skills.length) filter();
   }
 
-  /** Only the skills whose name or description has every word of the filter; the selection stays if it can. */
+  /**
+   * Only the skills whose name or description has every word of the filter; the selection stays if it can. Text typed opens
+   * each cluster with a skill shown.
+   */
   function filter() {
     if ($('filter').hidden) return; // before a scan, or while one runs
     const text = $('filter').value;
-    const items = [...$('skills').querySelectorAll('button')];
+    const items = rows();
     items.forEach((item, i) => {
       item.hidden = !matches(skills[i], text);
       item.querySelector('.name').replaceChildren(...marked(skills[i].name, text));
       if (skills[i].description) item.querySelector('.description').replaceChildren(...marked(skills[i].description, text));
     });
-    $('skills').querySelectorAll('.cluster').forEach((cluster) => (cluster.hidden = !cluster.querySelector('button:not([hidden])')));
+    $('skills').querySelectorAll('.cluster').forEach((cluster) => {
+      cluster.hidden = !cluster.querySelector('button:not(.toggle):not([hidden])');
+      if (!cluster.hidden && text.trim()) fold(cluster, true);
+    });
     const shown = items.filter((item) => !item.hidden).length;
     const count = shown === skills.length ? String(skills.length) : shown + ' of ' + skills.length;
     $('count').textContent = count + (skills.length === 1 ? ' skill' : ' skills');
@@ -575,13 +609,16 @@ export const PAGE = `<!doctype html>
     }
     $('filter').value = '';
     filter();
-    const items = [...$('skills').querySelectorAll('button')];
+    const items = rows();
     const index = pick(skills.length, items.findIndex((item) => item.getAttribute('aria-current') === 'true'));
-    if (index >= 0) select(index);
+    if (index < 0) return;
+    const cluster = items[index].closest('.cluster');
+    if (cluster) fold(cluster, true);
+    select(index);
   });
 
   function select(index) {
-    const items = [...$('skills').querySelectorAll('button')];
+    const items = rows();
     items.forEach((item, i) => item.setAttribute('aria-current', String(i === index)));
     items[index].scrollIntoView({ block: 'nearest' });
     const skill = skills[index];
@@ -642,10 +679,10 @@ export const PAGE = `<!doctype html>
     return result;
   }
 
-  // Up and down move through the skills the filter shows, or through an organization's repositories.
+  // Up and down move through the skills the filter shows in open clusters, or through an organization's repositories.
   $('skills').addEventListener('keydown', (event) => {
     if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-    const items = [...$('skills').querySelectorAll('button')];
+    const items = rows();
     if ($('skills').classList.contains('repositories')) {
       const current = items.indexOf(document.activeElement);
       const next = items[Math.max(0, Math.min(items.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)))];
@@ -654,7 +691,7 @@ export const PAGE = `<!doctype html>
       next.focus();
       return;
     }
-    const shown = items.filter((item) => !item.hidden);
+    const shown = items.filter((item) => !item.hidden && !item.closest('.cluster.collapsed'));
     const current = shown.findIndex((item) => item.getAttribute('aria-current') === 'true');
     const next = Math.max(0, Math.min(shown.length - 1, current + (event.key === 'ArrowDown' ? 1 : -1)));
     if (next === current || !shown[next]) return;

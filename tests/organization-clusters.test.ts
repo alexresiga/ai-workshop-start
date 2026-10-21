@@ -542,6 +542,7 @@ browserTest('Cluster skills: clustering, the button disabled; then each cluster,
     'buildJetBrains/kotlinRun the build.',
     'lintJetBrains/androidRun the lint.',
   ]);
+  await page.locator('#clusters .theme h3 button').first().click();
   await expect(build.first().getByRole('link', { name: 'a', exact: true })).toHaveAttribute('href', A.link);
   await expect(page.locator('#warnings')).toBeEmpty();
 });
@@ -578,6 +579,42 @@ browserTest('clustering: the repositories’ bar while the organization is scann
   await expect(page.locator('#clustering progress')).toHaveCount(1);
   release();
   await expect(page.locator('#clusters .theme')).toHaveCount(3);
+});
+
+const headings = (page: Page) => page.locator('#clusters .theme h3 button');
+
+browserTest('each cluster collapsed by default: its theme and pill a button, ▸, its skills hidden', async (t) => {
+  const page = await organizationPage(t, async () => ANSWER);
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await expect(headings(page)).toHaveText(['Build4 skills', 'Review2 skills', 'Releases1 skill']);
+  assert.deepEqual(await headings(page).evaluateAll((buttons) => buttons.map((b) => b.getAttribute('aria-expanded'))), ['false', 'false', 'false']);
+  assert.equal(await headings(page).first().evaluate((button) => button.ownerDocument.defaultView!.getComputedStyle(button, '::before').content), '"▸ "');
+  await expect(page.locator('#clusters .theme li:visible')).toHaveCount(0);
+});
+
+browserTest('a cluster’s button shows its skills, and hides them again', async (t) => {
+  const page = await organizationPage(t, async () => ANSWER);
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await headings(page).nth(1).click();
+  await expect(headings(page).nth(1)).toHaveAttribute('aria-expanded', 'true');
+  assert.equal(await headings(page).nth(1).evaluate((button) => button.ownerDocument.defaultView!.getComputedStyle(button, '::before').content), '"▾ "');
+  await expect(page.locator('#clusters .theme li:visible')).toHaveText(['cJetBrains/ideaRun the c.', 'reviewJetBrains/androidRun the review.']);
+  await expect(page.getByRole('link', { name: 'review', exact: true })).toHaveAttribute('href', REVIEW.link);
+  await headings(page).nth(1).click();
+  await expect(headings(page).nth(1)).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#clusters .theme li:visible')).toHaveCount(0);
+});
+
+browserTest('each new answer comes collapsed', async (t) => {
+  const page = await organizationPage(t, async () => ANSWER);
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await headings(page).first().click();
+  await expect(headings(page).first()).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: 'Cluster skills' }).click();
+  await expect(page.getByRole('button', { name: 'Cluster skills' })).toBeEnabled();
+  await expect(headings(page)).toHaveText(['Build4 skills', 'Review2 skills', 'Releases1 skill']);
+  await expect(headings(page).first()).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#clusters .theme li:visible')).toHaveCount(0);
 });
 
 browserTest('the model’s warnings go under the header', async (t) => {
