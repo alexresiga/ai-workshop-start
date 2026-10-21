@@ -5,6 +5,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import type { AddressInfo } from 'node:net';
 import { test, type TestContext } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { REACTIONS } from '../.agents/skills/issue-to-pr/ask.ts';
 
 const ASK = fileURLToPath(new URL('../.agents/skills/issue-to-pr/ask.ts', import.meta.url));
 const QUESTION = 'Which repository does the dice use?';
@@ -80,6 +81,38 @@ test('the answer: the replies in the thread, oldest first, each <user>: <text> o
   const run = await ask([QUESTION, ...FAST], { SLACK_API: api });
   assert.equal(run.code, 0, run.stderr);
   assert.equal(run.stdout, 'U1: JetBrains/kotlin\nU2: and keep the filter\n');
+});
+
+test('each reply read is marked with a funny emoji reaction, one from REACTIONS', async (t) => {
+  const { api, calls } = await slack(t, {
+    'chat.postMessage': posted,
+    'chat.getPermalink': permalink,
+    'conversations.replies': thread(
+      { ts: '1700000002.000000', user: 'U1', text: 'JetBrains/kotlin' },
+      { ts: '1700000003.000000', user: 'U2', text: 'and keep the filter' },
+      { ts: '1700000004.000000', ...BOT, text: 'the bot again' },
+    ),
+    'reactions.add': () => ({ body: { ok: true } }),
+  });
+  const run = await ask([QUESTION, ...FAST], { SLACK_API: api });
+  assert.equal(run.code, 0, run.stderr);
+  const reactions = calls.filter((c) => c.method === 'reactions.add');
+  assert.deepEqual(reactions.map((c) => [c.body.channel, c.body.timestamp]), [['C1', '1700000002.000000'], ['C1', '1700000003.000000']]);
+  for (const c of reactions) assert.ok(REACTIONS.includes(c.body.name), c.body.name);
+  assert.doesNotMatch(run.stderr, /warning/);
+});
+
+test('a reaction that fails, no reactions:write scope, is a warning: the answer stands', async (t) => {
+  const { api } = await slack(t, {
+    'chat.postMessage': posted,
+    'chat.getPermalink': permalink,
+    'conversations.replies': thread({ ts: '1700000002.000000', user: 'U1', text: 'yes' }),
+    'reactions.add': () => ({ body: { ok: false, error: 'missing_scope' } }),
+  });
+  const run = await ask([QUESTION, ...FAST], { SLACK_API: api });
+  assert.equal(run.code, 0, run.stderr);
+  assert.equal(run.stdout, 'U1: yes\n');
+  assert.match(run.stderr, /^warning: could not mark the reply 1700000002\.000000 as read: missing_scope$/m);
 });
 
 test('it waits until the first reply, checking every --poll', async (t) => {
