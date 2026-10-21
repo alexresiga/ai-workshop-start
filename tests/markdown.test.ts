@@ -77,6 +77,20 @@ test('a tilde in a URL or after punctuation before a letter strikes nothing out,
   assert.deepEqual(inline('~(a)~ and ~a.~, ~.a~'), [['del', {}, '(a)'], ' and ', ['del', {}, 'a.'], ', ', ['del', {}, '.a']]);
 });
 
+test('a closing tilde ends the nearest one that opens, as on GitHub; struck-out text may hold struck-out text', () => {
+  const inline = (text: string) => markdown(text)[0].slice(2);
+  assert.deepEqual(inline('Build takes ~2 min. Old step ~deprecated~.'), ['Build takes ~2 min. Old step ', ['del', {}, 'deprecated'], '.']);
+  assert.deepEqual(inline('run ~/a.sh then ~/b.sh~'), ['run ~/a.sh then ', ['del', {}, '/b.sh']]);
+  assert.deepEqual(inline('~a ~a~'), ['~a ', ['del', {}, 'a']]);
+  assert.deepEqual(inline('~a~b~'), [['del', {}, 'a'], 'b~']);
+  assert.deepEqual(inline('~a~ ~b~'), [['del', {}, 'a'], ' ', ['del', {}, 'b']]);
+  // Nested, the same run or the other one.
+  assert.deepEqual(inline('~a ~b~ c~'), [['del', {}, 'a ', ['del', {}, 'b'], ' c']]);
+  assert.deepEqual(inline('~a ~b ~c~ d~ e~'), [['del', {}, 'a ', ['del', {}, 'b ', ['del', {}, 'c'], ' d'], ' e']]);
+  assert.deepEqual(inline('~~a ~~b~~ c~~'), [['del', {}, 'a ', ['del', {}, 'b'], ' c']]);
+  assert.deepEqual(inline('~a ~~b~~ c~'), [['del', {}, 'a ', ['del', {}, 'b'], ' c']]);
+});
+
 test('a code span binds tighter than strong, emphasis, struck out and a link, as on GitHub', () => {
   const inline = (text: string) => markdown(text)[0].slice(2);
   assert.deepEqual(inline('**Pass `**kwargs` through**'), [['strong', {}, 'Pass ', ['code', {}, '**kwargs'], ' through']]);
@@ -112,7 +126,7 @@ test('a code span inside an emphasis keeps its stars, a strong next to it too', 
   assert.deepEqual(markdown('*Glob `**/*.ts` **all** files*'), [['p', {}, ['em', {}, 'Glob ', ['code', {}, '**/*.ts'], ' ', ['strong', {}, 'all'], ' files']]]);
 });
 
-test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs and code spans after a lone *; bare URLs and runs of spaces too', () => {
+test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs and code spans after a lone *; bare URLs, runs of spaces and tildes too', () => {
   for (const text of [
     `*Note: paths look like C:${'\\dir'.repeat(30)} on Windows`,
     `*${'\\'.repeat(44)}`,
@@ -127,6 +141,12 @@ test('an emphasis never closed fails fast: backslashes, Windows paths, bold runs
     `a${' '.repeat(50000)}b`,
     `a${' \t'.repeat(25000)}b`,
     `a${' '.repeat(50000)}\nb`,
+    // Struck-out text never closed: tildes that open, close, or both.
+    '~a '.repeat(20000),
+    'a~'.repeat(20000),
+    '~/x '.repeat(20000),
+    '~a ~b '.repeat(5000),
+    '~a\\'.repeat(20000),
   ]) {
     const start = performance.now();
     markdown(text);

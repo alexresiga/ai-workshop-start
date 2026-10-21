@@ -50,7 +50,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
   with a space after the opening one or before the closing one, `~ a~`, or an escaped `\~` is text; as in GFM, a tilde before
   punctuation opens only after a space or punctuation, and one after punctuation closes only before them; a tilde in an autolink
   `<…>`, a link's destination or a bare URL opens and closes nothing: in "Install to ~/bin, see [docs](https://example.edu/~jdoe/)."
-  no text is struck out, and the link goes to `https://example.edu/~jdoe/`
+  no text is struck out, and the link goes to `https://example.edu/~jdoe/`; a closing tilde ends the nearest one that opens, and
+  struck-out text may hold struck-out text: "Build takes ~2 min. Old step ~deprecated~." strikes out "deprecated" alone,
+  `~a ~b~ c~` is "a b c" struck out, "b" twice
 - A list item that starts with `[ ]` or `[x]` (or `[X]`), then a space and text, is a task list item, as on GitHub (GFM's task list items):
   a checkbox, unticked or ticked, that a click does not change, then the text alone, no bullet: "- [ ] Tag the release" is an
   unticked box and "Tag the release"; in a loose list, the box is in the item's first paragraph; `[ ]` with no text after it,
