@@ -279,14 +279,20 @@ export const PAGE = `<!doctype html>
    */
   function progressed({ scanned, of }, status = $('loading')) {
     status.querySelector('.text').textContent = 'Scanned ' + scanned + ' of ' + plural(of, 'repository');
-    let bar = status.querySelector('progress');
-    if (!bar) {
-      bar = element('progress');
-      bar.setAttribute('aria-label', 'Repositories scanned');
-      status.append(bar);
+    bar(status, 'Repositories scanned', scanned, of);
+  }
+
+  /** The status's progress bar, made the first time, or when it measured something else: \`value\` of \`max\`. */
+  function bar(status, label, value, max) {
+    let progress = status.querySelector('progress');
+    if (progress?.getAttribute('aria-label') !== label) {
+      progress?.remove();
+      progress = element('progress');
+      progress.setAttribute('aria-label', label);
+      status.append(progress);
     }
-    bar.max = of;
-    bar.value = scanned;
+    progress.max = max;
+    progress.value = value;
   }
 
   /**
@@ -303,7 +309,7 @@ export const PAGE = `<!doctype html>
       buffered = lines.pop();
       for (const line of lines.filter(Boolean)) {
         const answer = JSON.parse(line);
-        if (!answer.progress && answer.clustering === undefined) return answer;
+        if (!answer.progress && answer.clustering === undefined && !answer.clustered) return answer;
         if (mine !== latest) continue; // a later scan replaced this one
         show(answer);
       }
@@ -401,12 +407,18 @@ export const PAGE = `<!doctype html>
     $('cluster').disabled = true;
     $('cluster').textContent = 'Clustering…';
     $('clusters').replaceChildren(loading('Listing ' + organization + '’s repositories…', 'clustering'));
-    // The organization scanned again, its progress as the list shows it; then the model asked.
+    // The organization scanned again, its progress as the list shows it; then the model asked, a bar of its own
+    // moving on as its answer puts the skills in clusters.
     const show = (line) => {
-      if (line.progress) progressed(line.progress, $('clustering'));
-      else {
-        $('clustering').querySelector('.text').textContent = 'Clustering ' + plural(line.clustering, 'skill') + ' with haiku…';
-        $('clustering').querySelector('progress')?.remove();
+      const status = $('clustering');
+      if (line.progress) progressed(line.progress, status);
+      else if (line.clustered) {
+        status.querySelector('.text').textContent =
+          'Clustered ' + line.clustered.skills + ' of ' + plural(line.clustered.of, 'skill') + ' with haiku…';
+        bar(status, 'Skills clustered', line.clustered.skills, line.clustered.of);
+      } else {
+        status.querySelector('.text').textContent = 'Clustering ' + plural(line.clustering, 'skill') + ' with haiku…';
+        bar(status, 'Skills clustered', 0, line.clustering);
       }
     };
     try {

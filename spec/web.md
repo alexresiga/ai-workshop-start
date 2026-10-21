@@ -51,7 +51,9 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 ## An organization’s clusters
 - **Cluster skills**: the organization scanned again, nothing is stored, and its skills grouped by theme by a small model;
   while it runs, under the button: the spinner and `Listing <org>’s repositories…`, then `Scanned N of M repositories` and the
-  progress bar, as the organization's own scan shows them; then `Clustering N skills with haiku…`; the button disabled;
+  progress bar, as the organization's own scan shows them; then `Clustering N skills with haiku…` and a **progress bar** of
+  the skills, in the repositories' bar's place, from 0; as the model's answer streams, `Clustered K of N skills with haiku…`,
+  the bar moving on with each skill it puts in a cluster; the same spinner throughout; the button disabled;
   a new scan, or home, drops the answer
 - Under the button, `N skills in K clusters.`, then each cluster: its theme and an `N skills` pill; its skills by **name**, each
   linked to its SKILL.md on GitHub, with its repository and the description's *first sentence*
@@ -59,8 +61,11 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - **Every skill in exactly one cluster**: one the model leaves out → `Other`, last; one it names twice → the first cluster;
   a number not in the list → ignored; each kind a *warning*, naming ten and how many more, under the header after the scan's,
   until the next answer
-- The model: **haiku**, through Claude Code on the server: `claude -p --model haiku --output-format json`, no session kept;
-  `CLAUDE`, optional: another `claude` binary
+- The model: **haiku**, through Claude Code on the server: `claude -p --model haiku --output-format stream-json --verbose
+  --include-partial-messages`, no session kept; the answer, its last `result` line; `CLAUDE`, optional: another `claude` binary
+- How far the model is: each skill number in a `"skills"` list of the answer so far, once it is *whole* (a comma, a space or
+  the `]` after it: `1` may be the start of `12`), counts the skills of its line, once; a number not in the list, or named
+  again, does not
 - **No tools**, the descriptions being any repository's text: no built-in tool, no MCP server, the operator's own included; in an empty
   directory of its own, so no project's `CLAUDE.md`, settings or `.mcp.json`
 - More than **5 minutes** → stopped, `claude took too long to cluster the skills`, at once, whatever `claude` does: killed if SIGTERM
@@ -84,6 +89,7 @@ A port already in use, or not a port (above 65535) → a clear message, exit cod
 - `GET /api/clusters?name=<org | org/ | GitHub URL>` → JSON `{ organization: { id, url }, skills, clusters: [{ theme, skills: [{ name,
   description, repository, path, link }] }], warnings }`, `skills` the count; not an organization, or a failure → status 400, `{ error }`
 - `GET /api/clusters/progress?name=<org | org/ | GitHub URL>` → the same, as NDJSON, one JSON a line, as it goes: `{ progress: { scanned, of } }`
-  as the organization is scanned again; `{ clustering }`, how many skills the model is asked about, unless there are none; the last line,
+  as the organization is scanned again; `{ clustering }`, how many skills the model is asked about, unless there are none;
+  `{ clustered: { skills, of } }` each time the model's answer has put more of them in a cluster; the last line,
   the answer of `/api/clusters`, or `{ error }`; not an organization → status 400, `{ error }`; what the page reads
 - Nothing is stored
