@@ -200,6 +200,8 @@ export const PAGE = `<!doctype html>
   let latest = 0;
   /** An organization or a user, alone or as a GitHub link; \`owner/repo\` is a repository. */
   const ORGANIZATION = /^(?:(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/)?([a-z\\d][a-z\\d-]*)\\/?$/i;
+  /** A repository's GitHub link, as the CLI takes it: \`owner/repo\` is what the list says while it scans. */
+  const LINK = /^(?:https?:\\/\\/)?(?:www\\.)?github\\.com\\/([\\w.-]+)\\/([\\w.-]+?)(?:\\.git)?\\/?$/i;
   /** The repository on the page, as \`owner/repo\`, after a scan. */
   let onPage = '';
 
@@ -260,7 +262,7 @@ export const PAGE = `<!doctype html>
     else if (how === 'replace') history.replaceState(null, '', address);
     return organization
       ? load('/api/organization/progress?name=' + encodeURIComponent(name), 'Listing ' + name + '’s repositories…', showOrganization)
-      : load('/api/scan?url=' + encodeURIComponent(text), 'Scanning ' + text + '…', show);
+      : load('/api/scan?url=' + encodeURIComponent(text), 'Scanning ' + text.replace(LINK, '$1/$2') + '…', show);
   }
 
   /** What the list shows while a scan runs, or the clusters while they come: a spinner and what it does. */
