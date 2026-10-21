@@ -24,8 +24,9 @@ if jq -e '[.checks[] | select(.ok | not)] | length > 0' "$repro" >/dev/null; the
 fi
 
 title=$(jq -r .title "$repro")
-# The same bug, open already: a comment there is better than a second run on it.
-same=$(gh issue list --repo "$repo" --state open --search "$title in:title" --json title,url --limit 100 \
+# The same bug, open already: a comment there is better than a second run on it. Every open issue, matched here:
+# GitHub's search would read the title as query syntax, and a `:` or `(` would find nothing.
+same=$(gh issue list --repo "$repo" --state open --json title,url --limit 1000 \
   | jq -r --arg t "$title" '.[] | select(.title == $t) | .url' | head -1)
 if [[ -n $same ]]; then
   echo "already open: $same" >&2

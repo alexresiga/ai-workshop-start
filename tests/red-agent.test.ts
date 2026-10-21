@@ -96,6 +96,9 @@ reproTest('the steps: only one run fails → it fails in only 1 of 2 runs, exit 
 test('the steps: a missing title, expected or steps → <file> exports no <name>, exit 1, no video', (t) => {
   const dir = bugDir(t);
   writeFileSync(join(dir, 'steps.ts'), "export const title = '  ';\nexport const steps = [];\n");
+  // An earlier run's recording, of other steps: not left for file.sh to file.
+  mkdirSync(join(dir, 'out'));
+  writeFileSync(join(dir, 'out/repro.json'), '{}');
   const run = spawnSync('node', [REPRO, join(dir, 'steps.ts')], { cwd: REPOSITORY, encoding: 'utf8' });
   assert.equal(run.status, 1);
   assert.match(run.stderr, /steps\.ts exports no title, no expected, no steps\n$/);
@@ -115,10 +118,10 @@ test('actual: the error with no colours and no call log, at most 12 lines', () =
 });
 
 // Filing: with a gh that answers the issue search from FAKE_ISSUES, and --dry-run, so nothing is pushed or filed.
-function recorded(t: T, checks: { name: string; ok: boolean; detail: string }[]) {
+function recorded(t: T, checks: { name: string; ok: boolean; detail: string }[], title = 'The pill says 9 of 9') {
   const dir = bugDir(t, 'pill-count');
   mkdirSync(join(dir, 'out'));
-  writeFileSync(join(dir, 'out/repro.json'), JSON.stringify({ title: 'The pill says 9 of 9', head: 'abc123', checks }));
+  writeFileSync(join(dir, 'out/repro.json'), JSON.stringify({ title, head: 'abc123', checks }));
   writeFileSync(join(dir, 'out/issue.md'), '![preview]({{media}}/preview.gif)\n[Video]({{media}}/repro.mp4)\n');
   writeFileSync(join(dir, 'out/repro.mp4'), '');
   const bin = join(dir, '..', 'bin');
@@ -147,12 +150,14 @@ test('filing: --dry-run prints what it would push and file, labelled "delegated 
   assert.match(run.stdout, /would open an issue labelled "delegated to AI": The pill says 9 of 9\n/);
   const media = 'https://raw.githubusercontent.com/alexresiga/ai-workshop-start/media/recordings/bugs/pill-count/abc123';
   assert.ok(run.stdout.includes(`![preview](${media}/preview.gif)\n[Video](${media}/repro.mp4)\n\n---\nProduced by a test\n`), run.stdout);
-  assert.match(run.calls, /^issue list --repo alexresiga\/ai-workshop-start --state open --search The pill says 9 of 9 in:title/);
+  // Every open issue, matched by its title here: a search would read a `:` or `(` in the title as its syntax.
+  assert.match(run.calls, /^issue list --repo alexresiga\/ai-workshop-start --state open --json title,url --limit 1000\n/);
   assert.doesNotMatch(run.calls, /issue create/);
 });
 
 test('filing: an open issue with the same title → already open: <url>, exit 1, nothing filed', (t) => {
-  const run = file(recorded(t, OK), [{ title: 'The pill says 9 of 9', url: 'https://github.com/alexresiga/ai-workshop-start/issues/99' }]);
+  const run = file(recorded(t, OK, 'Filter: the pill says (9 of 9)'),
+    [{ title: 'Filter', url: 'https://github.com/x/1' }, { title: 'Filter: the pill says (9 of 9)', url: 'https://github.com/alexresiga/ai-workshop-start/issues/99' }]);
   assert.equal(run.status, 1);
   assert.equal(run.stderr, 'already open: https://github.com/alexresiga/ai-workshop-start/issues/99\n');
   assert.doesNotMatch(run.stdout, /would push/);
