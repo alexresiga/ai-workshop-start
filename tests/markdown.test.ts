@@ -226,6 +226,22 @@ test('an entity reference is its character, as on GitHub: named, decimal or hex;
   assert.deepEqual(inline('<https://a.com/?b=1&amp;c=2>'), [['a', { href: 'https://a.com/?b=1&c=2' }, 'https://a.com/?b=1&c=2']]);
 });
 
+test('a hard line break, as on GitHub: a \\ or two spaces at the end of a line; any other end of a line is a space', () => {
+  assert.deepEqual(markdown('Tag the release.\\\nPush the tag.'), [['p', {}, 'Tag the release.', ['br', {}], 'Push the tag.']]);
+  assert.deepEqual(markdown('Tag the release.  \nPush the tag.'), [['p', {}, 'Tag the release.', ['br', {}], 'Push the tag.']]);
+  assert.deepEqual(markdown('Tag the release. \nPush the tag.'), [['p', {}, 'Tag the release. Push the tag.']]);
+  // In emphasis, a list, a quote and a link's text too.
+  assert.deepEqual(markdown('*a\\\nb*'), [['p', {}, ['em', {}, 'a', ['br', {}], 'b']]]);
+  assert.deepEqual(markdown('- a\\\n  b'), [['ul', {}, ['li', {}, 'a', ['br', {}], 'b']]]);
+  assert.deepEqual(markdown('> a\\\n> b'), [['blockquote', {}, ['p', {}, 'a', ['br', {}], 'b']]]);
+  assert.deepEqual(markdown('[a\\\nb](u)'), [['p', {}, ['a', { href: 'u' }, 'a', ['br', {}], 'b']]]);
+  // At the end of a paragraph or a heading, an escaped one, or in code, the \\ is text.
+  assert.deepEqual(markdown('a\\\n\nb  '), [['p', {}, 'a\\'], ['p', {}, 'b']]);
+  assert.deepEqual(markdown('# Steps\\'), [['h1', {}, 'Steps\\']]);
+  assert.deepEqual(markdown('a\\\\\nb'), [['p', {}, 'a\\ b']]);
+  assert.deepEqual(markdown('`a\\\nb`'), [['p', {}, ['code', {}, 'a\\ b']]]);
+});
+
 test('HTML in a SKILL.md is text, never an element', () => {
   assert.deepEqual(markdown('<script>alert(1)</script>\n\n<img src=x onerror=alert(1)>'), [
     ['p', {}, '<script>alert(1)</script>'],
@@ -234,7 +250,7 @@ test('HTML in a SKILL.md is text, never an element', () => {
 });
 
 test('every node is one of the tags the page builds', () => {
-  const tags = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'pre', 'code', 'blockquote', 'ul', 'ol', 'li', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'strong', 'em', 'del', 'a', 'input']);
+  const tags = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'pre', 'code', 'blockquote', 'ul', 'ol', 'li', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'strong', 'em', 'del', 'a', 'input', 'br']);
   const walk = (node: unknown): void => {
     if (typeof node === 'string') return;
     const [tag, attributes, ...children] = node as [string, Record<string, string>, ...unknown[]];
@@ -242,7 +258,7 @@ test('every node is one of the tags the page builds', () => {
     assert.deepEqual(Object.keys(attributes), tag === 'a' ? ['href'] : tag === 'input' ? ['checked'] : []);
     children.forEach(walk);
   };
-  markdown('# a\n\n- **b** [c](d)\n- [x] i\n\n> e\n\n```\nf\n```\n\n| g |\n|---|\n| h |\n\n***\n').forEach(walk);
+  markdown('# a\n\n- **b** [c](d)\\\n  i\n- [x] j\n\n> e\n\n```\nf\n```\n\n| g |\n|---|\n| h |\n\n***\n').forEach(walk);
 });
 
 test('an email autolink is a mailto link, its text the address; one that is not an address is text', () => {
